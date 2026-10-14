@@ -35,6 +35,12 @@ git clone <url> ~/void-setup && cd ~/void-setup
 
 Les dotfiles existants sont déplacés en `*.bak.<date>`. Le dépôt doit rester à son emplacement (les liens pointent dedans).
 
+Sans remote git, copier le dépôt depuis un autre poste : `rsync -a --exclude .git ~/Projects/void-setup/ void:void-setup/`
+puis `ssh -t void 'cd ~/void-setup && ./bootstrap.sh'` (`-t` pour la saisie du mot de passe sudo).
+Sur l'ISO live : `scp -r void-setup root@<ip-du-live>:`.
+
+Après la première connexion, lancer le bureau avec `niri-session` (pas de démarrage automatique configuré).
+
 ## Workflow
 
 La VM reste le terrain d'essai : on règle niri/waybar/etc. dessus, puis `scripts/pull-from-vm.sh`, relire le diff, commit.
