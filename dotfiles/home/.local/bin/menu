@@ -1,9 +1,9 @@
 #!/bin/sh
 # Menu tout-en-un (fuzzel --dmenu), équivalent léger du menu Walker d'Omarchy.
-# Une seule liste à recherche floue: applications, actions système, entrées perso.
+# Catégories d'abord; dès qu'on tape, recherche floue globale (applications, actions, entrées perso).
 # Aucun démon: il n'existe que le temps du menu (0 Mo au repos).
 #
-#   menu                  liste unique (taper pour filtrer, Entrée pour lancer)
+#   menu                  catégories à vide; en tapant, recherche floue sur tout
 #   menu apps|clip|emoji|calc|system|audio|network|style|packages|custom
 #                         ouvre directement une section (raccourcis clavier)
 #
@@ -248,26 +248,49 @@ Paquets: Rechercher et installer
 Paquets: Supprimer
 Paquets: Mettre à jour le système
 Paquets: Nettoyer le cache
-Presse-papiers
-Émojis
-Calculatrice
-Entrées perso
+EOF
+}
+
+# Catégories: affichées en premier. Sans saisie, la liste est limitée à leur nombre de lignes
+# (on ne voit qu'elles); dès qu'on tape, la recherche floue porte sur TOUTE la liste.
+categories_list() {
+    cat <<'EOF'
+Applications ›
+Presse-papiers ›
+Émojis ›
+Calculatrice ›
+Système ›
+Audio ›
+Réseau ›
+Style ›
+Paquets ›
+Entrées perso ›
 EOF
 }
 
 menu_main() {
-    items="$( { custom_labels; list_apps | cut -f1; actions_list; } )"
-    sel="$(printf '%s\n' "$items" | pick "> " 12)"
+    cats="$(categories_list)"
+    nb="$(printf '%s\n' "$cats" | wc -l | tr -d ' ')"
+    items="$( { printf '%s\n' "$cats"; custom_labels; list_apps | cut -f1; actions_list; } )"
+    sel="$(printf '%s\n' "$items" | pick "> " "$nb")"
     [ -n "$sel" ] || exit 0
 
-    # 1. entrées perso, 2. applications, 3. actions
+    # catégories (ouvrent la section), puis entrées perso, applications, actions directes
+    case "$sel" in
+        "Applications ›") menu_apps ;;
+        "Presse-papiers ›") menu_clip ;;
+        "Émojis ›") menu_emoji ;;
+        "Calculatrice ›") menu_calc ;;
+        "Système ›") menu_system ;;
+        "Audio ›") menu_audio ;;
+        "Réseau ›") menu_network ;;
+        "Style ›") menu_style ;;
+        "Paquets ›") menu_packages ;;
+        "Entrées perso ›") menu_custom ;;
+    esac
     custom_run "$sel"
     run_app "$sel"
     case "$sel" in
-        "Presse-papiers") menu_clip ;;
-        "Émojis") menu_emoji ;;
-        "Calculatrice") menu_calc ;;
-        "Entrées perso") menu_custom ;;
         "Système: "*) menu_system "${sel#Système: }" ;;
         "Audio: "*) menu_audio "${sel#Audio: }" ;;
         "Réseau: "*) menu_network "${sel#Réseau: }" ;;
