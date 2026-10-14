@@ -9,7 +9,7 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 for f in .bashrc .bash_profile .inputrc; do
     scp -q "$HOST:$f" "dotfiles/home/$f"
 done
-for d in niri htop; do
+for d in niri htop waybar fuzzel mako; do
     rm -rf "dotfiles/config/$d"
     scp -qr "$HOST:.config/$d" dotfiles/config/
 done

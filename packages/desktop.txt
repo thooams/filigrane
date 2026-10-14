@@ -3,6 +3,7 @@ niri
 Waybar
 alacritty
 fuzzel
+mako
 chromium
 swaylock
 brightnessctl
