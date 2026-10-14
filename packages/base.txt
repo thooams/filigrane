@@ -10,3 +10,6 @@ chrony
 dbus
 elogind
 socklog-void
+
+# Traitement JSON en ligne de commande (553 Ko)
+jq

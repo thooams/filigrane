@@ -66,5 +66,9 @@
       "Read(~/.claude/.credentials.json)",
       "Read(~/.ssh/id_*)"
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "/bin/bash /home/thomas/.claude/statusline-command.sh"
   }
 }
