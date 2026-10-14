@@ -7,6 +7,7 @@
 - Keyboard layout: `input { keyboard { xkb { layout "fr" variant "bepo" } } }`.
 - Autostart: `spawn-at-startup "<cmd>" ...` lines in the config (pipewire, waybar are started this way).
 - Terminal: `Mod+T` (alacritty). Launcher: `Mod+D` (fuzzel). Lock: `Super+Alt+L` (swaylock). Claude Code: `Mod+Y`.
+- Wallpaper: `swaybg` (static, 41 KB) via `~/.local/bin/wallpaper [image]`; images in `~/.local/share/wallpapers/`. Never use animated wallpapers (cost CPU/GPU at idle).
 - Waybar: `~/.config/waybar/config.jsonc` and `style.css`; restart with `pkill waybar; waybar &`.
 - Logs: run from a tty as `dbus-run-session niri 2>&1 | tee ~/niri.log` if debugging.
 

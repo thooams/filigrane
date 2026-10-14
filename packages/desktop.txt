@@ -4,6 +4,7 @@ Waybar
 alacritty
 fuzzel
 mako
+swaybg
 chromium
 swaylock
 brightnessctl
