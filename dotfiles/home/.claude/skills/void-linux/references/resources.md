@@ -43,7 +43,7 @@ Baseline to protect: record `free -h` after a clean boot into niri and compare a
 - Fonts and a coherent palette cost nothing: `dejavu-fonts-ttf`, `noto-fonts-ttf`, `font-awesome6` are in place.
 - niri gaps, borders, rounded corners and focus ring are configured in `config.kdl` and are essentially free. Disable animations if they cost anything on weak GPUs.
 - Waybar: few modules, long polling intervals (`interval` of 5 s or more), no custom scripts that spawn often.
-- Terminal: alacritty (GPU, light).
+- Terminal: foot (Wayland natif, ~20 Mo, sans GPU).
 
 ## Rules of thumb
 

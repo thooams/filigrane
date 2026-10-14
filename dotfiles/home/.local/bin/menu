@@ -84,7 +84,7 @@ Oui
     esac
 }
 term() { # term COMMANDE : terminal gardé ouvert à la fin
-    exec alacritty -e sh -c "$1; echo; printf 'Entrée pour fermer '; read _"
+    exec foot -e sh -c "$1; echo; printf 'Entrée pour fermer '; read _"
 }
 trim() { printf '%s' "$1" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//'; }
 
@@ -126,7 +126,7 @@ run_app() { # run_app NOM : retourne 1 si aucune application de ce nom
     cmd="$(printf '%s' "$line" | cut -f2)"
     istty="$(printf '%s' "$line" | cut -f3)"
     if [ "$istty" = "true" ]; then
-        exec alacritty -e sh -c "$cmd"
+        exec foot -e sh -c "$cmd"
     else
         setsid sh -c "$cmd" >/dev/null 2>&1 &
         exit 0
@@ -153,7 +153,7 @@ custom_run() { # custom_run LIBELLÉ : retourne 1 si le libellé n'existe pas
         mode="$(trim "$mode")"
         cmd="$(trim "$cmd")"
         case "$mode" in
-            term) exec alacritty -e sh -c "$cmd" ;;
+            term) exec foot -e sh -c "$cmd" ;;
             hold) term "$cmd" ;;
             run) setsid sh -c "$cmd" >/dev/null 2>&1 & exit 0 ;;
             *) notify -u critical "Menu" "Mode inconnu '$mode' pour $label"; exit 1 ;;
@@ -188,7 +188,7 @@ menu_custom() {
                     fi
                 fi
                 ;;
-            "Modifier le fichier") exec alacritty -e nvim "$ENTRIES" ;;
+            "Modifier le fichier") exec foot -e nvim "$ENTRIES" ;;
         esac
         [ -n "$arg" ] && return $BACK # annulé depuis la liste unique
     done

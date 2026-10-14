@@ -18,7 +18,7 @@
         "format": "\uf0c9",
         "tooltip": false,
         "on-click": "$HOME/.local/bin/menu",
-        "on-click-right": "alacritty"
+        "on-click-right": "foot"
     },
     // Clic = aller au workspace, molette = précédent/suivant (sans boucler)
     "niri/workspaces": {

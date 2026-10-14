@@ -1,7 +1,7 @@
 # Bureau niri (tous profils)
 niri
 Waybar
-alacritty
+foot
 fuzzel
 mako
 swaybg
