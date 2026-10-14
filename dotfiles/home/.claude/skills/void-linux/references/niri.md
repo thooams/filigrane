@@ -7,7 +7,7 @@
 - Keyboard layout: `input { keyboard { xkb { layout "fr" variant "bepo" } } }`.
 - Environment: `environment { ... }` block sets `CHROME_FLAGS` (chromium native Wayland, pipewire screen capture) and `ELECTRON_OZONE_PLATFORM_HINT`. Void's chromium wrapper ignores flags files; it only reads `CHROME_FLAGS`.
 - Autostart: `spawn-at-startup "<cmd>" ...` lines in the config (pipewire, waybar are started this way).
-- Terminal: `Mod+T` (alacritty). Menu: `Mod+Space` (`~/.local/bin/menu`, fuzzel dmenu: apps, clipboard, emoji, calc, system, audio, network, style, packages; `menu <section>` jumps directly). App launcher only: `Mod+D` (fuzzel). Lock: `Super+Alt+L` (swaylock). Claude Code: `Mod+Y`.
+- Terminal: `Mod+T` (alacritty). Menu: `Mod+Space` (`~/.local/bin/menu`, fuzzel dmenu, ONE fuzzy list: custom entries from `~/.config/menu/entries`, all .desktop apps, and "Category: Action" system actions; `menu <section>` jumps directly to clip, emoji, calc...). App launcher only: `Mod+D` (fuzzel). Lock: `Super+Alt+L` (swaylock). Claude Code: `Mod+Y`.
 - Wallpaper: `swaybg` (static, 41 KB) via `~/.local/bin/wallpaper [image]`; images in `~/.local/share/wallpapers/`. Never use animated wallpapers (cost CPU/GPU at idle).
 - Waybar: `~/.config/waybar/config.jsonc` and `style.css`; restart with `pkill waybar; waybar &`.
 - Logs: run from a tty as `dbus-run-session niri 2>&1 | tee ~/niri.log` if debugging.

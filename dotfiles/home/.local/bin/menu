@@ -1,25 +1,125 @@
 #!/bin/sh
 # Menu tout-en-un (fuzzel --dmenu), équivalent léger du menu Walker d'Omarchy.
+# Une seule liste à recherche floue: applications, actions système, entrées perso.
 # Aucun démon: il n'existe que le temps du menu (0 Mo au repos).
 #
-#   menu [apps|clip|emoji|calc|system|audio|network|style|packages]
+#   menu                  liste unique (taper pour filtrer, Entrée pour lancer)
+#   menu apps|clip|emoji|calc|system|audio|network|style|packages|custom
+#                         ouvre directement une section (raccourcis clavier)
 #
-# Sans argument: menu principal. Échap quitte à tout moment.
+# Entrées perso: ~/.config/menu/entries (Libellé | mode | commande). Échap quitte.
 
 WALLPAPERS="$HOME/.local/share/wallpapers"
 EMOJIS="$HOME/.local/share/menu/emoji.txt"
+ENTRIES="${XDG_CONFIG_HOME:-$HOME/.config}/menu/entries"
+TAB="$(printf '\t')"
 
 pick() { # pick INVITE [LIGNES]  (entrées sur stdin, sélection sur stdout)
     fuzzel --dmenu --minimal-lines --lines "${2:-12}" --prompt "$1"
 }
-ask() { # ask INVITE : saisie libre
-    fuzzel --dmenu --prompt-only "$1"
-}
+ask() { fuzzel --dmenu --prompt-only "$1"; } # saisie libre
 notify() { command -v notify-send >/dev/null && notify-send -a menu "$@"; }
 confirm() { [ "$(printf 'Non\nOui\n' | pick "$1 > " 2)" = "Oui" ]; }
-term() { # term COMMANDE : exécute dans un terminal et attend avant de fermer
+term() { # term COMMANDE : terminal gardé ouvert à la fin
     exec alacritty -e sh -c "$1; echo; printf 'Entrée pour fermer '; read _"
 }
+trim() { printf '%s' "$1" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//'; }
+
+# ---------------------------------------------------------------- applications
+
+# Sortie: Nom<TAB>Commande<TAB>Terminal (fichiers .desktop visibles, sans doublon de nom)
+list_apps() {
+    for d in /usr/share/applications "$HOME/.local/share/applications"; do
+        [ -d "$d" ] && for f in "$d"/*.desktop; do [ -f "$f" ] && echo "$f"; done
+    done | xargs awk '
+        function flush() {
+            if (name != "" && cmd != "" && type == "Application" && nodisplay != "true" && hidden != "true") {
+                gsub(/%c/, name, cmd)
+                gsub(/ ?%[fFuUdDnNikvm]/, "", cmd)
+                print name "\t" cmd "\t" term
+            }
+            name = ""; cmd = ""; term = "false"; type = ""; nodisplay = ""; hidden = ""
+        }
+        FNR == 1 { flush(); ing = 0 }
+        /^\[/ { ing = ($0 == "[Desktop Entry]"); next }
+        !ing { next }
+        {
+            key = $0; sub(/=.*/, "", key)
+            val = $0; sub(/^[^=]*=/, "", val)
+            if (key == "Name" && name == "") name = val
+            else if (key == "Exec" && cmd == "") cmd = val
+            else if (key == "Terminal") term = val
+            else if (key == "Type") type = val
+            else if (key == "NoDisplay") nodisplay = val
+            else if (key == "Hidden") hidden = val
+        }
+        END { flush() }
+    ' | sort -t "$TAB" -k1,1 -u
+}
+
+run_app() { # run_app NOM : retourne 1 si aucune application de ce nom
+    line="$(list_apps | awk -F'\t' -v n="$1" '$1 == n { print; exit }')"
+    [ -n "$line" ] || return 1
+    cmd="$(printf '%s' "$line" | cut -f2)"
+    istty="$(printf '%s' "$line" | cut -f3)"
+    if [ "$istty" = "true" ]; then
+        exec alacritty -e sh -c "$cmd"
+    else
+        setsid sh -c "$cmd" >/dev/null 2>&1 &
+        exit 0
+    fi
+}
+
+# ---------------------------------------------------------------- entrées perso
+
+custom_labels() { # libellés valides du fichier d'entrées
+    [ -f "$ENTRIES" ] || return 0
+    while IFS='|' read -r label mode cmd; do
+        label="$(trim "$label")"
+        case "$label" in ''|'#'*) continue ;; esac
+        [ -n "$(trim "$mode")" ] && [ -n "$(trim "$cmd")" ] && printf '%s\n' "$label"
+    done < "$ENTRIES"
+}
+
+custom_run() { # custom_run LIBELLÉ : retourne 1 si le libellé n'existe pas
+    [ -f "$ENTRIES" ] || return 1
+    while IFS='|' read -r label mode cmd; do
+        label="$(trim "$label")"
+        case "$label" in ''|'#'*) continue ;; esac
+        [ "$label" = "$1" ] || continue
+        mode="$(trim "$mode")"
+        cmd="$(trim "$cmd")"
+        case "$mode" in
+            term) exec alacritty -e sh -c "$cmd" ;;
+            hold) term "$cmd" ;;
+            run) setsid sh -c "$cmd" >/dev/null 2>&1 & exit 0 ;;
+            *) notify -u critical "Menu" "Mode inconnu '$mode' pour $label"; exit 1 ;;
+        esac
+    done < "$ENTRIES"
+    return 1
+}
+
+menu_custom() {
+    case "$(printf 'Ajouter une entrée\nModifier le fichier\n' | pick "Entrées perso > " 2)" in
+        "Ajouter une entrée")
+            label="$(ask "Libellé > ")"
+            [ -n "$label" ] || exit 0
+            case "$label" in *'|'*|'#'*) notify -u critical "Menu" "Libellé invalide (pas de | ni de # au début)"; exit 1 ;; esac
+            mode="$(printf 'term  (terminal, fermé à la fin)\nhold  (terminal gardé ouvert)\nrun   (arrière-plan, appli graphique)\n' | pick "Mode > " 3)"
+            mode="${mode%% *}"
+            [ -n "$mode" ] || exit 0
+            cmd="$(ask "Commande > ")"
+            [ -n "$cmd" ] || exit 0
+            mkdir -p "$(dirname "$ENTRIES")"
+            printf '%s | %s | %s\n' "$label" "$mode" "$cmd" >> "$ENTRIES"
+            notify "Menu" "Entrée ajoutée: $label"
+            ;;
+        "Modifier le fichier") exec alacritty -e nvim "$ENTRIES" ;;
+    esac
+}
+
+# ---------------------------------------------------------------- sections
+# Chaque section accepte une action en argument (liste unique) ou la demande (menu de section).
 
 menu_apps() { exec fuzzel; }
 
@@ -53,7 +153,8 @@ menu_calc() {
 }
 
 menu_system() {
-    case "$(printf 'Verrouiller\nVeille\nDéconnexion\nRedémarrer\nÉteindre\n' | pick "Système > " 5)" in
+    act="${1:-$(printf 'Verrouiller\nVeille\nDéconnexion\nRedémarrer\nÉteindre\n' | pick "Système > " 5)}"
+    case "$act" in
         Verrouiller) exec swaylock -f -c 1e1e2e ;;
         Veille) sudo -n zzz ;;
         Déconnexion) confirm "Quitter la session" && exec niri msg action quit --skip-confirmation ;;
@@ -63,7 +164,8 @@ menu_system() {
 }
 
 menu_audio() {
-    case "$(printf 'Volume +\nVolume -\nMuet / son\nMicro muet / actif\nChoisir la sortie\n' | pick "Audio > " 5)" in
+    act="${1:-$(printf 'Volume +\nVolume -\nMuet / son\nMicro muet / actif\nChoisir la sortie\n' | pick "Audio > " 5)}"
+    case "$act" in
         "Volume +") wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+ ;;
         "Volume -") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
         "Muet / son") wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
@@ -78,7 +180,8 @@ menu_audio() {
 }
 
 menu_network() {
-    case "$(printf 'Adresses IP\nTester la connexion\n' | pick "Réseau > " 2)" in
+    act="${1:-$(printf 'Adresses IP\nTester la connexion\n' | pick "Réseau > " 2)}"
+    case "$act" in
         "Adresses IP")
             sel="$(ip -br addr | grep -v '^lo' | pick "Adresses > " 8)"
             [ -n "$sel" ] && printf '%s' "$sel" | awk '{print $3}' | wl-copy
@@ -90,7 +193,8 @@ menu_network() {
 }
 
 menu_style() {
-    case "$(printf 'Fond d'"'"'écran\nRecharger Waybar\nRecharger mako\n' | pick "Style > " 3)" in
+    act="${1:-$(printf 'Fond d'"'"'écran\nRecharger Waybar\nRecharger mako\n' | pick "Style > " 3)}"
+    case "$act" in
         "Fond d'écran")
             sel="$(ls "$WALLPAPERS" 2>/dev/null | pick "Fond d'écran > " 10)"
             [ -n "$sel" ] && { setsid "$HOME/.local/bin/wallpaper" "$WALLPAPERS/$sel" >/dev/null 2>&1 & }
@@ -101,7 +205,8 @@ menu_style() {
 }
 
 menu_packages() {
-    case "$(printf 'Rechercher et installer\nSupprimer\nMettre à jour le système\nNettoyer le cache\n' | pick "Paquets > " 4)" in
+    act="${1:-$(printf 'Rechercher et installer\nSupprimer\nMettre à jour le système\nNettoyer le cache\n' | pick "Paquets > " 4)}"
+    case "$act" in
         "Rechercher et installer")
             q="$(ask "Paquet > ")"
             [ -n "$q" ] || exit 0
@@ -119,17 +224,55 @@ menu_packages() {
     esac
 }
 
+# ---------------------------------------------------------------- liste unique
+
+# Actions directes, libellé "Catégorie: Action" (la catégorie sert aussi à la recherche)
+actions_list() {
+    cat <<'EOF'
+Système: Verrouiller
+Système: Veille
+Système: Déconnexion
+Système: Redémarrer
+Système: Éteindre
+Audio: Volume +
+Audio: Volume -
+Audio: Muet / son
+Audio: Micro muet / actif
+Audio: Choisir la sortie
+Réseau: Adresses IP
+Réseau: Tester la connexion
+Style: Fond d'écran
+Style: Recharger Waybar
+Style: Recharger mako
+Paquets: Rechercher et installer
+Paquets: Supprimer
+Paquets: Mettre à jour le système
+Paquets: Nettoyer le cache
+Presse-papiers
+Émojis
+Calculatrice
+Entrées perso
+EOF
+}
+
 menu_main() {
-    case "$(printf 'Applications\nPresse-papiers\nÉmojis\nCalculatrice\nSystème\nAudio\nRéseau\nStyle\nPaquets\n' | pick "Menu > " 9)" in
-        Applications) menu_apps ;;
-        Presse-papiers) menu_clip ;;
-        Émojis) menu_emoji ;;
-        Calculatrice) menu_calc ;;
-        Système) menu_system ;;
-        Audio) menu_audio ;;
-        Réseau) menu_network ;;
-        Style) menu_style ;;
-        Paquets) menu_packages ;;
+    items="$( { custom_labels; list_apps | cut -f1; actions_list; } )"
+    sel="$(printf '%s\n' "$items" | pick "> " 12)"
+    [ -n "$sel" ] || exit 0
+
+    # 1. entrées perso, 2. applications, 3. actions
+    custom_run "$sel"
+    run_app "$sel"
+    case "$sel" in
+        "Presse-papiers") menu_clip ;;
+        "Émojis") menu_emoji ;;
+        "Calculatrice") menu_calc ;;
+        "Entrées perso") menu_custom ;;
+        "Système: "*) menu_system "${sel#Système: }" ;;
+        "Audio: "*) menu_audio "${sel#Audio: }" ;;
+        "Réseau: "*) menu_network "${sel#Réseau: }" ;;
+        "Style: "*) menu_style "${sel#Style: }" ;;
+        "Paquets: "*) menu_packages "${sel#Paquets: }" ;;
     esac
 }
 
@@ -143,6 +286,7 @@ case "${1:-}" in
     network) menu_network ;;
     style) menu_style ;;
     packages) menu_packages ;;
+    custom) menu_custom ;;
     "") menu_main ;;
-    *) echo "Usage: menu [apps|clip|emoji|calc|system|audio|network|style|packages]" >&2; exit 1 ;;
+    *) echo "Usage: menu [apps|clip|emoji|calc|system|audio|network|style|packages|custom]" >&2; exit 1 ;;
 esac

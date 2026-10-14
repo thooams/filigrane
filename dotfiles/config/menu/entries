@@ -1,0 +1,11 @@
+# Entrées personnalisées du menu (Mod+Space).
+# Format, une entrée par ligne :   Libellé | mode | commande
+#
+# Modes :
+#   term  terminal qui se ferme quand la commande se termine
+#   hold  terminal laissé ouvert à la fin ("Entrée pour fermer")
+#   run   lance en arrière-plan, sans terminal (applications graphiques)
+#
+# Ajouter depuis le menu : Entrées perso > Ajouter une entrée. Les lignes # sont ignorées.
+
+Claude | term | claude
