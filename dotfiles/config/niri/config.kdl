@@ -282,6 +282,9 @@ spawn-at-startup "pipewire"
 spawn-at-startup "waybar"
 spawn-at-startup "mako"
 spawn-sh-at-startup "$HOME/.local/bin/wallpaper"
+// Historique du presse-papiers pour le menu (cliphist), texte et images
+spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
+spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
@@ -378,7 +381,7 @@ binds {
     Mod+T hotkey-overlay-title="Open a Terminal: alacritty" { spawn "alacritty"; }
     Mod+Y hotkey-overlay-title="Claude Code" { spawn "alacritty" "-e" "bash" "-lc" "cd ~ && claude"; }
     Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
-    Mod+Space hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
+    Mod+Space hotkey-overlay-title="Menu: apps, clipboard, emoji, system..." { spawn-sh "$HOME/.local/bin/menu"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.

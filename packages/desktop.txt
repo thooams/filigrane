@@ -17,3 +17,8 @@ mesa-dri
 dejavu-fonts-ttf
 noto-fonts-ttf
 font-awesome6
+# Menu tout-en-un (dotfiles/home/.local/bin/menu)
+cliphist
+libnotify
+qalculate
+noto-fonts-emoji

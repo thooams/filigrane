@@ -129,6 +129,10 @@ setup_system() {
     echo '%wheel ALL=(ALL:ALL) ALL' | $SUDO tee /etc/sudoers.d/wheel >/dev/null
     $SUDO chmod 440 /etc/sudoers.d/wheel
     $SUDO visudo -cf /etc/sudoers.d/wheel >/dev/null
+    # Menu Système: éteindre, redémarrer, veille sans mot de passe (pas de polkit sur cette machine)
+    echo '%wheel ALL=(root) NOPASSWD: /usr/bin/zzz, /usr/bin/reboot, /usr/bin/poweroff' | $SUDO tee /etc/sudoers.d/power >/dev/null
+    $SUDO chmod 440 /etc/sudoers.d/power
+    $SUDO visudo -cf /etc/sudoers.d/power >/dev/null
 
     if [ "$PROFILE" = baremetal ] || [ -n "${T2_FORCE:-}" ]; then
         if "$ROOT/hardware/mac-t2/setup.sh" --check >/dev/null 2>&1 || [ -n "${T2_FORCE:-}" ]; then

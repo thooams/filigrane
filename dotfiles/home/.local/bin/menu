@@ -1,0 +1,148 @@
+#!/bin/sh
+# Menu tout-en-un (fuzzel --dmenu), équivalent léger du menu Walker d'Omarchy.
+# Aucun démon: il n'existe que le temps du menu (0 Mo au repos).
+#
+#   menu [apps|clip|emoji|calc|system|audio|network|style|packages]
+#
+# Sans argument: menu principal. Échap quitte à tout moment.
+
+WALLPAPERS="$HOME/.local/share/wallpapers"
+EMOJIS="$HOME/.local/share/menu/emoji.txt"
+
+pick() { # pick INVITE [LIGNES]  (entrées sur stdin, sélection sur stdout)
+    fuzzel --dmenu --minimal-lines --lines "${2:-12}" --prompt "$1"
+}
+ask() { # ask INVITE : saisie libre
+    fuzzel --dmenu --prompt-only "$1"
+}
+notify() { command -v notify-send >/dev/null && notify-send -a menu "$@"; }
+confirm() { [ "$(printf 'Non\nOui\n' | pick "$1 > " 2)" = "Oui" ]; }
+term() { # term COMMANDE : exécute dans un terminal et attend avant de fermer
+    exec alacritty -e sh -c "$1; echo; printf 'Entrée pour fermer '; read _"
+}
+
+menu_apps() { exec fuzzel; }
+
+menu_clip() {
+    command -v cliphist >/dev/null || { notify "Presse-papiers" "cliphist n'est pas installé"; exit 1; }
+    sel="$(cliphist list | pick "Presse-papiers > " 15)"
+    [ -n "$sel" ] && printf '%s' "$sel" | cliphist decode | wl-copy
+}
+
+menu_emoji() {
+    sel="$(pick "Émoji > " 12 < "$EMOJIS")"
+    [ -n "$sel" ] || exit 0
+    char="${sel%% *}"
+    printf '%s' "$char" | wl-copy
+    notify "Émoji copié" "$char"
+}
+
+menu_calc() {
+    command -v qalc >/dev/null || { notify "Calculatrice" "qalculate n'est pas installé"; exit 1; }
+    while :; do
+        expr="$(ask "= ")"
+        [ -n "$expr" ] || exit 0
+        res="$(qalc -t "$expr" 2>&1)"
+        sel="$(printf '%s\nNouveau calcul\n' "$res" | pick "$expr = " 3)"
+        case "$sel" in
+            "") exit 0 ;;
+            "Nouveau calcul") continue ;;
+            *) printf '%s' "$res" | wl-copy; exit 0 ;;
+        esac
+    done
+}
+
+menu_system() {
+    case "$(printf 'Verrouiller\nVeille\nDéconnexion\nRedémarrer\nÉteindre\n' | pick "Système > " 5)" in
+        Verrouiller) exec swaylock -f -c 1e1e2e ;;
+        Veille) sudo -n zzz ;;
+        Déconnexion) confirm "Quitter la session" && exec niri msg action quit --skip-confirmation ;;
+        Redémarrer) confirm "Redémarrer" && sudo -n reboot ;;
+        Éteindre) confirm "Éteindre" && sudo -n poweroff ;;
+    esac
+}
+
+menu_audio() {
+    case "$(printf 'Volume +\nVolume -\nMuet / son\nMicro muet / actif\nChoisir la sortie\n' | pick "Audio > " 5)" in
+        "Volume +") wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+ ;;
+        "Volume -") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
+        "Muet / son") wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+        "Micro muet / actif") wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle ;;
+        "Choisir la sortie")
+            sinks="$(wpctl status | awk '/Sinks:/{f=1;next} /Sources:|Filters:|Streams:/{f=0} f' \
+                | sed -E -n 's/^[^0-9]*([0-9]+)\. (.*)$/\1 \2/p')"
+            sel="$(printf '%s\n' "$sinks" | pick "Sortie audio > " 8)"
+            [ -n "$sel" ] && wpctl set-default "${sel%% *}"
+            ;;
+    esac
+}
+
+menu_network() {
+    case "$(printf 'Adresses IP\nTester la connexion\n' | pick "Réseau > " 2)" in
+        "Adresses IP")
+            sel="$(ip -br addr | grep -v '^lo' | pick "Adresses > " 8)"
+            [ -n "$sel" ] && printf '%s' "$sel" | awk '{print $3}' | wl-copy
+            ;;
+        "Tester la connexion")
+            if ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then notify "Réseau" "Connexion OK"; else notify -u critical "Réseau" "Pas de connexion"; fi
+            ;;
+    esac
+}
+
+menu_style() {
+    case "$(printf 'Fond d'"'"'écran\nRecharger Waybar\nRecharger mako\n' | pick "Style > " 3)" in
+        "Fond d'écran")
+            sel="$(ls "$WALLPAPERS" 2>/dev/null | pick "Fond d'écran > " 10)"
+            [ -n "$sel" ] && { setsid "$HOME/.local/bin/wallpaper" "$WALLPAPERS/$sel" >/dev/null 2>&1 & }
+            ;;
+        "Recharger Waybar") pkill -USR2 waybar ;;
+        "Recharger mako") makoctl reload ;;
+    esac
+}
+
+menu_packages() {
+    case "$(printf 'Rechercher et installer\nSupprimer\nMettre à jour le système\nNettoyer le cache\n' | pick "Paquets > " 4)" in
+        "Rechercher et installer")
+            q="$(ask "Paquet > ")"
+            [ -n "$q" ] || exit 0
+            sel="$(xbps-query -Rs "$q" | head -60 | sed -E 's/^\[.\] //' | pick "Résultats > " 15)"
+            [ -n "$sel" ] || exit 0
+            pkg="$(printf '%s' "$sel" | awk '{print $1}' | sed -E 's/-[^-]+$//')"
+            term "echo 'Budget ressources: vérifier la taille et les dépendances avant d installer.'; xbps-query -R -p pkgver,installed_size $pkg; echo; sudo xbps-install -S $pkg"
+            ;;
+        Supprimer)
+            sel="$(xbps-query -m | sed -E 's/-[^-]+$//' | pick "Supprimer > " 15)"
+            [ -n "$sel" ] && confirm "Supprimer $sel" && term "sudo xbps-remove -R $sel"
+            ;;
+        "Mettre à jour le système") term "sudo xbps-install -Su" ;;
+        "Nettoyer le cache") term "sudo xbps-remove -yO; df -h /" ;;
+    esac
+}
+
+menu_main() {
+    case "$(printf 'Applications\nPresse-papiers\nÉmojis\nCalculatrice\nSystème\nAudio\nRéseau\nStyle\nPaquets\n' | pick "Menu > " 9)" in
+        Applications) menu_apps ;;
+        Presse-papiers) menu_clip ;;
+        Émojis) menu_emoji ;;
+        Calculatrice) menu_calc ;;
+        Système) menu_system ;;
+        Audio) menu_audio ;;
+        Réseau) menu_network ;;
+        Style) menu_style ;;
+        Paquets) menu_packages ;;
+    esac
+}
+
+case "${1:-}" in
+    apps) menu_apps ;;
+    clip) menu_clip ;;
+    emoji) menu_emoji ;;
+    calc) menu_calc ;;
+    system) menu_system ;;
+    audio) menu_audio ;;
+    network) menu_network ;;
+    style) menu_style ;;
+    packages) menu_packages ;;
+    "") menu_main ;;
+    *) echo "Usage: menu [apps|clip|emoji|calc|system|audio|network|style|packages]" >&2; exit 1 ;;
+esac
