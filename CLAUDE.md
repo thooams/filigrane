@@ -28,7 +28,7 @@ L'OS doit se faire oublier: le navigateur, les agents et les conteneurs passent 
 ## Interdits
 
 `install-void.sh` (efface un disque entier), `mkfs`, `wipefs`, `parted`, `dd` sur un disque, et toute modification de `/etc/sudoers*`, `~/.ssh`, `~/.claude/.credentials.json`.
-Demander avant: `xbps-install`, `xbps-remove`, `sv restart/stop`, `rm`, édition de `/etc`, bootloader, reboot. `sv` et `xbps-*` passent sans mot de passe sudo: la confirmation vient de Claude Code.
+Installer un paquet (`xbps-install <pkg>`) ne demande pas de confirmation (avertissement ressources si lourd, voir ci-dessus). Demander avant: mises à jour système (`xbps-install -u/-Su`), `xbps-remove`, `sv restart/stop`, `rm`, édition de `/etc`, bootloader, reboot. `sv` et `xbps-*` passent sans mot de passe sudo: la confirmation vient de Claude Code.
 
 ## Style
 

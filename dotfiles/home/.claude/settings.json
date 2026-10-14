@@ -4,6 +4,7 @@
       "Bash(xbps-query *)",
       "Bash(sv status *)",
       "Bash(sudo sv status *)",
+      "Bash(sudo xbps-install *)",
       "Bash(sudo -n -l)",
       "Bash(lsblk *)",
       "Bash(df *)",
@@ -21,7 +22,8 @@
       "Bash(git -C ~/void-setup log *)"
     ],
     "ask": [
-      "Bash(sudo xbps-install *)",
+      "Bash(sudo xbps-install -u*)",
+      "Bash(sudo xbps-install -*u*)",
       "Bash(sudo xbps-remove *)",
       "Bash(sudo xbps-reconfigure *)",
       "Bash(sudo sv restart *)",

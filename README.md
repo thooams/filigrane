@@ -63,4 +63,4 @@ Nouveau paquet : l'ajouter dans le bon fichier `packages/*.txt`.
 - Mac T2 : pas de Touch Bar, firmware Wi-Fi à récupérer à la main (`t2-wifi-firmware`), voir `hardware/mac-t2/README.md`.
 - Wi-Fi Broadcom des vieux Mac (sans T2) : pilote propriétaire non inclus.
 - Non testés de bout en bout : `install-void.sh`, le profil `baremetal`, le profil `mac-t2` (la VM de développement n'est pas réinstallable sans être effacée, et n'a pas de puce T2).
-- Les actions `Éteindre`, `Redémarrer` et `Veille` du menu passent par `sudo` sans mot de passe (règle `/etc/sudoers.d/power`, limitée à `zzz`, `reboot`, `poweroff`), faute de `polkit`.
+- Les actions `Éteindre`, `Redémarrer` et `Veille` du menu passent par `sudo` sans mot de passe (règle `/etc/sudoers.d/zz-power`, limitée à `zzz`, `reboot`, `poweroff`), faute de `polkit`.

@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""Enregistre la disposition d'écrans actuelle comme profil kanshi.
+
+Usage: display-save
+Lit `niri msg --json outputs` et écrit ~/.config/kanshi/profiles.d/<écrans>.conf.
+Réenregistrer le même jeu d'écrans remplace le profil. Workflow: régler avec
+wdisplays (Mod+P), puis display-save (Mod+Ctrl+P).
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+
+DIR = os.path.expanduser("~/.config/kanshi/profiles.d")
+
+
+def notify(msg):
+    print(msg)
+    subprocess.run(["notify-send", "-a", "display-save", "Écrans", msg], check=False)
+
+
+def criteria(o):
+    # kanshi identifie un écran par "marque modèle série"; sans EDID exploitable, par connecteur.
+    if o["make"] in (None, "Unknown") and o["model"] in (None, "Unknown"):
+        return o["name"]
+    return " ".join(str(o[k] or "Unknown") for k in ("make", "model", "serial"))
+
+
+def output_line(o):
+    lg = o["logical"]
+    if lg is None:
+        return f'    output "{criteria(o)}" disable'
+    m = o["modes"][o["current_mode"]]
+    hz = m["refresh_rate"] / 1000
+    transform = re.sub(r"(?<!^)(?=[A-Z])", "-", lg["transform"]).lower()  # Flipped90 -> flipped-90
+    return (
+        f'    output "{criteria(o)}" enable mode {m["width"]}x{m["height"]}@{hz:.3f}Hz '
+        f'position {lg["x"]},{lg["y"]} scale {lg["scale"]:g} transform {transform}'
+    )
+
+
+def main():
+    raw = subprocess.run(["niri", "msg", "--json", "outputs"], capture_output=True, text=True)
+    if raw.returncode != 0:
+        sys.exit(f"niri msg a échoué: {raw.stderr.strip()}")
+    outputs = sorted(json.loads(raw.stdout).values(), key=criteria)
+    if not outputs:
+        sys.exit("aucun écran détecté")
+    ident = "+".join(criteria(o) for o in outputs)
+    slug = re.sub(r"[^A-Za-z0-9]+", "-", ident).strip("-")[:120]
+    os.makedirs(DIR, exist_ok=True)
+    path = os.path.join(DIR, f"{slug}.conf")
+    body = f'profile "{slug}" {{\n' + "\n".join(output_line(o) for o in outputs) + "\n}\n"
+    with open(path, "w") as f:
+        f.write(body)
+    subprocess.run(["pkill", "-HUP", "-x", "kanshi"], check=False)  # recharge la config
+    notify(f"Profil enregistré: {len(outputs)} écran(s)")
+
+
+main()

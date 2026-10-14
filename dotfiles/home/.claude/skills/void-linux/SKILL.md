@@ -51,7 +51,7 @@ If the user only wants a throwaway test, say it will not survive a reinstall.
 
 ## Ask before running
 
-`xbps-install -u` / `-Syu`, `xbps-remove`, `rm`, any edit in `/etc`, bootloader (`grub-*`), partitioning, `reboot`.
+`xbps-install -u` / `-Syu` (system upgrades; plain package installs are pre-approved), `xbps-remove`, `rm`, any edit in `/etc`, bootloader (`grub-*`), partitioning, `reboot`.
 Read-only commands: just run them.
 
 ## Never run
