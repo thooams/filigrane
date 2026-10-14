@@ -98,6 +98,16 @@ setup_system() {
         done
     done
 
+    log "Connexion automatique tty1"
+    local conf=/etc/sv/agetty-tty1/conf autologin="$AUTOLOGIN"
+    [ "$autologin" = auto ] && { [ "$PROFILE" = vm ] && autologin=1 || autologin=0; }
+    if [ "$autologin" = 1 ]; then
+        $SUDO sed -i -E "s|GETTY_ARGS=\"(--autologin [^ ]+ )?--noclear\"|GETTY_ARGS=\"--autologin $TARGET_USER --noclear\"|" "$conf"
+    else
+        $SUDO sed -i -E 's|GETTY_ARGS="--autologin [^ ]+ --noclear"|GETTY_ARGS="--noclear"|' "$conf"
+    fi
+    grep -n GETTY_ARGS "$conf"
+
     log "Réglages système (clavier, fuseau, locale)"
     set_rc KEYMAP "$KEYMAP"
     set_rc TIMEZONE "$TIMEZONE"
