@@ -40,7 +40,7 @@ Sans remote git, copier le dépôt depuis un autre poste (pas de `rsync` sur Voi
 puis `ssh -t void 'cd ~/void-setup && ./bootstrap.sh'` (`-t` pour la saisie du mot de passe sudo).
 Sur l'ISO live : `scp -r void-setup root@<ip-du-live>:`.
 
-Après la première connexion, lancer le bureau avec `niri-session` (pas de démarrage automatique configuré).
+Après la première connexion, lancer le bureau avec `dbus-run-session niri` (`niri-session` est un script systemd, absent de Void) (pas de démarrage automatique configuré).
 
 ## Claude Code et skill `void-linux`
 
