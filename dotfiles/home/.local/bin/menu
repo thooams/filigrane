@@ -56,8 +56,8 @@ KEYS="--override=key-bindings.custom-1=Shift+BackSpace"
 BINDS="${XDG_RUNTIME_DIR:-/tmp}/menu-binds.$$"
 trap 'rm -f "$STATE" "$BINDS"' EXIT
 
-pick() { # pick INVITE [LIGNES] [LARGEUR]  (entrées sur stdin, sélection sur stdout; vide si annulé)
-    out="$(fuzzel --dmenu $KEYS --minimal-lines --lines "${2:-12}" ${3:+--width "$3"} --prompt "$1")"; rc=$?
+pick() { # pick INVITE [LIGNES] [LARGEUR] [POLICE]  (entrées sur stdin, sélection sur stdout; vide si annulé)
+    out="$(fuzzel --dmenu $KEYS --minimal-lines --lines "${2:-12}" ${3:+--width "$3"} ${4:+--font "$4"} --prompt "$1")"; rc=$?
     if [ "$rc" -eq 10 ]; then : > "$STATE"; return 0; fi
     [ -n "$out" ] && printf '%s\n' "$out"
     return 0
@@ -576,6 +576,20 @@ action_needle() {
     esac
 }
 
+# Mise en page du menu principal (police à chasse fixe): glyphe + 2 espaces, touche alignée à droite.
+# Largeur en caractères = largeur fuzzel (36) moins les marges.
+MENU_FONT="DejaVu Sans Mono:size=12,Symbols Nerd Font Mono:size=12"
+MENU_COLS=33
+align_hints() {
+    awk -v w="$MENU_COLS" '{
+        key = ""; line = $0
+        if (match(line, /  ‹[^‹›]*›$/)) { key = substr(line, RSTART + 3, RLENGTH - 4); line = substr(line, 1, RSTART - 1) }
+        sub(/ /, "  ", line)
+        if (key != "") { pad = w - length(line) - length(key) - 2; if (pad < 2) pad = 2; line = sprintf("%s%*s‹%s›", line, pad, "", key) }
+        print line
+    }'
+}
+
 # Ajoute "  ‹touche›" aux lignes "GLYPHE Libellé" quand une touche existe
 with_hints() {
     while IFS= read -r line; do
@@ -593,10 +607,11 @@ menu_main() {
     items="$( { printf '%s\n' "$cats"; [ -n "$customs" ] && printf '%s\n' "$customs"; [ -n "$apps" ] && printf '%s\n' "$apps"; actions_list | with_hints; } )"
 
     while :; do # Échap dans une section revient ici; Échap ici quitte
-        sel="$(printf '%s\n' "$items" | pick "› " "$nb")"
+        sel="$(printf '%s\n' "$items" | align_hints | pick "› " "$nb" "" "$MENU_FONT")"
         [ -n "$sel" ] || exit 0
-        sel="${sel#* }" # retire le glyphe et l'espace qui le suit
-        sel="$(printf '%s' "$sel" | sed 's/  ‹[^‹›]*›$//')" # retire la touche affichée
+        sel="${sel#* }" # retire le glyphe et le 1er espace
+        sel="${sel# }"  # ... et le 2e
+        sel="$(printf '%s' "$sel" | sed 's/ *‹[^‹›]*›$//')" # retire la touche affichée
 
         rc=0
         case "$sel" in
