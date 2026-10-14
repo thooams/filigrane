@@ -7,3 +7,5 @@ bluetoothd
 sshd
 chronyd
 acpid
+socklog-unix
+nanoklogd
