@@ -33,3 +33,10 @@ done
 # Plugins (la coloration syntaxique doit rester en dernier)
 [ -r /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && . /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 [ -r /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && . /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+# zellij par défaut dans les terminaux graphiques (comme sur le Mac).
+# Ignoré en SSH, sur la console tty et hors terminal interactif. Désactiver: NO_ZELLIJ=1 zsh
+if [[ -o interactive && -t 0 && -t 1 && -n "$WAYLAND_DISPLAY" && -z "$SSH_CONNECTION" \
+      && -z "$ZELLIJ" && -z "$NO_ZELLIJ" ]] && command -v zellij >/dev/null; then
+    exec zellij
+fi

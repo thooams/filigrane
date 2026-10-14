@@ -31,7 +31,7 @@ alias ....='cd ../../..'
 # Outils
 alias d='podman'
 n() { if [ "$#" -eq 0 ]; then nvim .; else nvim "$@"; fi; }
-# zellij à la demande (pas de démarrage automatique): attache ou crée la session "main"
+# zellij démarre déjà dans chaque terminal graphique (.zshrc); zj attache ou crée la session "main"
 alias zj='zellij attach -c main'
 
 # Git
