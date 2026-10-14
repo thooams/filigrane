@@ -114,6 +114,24 @@ setup_system() {
     $SUDO visudo -cf /etc/sudoers.d/wheel >/dev/null
 }
 
+run_as_user() {
+    if [ "$(id -u)" -eq 0 ]; then
+        runuser -u "$TARGET_USER" -- env HOME="$TARGET_HOME" "$@"
+    else
+        "$@"
+    fi
+}
+
+setup_claude() {
+    log "Claude Code"
+    if [ -x "$TARGET_HOME/.local/bin/claude" ]; then
+        echo "déjà installé"
+        return 0
+    fi
+    run_as_user bash -c 'curl -fsSL https://claude.ai/install.sh | bash' \
+        || warn "installation de Claude Code échouée (réseau ?), relancer bootstrap.sh"
+}
+
 link_one() { # link_one SOURCE DESTINATION
     local src="$1" dst="$2"
     mkdir -p "$(dirname "$dst")"
@@ -139,4 +157,5 @@ setup_dotfiles() {
 
 [ "$DO_SYSTEM" -eq 1 ] && setup_system
 [ "$DO_DOTFILES" -eq 1 ] && setup_dotfiles
+[ "$DO_SYSTEM" -eq 1 ] && setup_claude
 log "Terminé"

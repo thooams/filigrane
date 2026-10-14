@@ -35,11 +35,18 @@ git clone <url> ~/void-setup && cd ~/void-setup
 
 Les dotfiles existants sont déplacés en `*.bak.<date>`. Le dépôt doit rester à son emplacement (les liens pointent dedans).
 
-Sans remote git, copier le dépôt depuis un autre poste : `rsync -a --exclude .git ~/Projects/void-setup/ void:void-setup/`
+Sans remote git, copier le dépôt depuis un autre poste (pas de `rsync` sur Void de base) :
+`tar --exclude=.git -C ~/Projects/void-setup -cf - . | ssh void 'mkdir -p ~/void-setup && tar -xf - -C ~/void-setup'`
 puis `ssh -t void 'cd ~/void-setup && ./bootstrap.sh'` (`-t` pour la saisie du mot de passe sudo).
 Sur l'ISO live : `scp -r void-setup root@<ip-du-live>:`.
 
 Après la première connexion, lancer le bureau avec `niri-session` (pas de démarrage automatique configuré).
+
+## Claude Code et skill `void-linux`
+
+`bootstrap.sh` installe Claude Code (`~/.local/bin/claude`, installeur officiel, sans root). Premier lancement : `claude` puis `/login` (aucun credential dans le dépôt). Raccourci niri : `Mod+Y`.
+
+Le skill `dotfiles/home/.claude/skills/void-linux/` apprend à Claude les règles de cette machine (xbps, runit, niri) et l'oblige à reporter tout changement durable dans ce dépôt. `dotfiles/home/.claude/settings.json` pré-autorise les commandes en lecture seule et refuse `install-void.sh`, `mkfs`, `wipefs`, `dd`.
 
 ## Workflow
 

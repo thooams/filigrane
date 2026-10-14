@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xbps-query *)",
+      "Bash(sv status *)",
+      "Bash(sudo sv status *)",
+      "Bash(lsblk *)",
+      "Bash(df *)",
+      "Bash(ip *)",
+      "Bash(uname *)",
+      "Bash(dmesg *)",
+      "Bash(wpctl status *)",
+      "Bash(niri validate *)",
+      "Bash(git -C ~/void-setup status *)",
+      "Bash(git -C ~/void-setup diff *)",
+      "Bash(git -C ~/void-setup log *)"
+    ],
+    "deny": [
+      "Bash(*install-void.sh*)",
+      "Bash(*mkfs*)",
+      "Bash(*wipefs*)",
+      "Bash(*dd if=*)"
+    ]
+  }
+}
