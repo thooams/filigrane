@@ -1,0 +1,23 @@
+# Shell et outils CLI (tous profils), repris du Mac
+zsh
+zsh-autosuggestions
+zsh-syntax-highlighting
+zellij
+eza
+fd
+fzf
+ripgrep
+zoxide
+bat
+lazygit
+github-cli
+nerd-fonts-symbols-ttf
+wl-clipboard
+cmus
+# Conteneurs sans démon (remplace docker du Mac)
+podman
+# LazyVim: compilation des parsers treesitter (gcc = 234 Mo)
+gcc
+make
+unzip
+tree-sitter-cli

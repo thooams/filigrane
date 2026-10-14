@@ -74,6 +74,7 @@ setup_system() {
     log "Paquets"
     install_list "$ROOT/packages/base.txt"
     install_list "$ROOT/packages/desktop.txt"
+    install_list "$ROOT/packages/dev.txt"
     install_list "$ROOT/packages/$PROFILE.txt"
     if [ "$PROFILE" = baremetal ]; then
         $SUDO xbps-install -y void-repo-nonfree
@@ -109,6 +110,9 @@ setup_system() {
     for g in $USER_GROUPS; do
         if getent group "$g" >/dev/null; then $SUDO usermod -aG "$g" "$TARGET_USER"; fi
     done
+    if [ -x /bin/zsh ] && [ "$(getent passwd "$TARGET_USER" | cut -d: -f7)" != "/bin/zsh" ]; then
+        $SUDO chsh -s /bin/zsh "$TARGET_USER"
+    fi
     echo '%wheel ALL=(ALL:ALL) ALL' | $SUDO tee /etc/sudoers.d/wheel >/dev/null
     $SUDO chmod 440 /etc/sudoers.d/wheel
     $SUDO visudo -cf /etc/sudoers.d/wheel >/dev/null
