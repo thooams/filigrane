@@ -39,6 +39,7 @@ window#waybar {
 #battery,
 #custom-menu,
 #custom-update,
+#custom-news,
 #custom-dnd,
 #custom-mic,
 #custom-weather,
@@ -99,6 +100,7 @@ tooltip {
 #custom-menu { color: @lavender; padding: 2px 10px; }
 #mpris { color: @mauve; }
 #custom-update { color: @peach; }
+#custom-news { color: @mauve; }
 #custom-dnd.idle { color: @overlay0; }
 #custom-dnd.active { color: @yellow; }
 #custom-mic { color: @teal; }

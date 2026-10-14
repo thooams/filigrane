@@ -284,6 +284,8 @@ spawn-at-startup "mako"
 // Profils d'écrans automatiques (config: ~/.config/kanshi/config)
 spawn-at-startup "kanshi"
 spawn-sh-at-startup "$HOME/.local/bin/wallpaper"
+// Mini-cron: MAJ Void (6 h), veille Omarchy et T2 via Claude (7 j), voir ~/.local/bin/cron-watch
+spawn-sh-at-startup "$HOME/.local/bin/cron-watch"
 // Verrouillage auto (swayidle): 5 min verrou, 10 min écran éteint; bascule dans la barre
 spawn-sh-at-startup "$HOME/.local/bin/bar-toggle idle start"
 // Historique du presse-papiers pour le menu (cliphist), texte et images

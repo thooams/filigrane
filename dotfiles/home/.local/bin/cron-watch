@@ -1,0 +1,26 @@
+#!/bin/bash
+# Mini-cron utilisateur (lancé par niri): exécute des tâches périodiques, sans daemon cron.
+# Chaque tâche a un fichier-témoin dans ~/.local/state/watch/; elle est rejouée quand il est plus vieux que son intervalle
+# (donc rattrapage après un reboot). Échec (réseau...) = témoin intact, nouvel essai au prochain tour.
+STATE="$HOME/.local/state/watch"
+mkdir -p "$STATE"
+exec 9>"$STATE/lock"
+flock -n 9 || exit 0
+
+# nom:intervalle en minutes:script:argument
+JOBS=(
+    "void:360:watch-void:"
+    "omarchy:10080:watch-claude:omarchy"
+    "t2:10080:watch-claude:t2"
+)
+
+while :; do
+    for job in "${JOBS[@]}"; do
+        IFS=: read -r name every script arg <<<"$job"
+        stamp="$STATE/$name.stamp"
+        if [ ! -e "$stamp" ] || [ -n "$(find "$stamp" -mmin "+$every")" ]; then
+            "$HOME/.local/bin/$script" $arg && touch "$stamp"
+        fi
+    done
+    sleep 1800
+done

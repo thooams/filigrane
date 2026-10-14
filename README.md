@@ -27,6 +27,7 @@ Le profil (`vm` ou `baremetal`) est détecté via le flag `hypervisor` de `/proc
 - **Shell** : zsh sans oh-my-zsh, zellij lancé dans chaque terminal graphique (`NO_ZELLIJ=1 zsh` pour s'en passer), outils CLI repris du Mac (`eza`, `fzf`, `zoxide`, `ripgrep`, `bat`, `lazygit`, `gh`), neovim avec LazyVim.
 - **Chromium** natif Wayland (variable `CHROME_FLAGS` posée par niri). **Conteneurs** : `podman`, alias `d`.
 - **Fond d'écran** : `swaybg` via `wallpaper [image]`, images dans `~/.local/share/wallpapers/`. Les images téléchargées ne sont pas dans le dépôt (licence inconnue).
+- **Veille automatique** : `cron-watch` (lancé par niri, un `bash` endormi d'environ 3 Mo, sans daemon cron) rejoue des tâches périodiques avec rattrapage après reboot. `watch-void` : notification mako des mises à jour xbps (toutes les 6 h). `watch-claude omarchy|t2` : chaque semaine, si Omarchy ou t2linux ont du neuf, `claude -p` (lecture seule, sans réseau ni Bash, plafond 1 $) compare au dépôt et écrit des propositions d'intégration dans `~/.local/state/watch/reports/`, avec notification. Prompts dans `dotfiles/config/watch/`.
 - **Claude Code** : installé par `bootstrap.sh` (`~/.local/bin/claude`, `/login` au premier lancement, `Mod+Y`), avec le skill `void-linux` (règles xbps/runit, budget ressources, tout changement durable reporté dans ce dépôt).
 
 ## Réinstaller un système complet

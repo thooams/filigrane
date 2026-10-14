@@ -9,6 +9,7 @@ chromium
 swaylock
 brightnessctl
 playerctl
+mpv
 pipewire
 wireplumber
 xdg-desktop-portal-gnome
