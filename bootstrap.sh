@@ -129,6 +129,13 @@ setup_system() {
     echo '%wheel ALL=(ALL:ALL) ALL' | $SUDO tee /etc/sudoers.d/wheel >/dev/null
     $SUDO chmod 440 /etc/sudoers.d/wheel
     $SUDO visudo -cf /etc/sudoers.d/wheel >/dev/null
+
+    if [ "$PROFILE" = baremetal ] || [ -n "${T2_FORCE:-}" ]; then
+        if "$ROOT/hardware/mac-t2/setup.sh" --check >/dev/null 2>&1 || [ -n "${T2_FORCE:-}" ]; then
+            log "Mac à puce T2 détecté"
+            $SUDO env T2_FORCE="${T2_FORCE:-}" "$ROOT/hardware/mac-t2/setup.sh"
+        fi
+    fi
 }
 
 run_as_user() {
