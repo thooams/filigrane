@@ -1,18 +1,15 @@
 #!/bin/bash
-# Resynchronise les dotfiles du dépôt depuis la VM de référence (hôte ssh "void").
-# La VM reste la source de vérité: on modifie là-bas, on rapatrie ici, on commit.
+# Rapatrie la configuration depuis la VM de référence (hôte ssh "void").
+# Sur la VM, les dotfiles sont des liens vers ~/void-setup: ce qu'on y modifie atterrit
+# dans sa copie du dépôt. On récupère donc les dossiers de configuration en bloc.
+# Usage: pull-from-vm.sh [hôte]   puis relire `git diff` et commiter.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 HOST="${1:-void}"
-TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
 
-for f in .bashrc .bash_profile .inputrc; do
-    scp -q "$HOST:$f" "dotfiles/home/$f"
-done
-for d in niri htop waybar fuzzel mako; do
-    rm -rf "dotfiles/config/$d"
-    scp -qr "$HOST:.config/$d" dotfiles/config/
-done
+ssh "$HOST" 'cd ~/void-setup && tar -cf - dotfiles packages services hardware config.env' | tar -xf - -C .
 
 echo "Paquets installés manuellement sur $HOST mais absents des listes:"
 ssh "$HOST" 'xbps-query -m' | sed -E 's/-[^-]+$//' | sort > "$TMP/vm.txt"

@@ -1,62 +1,66 @@
 # void-setup
 
-Environnement Void Linux (niri) rejouable sur VM, PC ou Mac Intel (x86_64, UEFI, glibc).
+Environnement Void Linux (niri, thème Catppuccin Mocha) rejouable sur VM, PC ou Mac Intel (x86_64, glibc, UEFI).
+Objectif: un système léger qui s'efface, pour laisser la RAM et le CPU au navigateur, aux agents et aux conteneurs.
 
 ## Structure
 
 | Chemin | Rôle |
 |---|---|
-| `install-void.sh` | Depuis l'ISO live : partitionne, installe la base, appelle `bootstrap.sh`, installe GRUB |
-| `bootstrap.sh` | Sur un Void existant : paquets, services runit, clavier/fuseau, groupes, dotfiles. Idempotent |
-| `config.env` | Clavier (`fr-bepo`), fuseau, locale, groupes |
-| `packages/*.txt` | Listes xbps : `base`, `desktop`, `vm`, `baremetal`, `nonfree-baremetal` |
+| `install-void.sh` | Depuis l'ISO live : partitionne le disque, installe la base, appelle `bootstrap.sh`, installe GRUB |
+| `bootstrap.sh` | Sur un Void existant : paquets, services runit, clavier/fuseau, groupes, sudo, dotfiles, Claude Code. Idempotent |
+| `config.env` | Clavier (`fr-bepo`), fuseau, locale, groupes, autologin |
+| `packages/*.txt` | Listes xbps : `base`, `desktop`, `dev`, `vm`, `baremetal`, `nonfree-baremetal`, `mac-t2` |
 | `services/*.txt` | Services runit : `common`, `vm` |
 | `dotfiles/home`, `dotfiles/config` | Fichiers liés par symlink dans `~` et `~/.config` |
-| `scripts/pull-from-vm.sh` | Rapatrie les dotfiles depuis la VM de référence et liste les paquets non suivis |
+| `hardware/mac-t2/` | Support des Mac Intel à puce T2 (voir son README) |
+| `scripts/` | `pull-from-vm.sh`, `gen-wallpaper.py`, `gen-emoji.py` |
 
-Le profil (`vm` ou `baremetal`) est détecté via le flag `hypervisor` de `/proc/cpuinfo`, ou forcé avec `--profile`.
+Le profil (`vm` ou `baremetal`) est détecté via le flag `hypervisor` de `/proc/cpuinfo`, ou forcé avec `--profile`. Sur machine physique, une puce T2 est détectée et `hardware/mac-t2/setup.sh` est lancé.
+
+## Ce que contient le bureau
+
+- **Session** : sur la VM, connexion automatique sur `tty1` (`AUTOLOGIN=auto` : actif en VM, inactif sur machine physique), puis `~/.zprofile` lance `dbus-run-session niri`. Désactiver : `touch ~/.no-niri`, ou se connecter sur `tty2` à `tty6`.
+- **Thème** : Catppuccin Mocha pour niri, waybar, fuzzel, mako, alacritty, zellij, nvim.
+- **Menu** (`Mod+Space`) : catégories à vide, recherche floue sur tout dès qu'on tape (applications, actions système, entrées perso). `Mod+D` ouvre le lanceur d'applications seul. Entrées perso dans `~/.config/menu/entries` (`Libellé | mode | commande`, par exemple `Claude | term | claude`).
+- **Captures** : outil intégré à niri, sans logiciel en plus. `Mod+Shift+S` zone, `Mod+Shift+Ctrl+S` écran, `Print` / `Ctrl+Print` / `Alt+Print`, ou le menu (`Capture: ...`). Enregistrées dans `~/Pictures/Screenshots` et copiées dans le presse-papiers.
+- **Shell** : zsh sans oh-my-zsh, zellij lancé dans chaque terminal graphique (`NO_ZELLIJ=1 zsh` pour s'en passer), outils CLI repris du Mac (`eza`, `fzf`, `zoxide`, `ripgrep`, `bat`, `lazygit`, `gh`), neovim avec LazyVim.
+- **Chromium** natif Wayland (variable `CHROME_FLAGS` posée par niri). **Conteneurs** : `podman`, alias `d`.
+- **Fond d'écran** : `swaybg` via `wallpaper [image]`, images dans `~/.local/share/wallpapers/`. Les images téléchargées ne sont pas dans le dépôt (licence inconnue).
+- **Claude Code** : installé par `bootstrap.sh` (`~/.local/bin/claude`, `/login` au premier lancement, `Mod+Y`), avec le skill `void-linux` (règles xbps/runit, budget ressources, tout changement durable reporté dans ce dépôt).
 
 ## Réinstaller un système complet
 
-1. Démarrer sur l'ISO live Void (glibc x86_64), configurer le réseau, root/`voidlinux`.
-2. Récupérer le dépôt : `xbps-install -Sy git && git clone <url> void-setup && cd void-setup`
+1. Démarrer sur l'ISO live Void (glibc x86_64), réseau actif, `root` / `voidlinux`.
+2. `xbps-install -Sy git && git clone https://github.com/thooams/void-setup && cd void-setup`
 3. `./install-void.sh --disk /dev/sda --user thomas --hostname void` (NVMe : `/dev/nvme0n1`)
-4. Taper le chemin du disque pour confirmer, saisir les mots de passe, redémarrer.
+4. Taper le chemin du disque pour confirmer l'effacement, saisir les mots de passe, redémarrer.
 
 GRUB est installé en `--removable` : pas d'entrée NVRAM, donc démarrage fiable sur PC comme sur Mac Intel.
 
 ## Rejouer sur un Void déjà installé
 
 ```
-git clone <url> ~/void-setup && cd ~/void-setup
-./bootstrap.sh                 # tout
+git clone https://github.com/thooams/void-setup ~/void-setup && cd ~/void-setup
+./bootstrap.sh                 # tout (demande le mot de passe sudo)
 ./bootstrap.sh --dotfiles-only # liens seulement
 ```
 
 Les dotfiles existants sont déplacés en `*.bak.<date>`. Le dépôt doit rester à son emplacement (les liens pointent dedans).
 
-Sans remote git, copier le dépôt depuis un autre poste (pas de `rsync` sur Void de base) :
-`tar --exclude=.git -C ~/Projects/void-setup -cf - . | ssh void 'mkdir -p ~/void-setup && tar -xf - -C ~/void-setup'`
-puis `ssh -t void 'cd ~/void-setup && ./bootstrap.sh'` (`-t` pour la saisie du mot de passe sudo).
-Sur l'ISO live : `scp -r void-setup root@<ip-du-live>:`.
-
-Après la première connexion, lancer le bureau avec `dbus-run-session niri` (`niri-session` est un script systemd, absent de Void) (pas de démarrage automatique configuré).
-
-## Claude Code et skill `void-linux`
-
-`bootstrap.sh` installe Claude Code (`~/.local/bin/claude`, installeur officiel, sans root). Premier lancement : `claude` puis `/login` (aucun credential dans le dépôt). Raccourci niri : `Mod+Y`.
-
-Le skill `dotfiles/home/.claude/skills/void-linux/` apprend à Claude les règles de cette machine (xbps, runit, niri) et l'oblige à reporter tout changement durable dans ce dépôt. `dotfiles/home/.claude/settings.json` pré-autorise les commandes en lecture seule et refuse `install-void.sh`, `mkfs`, `wipefs`, `dd`.
+Sans accès à GitHub, copier le dépôt depuis un autre poste (pas de `rsync` sur Void de base) :
+`tar --exclude=.git -C ~/Projects/void-setup -cf - . | ssh void 'mkdir -p ~/void-setup && tar -xf - -C ~/void-setup'`, puis `ssh -t void 'cd ~/void-setup && ./bootstrap.sh'` (`-t` pour le mot de passe sudo).
 
 ## Workflow
 
-La VM reste le terrain d'essai : on règle niri/waybar/etc. dessus, puis `scripts/pull-from-vm.sh`, relire le diff, commit.
+La VM sert de terrain d'essai : on règle niri, waybar, le menu... dessus (les fichiers sont des liens vers `~/void-setup` sur la VM), puis `scripts/pull-from-vm.sh` rapatrie le tout, on relit le diff et on commite.
 Nouveau paquet : l'ajouter dans le bon fichier `packages/*.txt`.
 
 ## Limites connues
 
-- UEFI uniquement, pas de LUKS/LVM, pas de BIOS legacy.
-- Macs T2 (2018+) : besoin d'un noyau spécifique, non géré.
-- Wi-Fi Broadcom des vieux Macs : pilote propriétaire (`broadcom-wl-dkms`, nonfree) non inclus.
-- `install-void.sh` et le profil `baremetal` n'ont pas été testés de bout en bout (la VM actuelle n'est pas réinstallable sans l'effacer).
-- Le fuseau n'était pas défini sur la VM ; `config.env` met `Europe/Paris`.
+- UEFI uniquement, pas de LUKS/LVM, pas de BIOS legacy ni d'EFI 32 bits (Mac Pro 2006).
+- `install-void.sh` utilise tout le disque : pas de double démarrage.
+- Mac T2 : pas de Touch Bar, firmware Wi-Fi à récupérer à la main (`t2-wifi-firmware`), voir `hardware/mac-t2/README.md`.
+- Wi-Fi Broadcom des vieux Mac (sans T2) : pilote propriétaire non inclus.
+- Non testés de bout en bout : `install-void.sh`, le profil `baremetal`, le profil `mac-t2` (la VM de développement n'est pas réinstallable sans être effacée, et n'a pas de puce T2).
+- Les actions `Éteindre`, `Redémarrer` et `Veille` du menu passent par `sudo` sans mot de passe (règle `/etc/sudoers.d/power`, limitée à `zzz`, `reboot`, `poweroff`), faute de `polkit`.

@@ -4,7 +4,7 @@
 # Aucun démon: il n'existe que le temps du menu (0 Mo au repos).
 #
 #   menu                  catégories à vide; en tapant, recherche floue sur tout
-#   menu apps|clip|emoji|calc|system|audio|network|style|packages|custom
+#   menu apps|clip|emoji|calc|system|audio|network|style|packages|capture|custom
 #                         ouvre directement une section (raccourcis clavier)
 #
 # Entrées perso: ~/.config/menu/entries (Libellé | mode | commande). Échap quitte.
@@ -14,12 +14,45 @@ EMOJIS="$HOME/.local/share/menu/emoji.txt"
 ENTRIES="${XDG_CONFIG_HOME:-$HOME/.config}/menu/entries"
 TAB="$(printf '\t')"
 
+# Glyphes Font Awesome 4 via Symbols Nerd Font Mono (largeur fixe: libellés alignés, 0 Mo en plus)
+I_APPS="$(printf '\357\200\211')"  # U+F009 th-large
+I_CLIP="$(printf '\357\203\252')"  # U+F0EA clipboard
+I_EMOJI="$(printf '\357\204\230')"  # U+F118 smile
+I_CALC="$(printf '\357\207\254')"  # U+F1EC calculator
+I_SYS="$(printf '\357\200\221')"  # U+F011 power-off
+I_AUDIO="$(printf '\357\200\250')"  # U+F028 volume-up
+I_NET="$(printf '\357\207\253')"  # U+F1EB wifi
+I_STYLE="$(printf '\357\207\274')"  # U+F1FC paint-brush
+I_PKG="$(printf '\357\206\262')"  # U+F1B2 cube
+I_CUSTOM="$(printf '\357\200\205')"  # U+F005 star
+I_LOCK="$(printf '\357\200\243')"  # U+F023 lock
+I_SLEEP="$(printf '\357\206\206')"  # U+F186 moon
+I_LOGOUT="$(printf '\357\202\213')"  # U+F08B sign-out
+I_REBOOT="$(printf '\357\200\236')"  # U+F01E repeat
+I_VOLDN="$(printf '\357\200\247')"  # U+F027 volume-down
+I_MUTE="$(printf '\357\200\246')"  # U+F026 volume-off
+I_MIC="$(printf '\357\204\261')"  # U+F131 microphone-slash
+I_PHONES="$(printf '\357\200\245')"  # U+F025 headphones
+I_GLOBE="$(printf '\357\202\254')"  # U+F0AC globe
+I_IMAGE="$(printf '\357\200\276')"  # U+F03E picture
+I_RELOAD="$(printf '\357\200\241')"  # U+F021 refresh
+I_SEARCH="$(printf '\357\200\202')"  # U+F002 search
+I_TRASH="$(printf '\357\207\270')"  # U+F1F8 trash
+I_DOWN="$(printf '\357\200\231')"  # U+F019 download
+I_BROOM="$(printf '\357\204\255')"  # U+F12D eraser
+I_TERM="$(printf '\357\204\240')"  # U+F120 terminal
+I_CODE="$(printf '\357\204\241')"  # U+F121 code
+I_CHART="$(printf '\357\202\200')"  # U+F080 bar-chart
+I_COLS="$(printf '\357\203\233')"  # U+F0DB columns
+I_CAM="$(printf '\357\200\260')"  # U+F030 camera
+I_WIN="$(printf '\357\213\220')"  # U+F2D0 window-maximize
+
 pick() { # pick INVITE [LIGNES]  (entrées sur stdin, sélection sur stdout)
     fuzzel --dmenu --minimal-lines --lines "${2:-12}" --prompt "$1"
 }
 ask() { fuzzel --dmenu --prompt-only "$1"; } # saisie libre
 notify() { command -v notify-send >/dev/null && notify-send -a menu "$@"; }
-confirm() { [ "$(printf 'Non\nOui\n' | pick "$1 > " 2)" = "Oui" ]; }
+confirm() { [ "$(printf 'Non\nOui\n' | pick "$1 › " 2)" = "Oui" ]; }
 term() { # term COMMANDE : terminal gardé ouvert à la fin
     exec alacritty -e sh -c "$1; echo; printf 'Entrée pour fermer '; read _"
 }
@@ -100,15 +133,15 @@ custom_run() { # custom_run LIBELLÉ : retourne 1 si le libellé n'existe pas
 }
 
 menu_custom() {
-    case "$(printf 'Ajouter une entrée\nModifier le fichier\n' | pick "Entrées perso > " 2)" in
+    case "$(printf 'Ajouter une entrée\nModifier le fichier\n' | pick "Entrées perso › " 2)" in
         "Ajouter une entrée")
-            label="$(ask "Libellé > ")"
+            label="$(ask "Libellé › ")"
             [ -n "$label" ] || exit 0
             case "$label" in *'|'*|'#'*) notify -u critical "Menu" "Libellé invalide (pas de | ni de # au début)"; exit 1 ;; esac
-            mode="$(printf 'term  (terminal, fermé à la fin)\nhold  (terminal gardé ouvert)\nrun   (arrière-plan, appli graphique)\n' | pick "Mode > " 3)"
+            mode="$(printf 'term  (terminal, fermé à la fin)\nhold  (terminal gardé ouvert)\nrun   (arrière-plan, appli graphique)\n' | pick "Mode › " 3)"
             mode="${mode%% *}"
             [ -n "$mode" ] || exit 0
-            cmd="$(ask "Commande > ")"
+            cmd="$(ask "Commande › ")"
             [ -n "$cmd" ] || exit 0
             mkdir -p "$(dirname "$ENTRIES")"
             printf '%s | %s | %s\n' "$label" "$mode" "$cmd" >> "$ENTRIES"
@@ -125,12 +158,12 @@ menu_apps() { exec fuzzel; }
 
 menu_clip() {
     command -v cliphist >/dev/null || { notify "Presse-papiers" "cliphist n'est pas installé"; exit 1; }
-    sel="$(cliphist list | pick "Presse-papiers > " 15)"
+    sel="$(cliphist list | pick "Presse-papiers › " 15)"
     [ -n "$sel" ] && printf '%s' "$sel" | cliphist decode | wl-copy
 }
 
 menu_emoji() {
-    sel="$(pick "Émoji > " 12 < "$EMOJIS")"
+    sel="$(pick "Émoji › " 12 < "$EMOJIS")"
     [ -n "$sel" ] || exit 0
     char="${sel%% *}"
     printf '%s' "$char" | wl-copy
@@ -153,7 +186,7 @@ menu_calc() {
 }
 
 menu_system() {
-    act="${1:-$(printf 'Verrouiller\nVeille\nDéconnexion\nRedémarrer\nÉteindre\n' | pick "Système > " 5)}"
+    act="${1:-$(printf 'Verrouiller\nVeille\nDéconnexion\nRedémarrer\nÉteindre\n' | pick "Système › " 5)}"
     case "$act" in
         Verrouiller) exec swaylock -f -c 1e1e2e ;;
         Veille) sudo -n zzz ;;
@@ -164,7 +197,7 @@ menu_system() {
 }
 
 menu_audio() {
-    act="${1:-$(printf 'Volume +\nVolume -\nMuet / son\nMicro muet / actif\nChoisir la sortie\n' | pick "Audio > " 5)}"
+    act="${1:-$(printf 'Volume +\nVolume -\nMuet / son\nMicro muet / actif\nChoisir la sortie\n' | pick "Audio › " 5)}"
     case "$act" in
         "Volume +") wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+ ;;
         "Volume -") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
@@ -173,17 +206,17 @@ menu_audio() {
         "Choisir la sortie")
             sinks="$(wpctl status | awk '/Sinks:/{f=1;next} /Sources:|Filters:|Streams:/{f=0} f' \
                 | sed -E -n 's/^[^0-9]*([0-9]+)\. (.*)$/\1 \2/p')"
-            sel="$(printf '%s\n' "$sinks" | pick "Sortie audio > " 8)"
+            sel="$(printf '%s\n' "$sinks" | pick "Sortie audio › " 8)"
             [ -n "$sel" ] && wpctl set-default "${sel%% *}"
             ;;
     esac
 }
 
 menu_network() {
-    act="${1:-$(printf 'Adresses IP\nTester la connexion\n' | pick "Réseau > " 2)}"
+    act="${1:-$(printf 'Adresses IP\nTester la connexion\n' | pick "Réseau › " 2)}"
     case "$act" in
         "Adresses IP")
-            sel="$(ip -br addr | grep -v '^lo' | pick "Adresses > " 8)"
+            sel="$(ip -br addr | grep -v '^lo' | pick "Adresses › " 8)"
             [ -n "$sel" ] && printf '%s' "$sel" | awk '{print $3}' | wl-copy
             ;;
         "Tester la connexion")
@@ -193,10 +226,10 @@ menu_network() {
 }
 
 menu_style() {
-    act="${1:-$(printf 'Fond d'"'"'écran\nRecharger Waybar\nRecharger mako\n' | pick "Style > " 3)}"
+    act="${1:-$(printf 'Fond d'"'"'écran\nRecharger Waybar\nRecharger mako\n' | pick "Style › " 3)}"
     case "$act" in
         "Fond d'écran")
-            sel="$(ls "$WALLPAPERS" 2>/dev/null | pick "Fond d'écran > " 10)"
+            sel="$(ls "$WALLPAPERS" 2>/dev/null | pick "Fond d'écran › " 10)"
             [ -n "$sel" ] && { setsid "$HOME/.local/bin/wallpaper" "$WALLPAPERS/$sel" >/dev/null 2>&1 & }
             ;;
         "Recharger Waybar") pkill -USR2 waybar ;;
@@ -204,19 +237,29 @@ menu_style() {
     esac
 }
 
+menu_capture() {
+    act="${1:-$(printf 'Zone\nÉcran\nFenêtre\n' | pick "Capture › " 3)}"
+    sleep 0.4 # laisse fuzzel disparaître avant de capturer
+    case "$act" in
+        Zone) niri msg action screenshot ;;
+        Écran) niri msg action screenshot-screen ;;
+        Fenêtre) niri msg action screenshot-window ;;
+    esac
+}
+
 menu_packages() {
-    act="${1:-$(printf 'Rechercher et installer\nSupprimer\nMettre à jour le système\nNettoyer le cache\n' | pick "Paquets > " 4)}"
+    act="${1:-$(printf 'Rechercher et installer\nSupprimer\nMettre à jour le système\nNettoyer le cache\n' | pick "Paquets › " 4)}"
     case "$act" in
         "Rechercher et installer")
-            q="$(ask "Paquet > ")"
+            q="$(ask "Paquet › ")"
             [ -n "$q" ] || exit 0
-            sel="$(xbps-query -Rs "$q" | head -60 | sed -E 's/^\[.\] //' | pick "Résultats > " 15)"
+            sel="$(xbps-query -Rs "$q" | head -60 | sed -E 's/^\[.\] //' | pick "Résultats › " 15)"
             [ -n "$sel" ] || exit 0
             pkg="$(printf '%s' "$sel" | awk '{print $1}' | sed -E 's/-[^-]+$//')"
             term "echo 'Budget ressources: vérifier la taille et les dépendances avant d installer.'; xbps-query -R -p pkgver,installed_size $pkg; echo; sudo xbps-install -S $pkg"
             ;;
         Supprimer)
-            sel="$(xbps-query -m | sed -E 's/-[^-]+$//' | pick "Supprimer > " 15)"
+            sel="$(xbps-query -m | sed -E 's/-[^-]+$//' | pick "Supprimer › " 15)"
             [ -n "$sel" ] && confirm "Supprimer $sel" && term "sudo xbps-remove -R $sel"
             ;;
         "Mettre à jour le système") term "sudo xbps-install -Su" ;;
@@ -228,52 +271,70 @@ menu_packages() {
 
 # Actions directes, libellé "Catégorie: Action" (la catégorie sert aussi à la recherche)
 actions_list() {
-    cat <<'EOF'
-Système: Verrouiller
-Système: Veille
-Système: Déconnexion
-Système: Redémarrer
-Système: Éteindre
-Audio: Volume +
-Audio: Volume -
-Audio: Muet / son
-Audio: Micro muet / actif
-Audio: Choisir la sortie
-Réseau: Adresses IP
-Réseau: Tester la connexion
-Style: Fond d'écran
-Style: Recharger Waybar
-Style: Recharger mako
-Paquets: Rechercher et installer
-Paquets: Supprimer
-Paquets: Mettre à jour le système
-Paquets: Nettoyer le cache
+    cat <<EOF
+$I_LOCK Système: Verrouiller
+$I_SLEEP Système: Veille
+$I_LOGOUT Système: Déconnexion
+$I_REBOOT Système: Redémarrer
+$I_SYS Système: Éteindre
+$I_AUDIO Audio: Volume +
+$I_VOLDN Audio: Volume -
+$I_MUTE Audio: Muet / son
+$I_MIC Audio: Micro muet / actif
+$I_PHONES Audio: Choisir la sortie
+$I_GLOBE Réseau: Adresses IP
+$I_NET Réseau: Tester la connexion
+$I_IMAGE Style: Fond d'écran
+$I_RELOAD Style: Recharger Waybar
+$I_RELOAD Style: Recharger mako
+$I_CAM Capture: Zone
+$I_CAM Capture: Écran
+$I_CAM Capture: Fenêtre
+$I_SEARCH Paquets: Rechercher et installer
+$I_TRASH Paquets: Supprimer
+$I_DOWN Paquets: Mettre à jour le système
+$I_BROOM Paquets: Nettoyer le cache
 EOF
 }
 
 # Catégories: affichées en premier. Sans saisie, la liste est limitée à leur nombre de lignes
 # (on ne voit qu'elles); dès qu'on tape, la recherche floue porte sur TOUTE la liste.
 categories_list() {
-    cat <<'EOF'
-Applications ›
-Presse-papiers ›
-Émojis ›
-Calculatrice ›
-Système ›
-Audio ›
-Réseau ›
-Style ›
-Paquets ›
-Entrées perso ›
+    cat <<EOF
+$I_APPS Applications ›
+$I_CLIP Presse-papiers ›
+$I_EMOJI Émojis ›
+$I_CALC Calculatrice ›
+$I_SYS Système ›
+$I_AUDIO Audio ›
+$I_NET Réseau ›
+$I_STYLE Style ›
+$I_PKG Paquets ›
+$I_CUSTOM Entrées perso ›
 EOF
+}
+
+# Glyphe d'une application selon son nom ou sa commande (repli: fenêtre générique)
+app_glyph() {
+    case "$(printf '%s %s' "$1" "$2" | tr 'A-Z' 'a-z')" in
+        *chrom*|*firefox*|*browser*|*navigat*|*brave*|*epiphany*) printf '%s' "$I_GLOBE" ;;
+        *alacritty*|*terminal*|*kitty*|*foot*|*konsole*) printf '%s' "$I_TERM" ;;
+        *nvim*|*vim*|*emacs*|*code*|*editor*|*éditeur*) printf '%s' "$I_CODE" ;;
+        *htop*|*btop*|*monitor*|*moniteur*|*top\ *) printf '%s' "$I_CHART" ;;
+        *zellij*|*tmux*) printf '%s' "$I_COLS" ;;
+        *) printf '%s' "$I_WIN" ;;
+    esac
 }
 
 menu_main() {
     cats="$(categories_list)"
     nb="$(printf '%s\n' "$cats" | wc -l | tr -d ' ')"
-    items="$( { printf '%s\n' "$cats"; custom_labels; list_apps | cut -f1; actions_list; } )"
-    sel="$(printf '%s\n' "$items" | pick "> " "$nb")"
+    customs="$(custom_labels | while IFS= read -r l; do printf '%s %s\n' "$I_CUSTOM" "$l"; done)"
+    apps="$(list_apps | while IFS="$TAB" read -r name cmd _; do printf '%s %s\n' "$(app_glyph "$name" "$cmd")" "$name"; done)"
+    items="$( { printf '%s\n' "$cats"; [ -n "$customs" ] && printf '%s\n' "$customs"; [ -n "$apps" ] && printf '%s\n' "$apps"; actions_list; } )"
+    sel="$(printf '%s\n' "$items" | pick "› " "$nb")"
     [ -n "$sel" ] || exit 0
+    sel="${sel#* }" # retire le glyphe et l'espace qui le suit
 
     # catégories (ouvrent la section), puis entrées perso, applications, actions directes
     case "$sel" in
@@ -296,6 +357,7 @@ menu_main() {
         "Réseau: "*) menu_network "${sel#Réseau: }" ;;
         "Style: "*) menu_style "${sel#Style: }" ;;
         "Paquets: "*) menu_packages "${sel#Paquets: }" ;;
+        "Capture: "*) menu_capture "${sel#Capture: }" ;;
     esac
 }
 
@@ -309,7 +371,8 @@ case "${1:-}" in
     network) menu_network ;;
     style) menu_style ;;
     packages) menu_packages ;;
+    capture) menu_capture ;;
     custom) menu_custom ;;
     "") menu_main ;;
-    *) echo "Usage: menu [apps|clip|emoji|calc|system|audio|network|style|packages|custom]" >&2; exit 1 ;;
+    *) echo "Usage: menu [apps|clip|emoji|calc|system|audio|network|style|packages|capture|custom]" >&2; exit 1 ;;
 esac

@@ -626,6 +626,10 @@ binds {
     // Mod+Space       { switch-layout "next"; }
     // Mod+Shift+Space { switch-layout "prev"; }
 
+    // Captures (outil intégré à niri, 0 Mo). Enregistrées dans ~/Pictures/Screenshots et copiées dans le presse-papiers.
+    // Alternatives sans touche Print (claviers Mac): Mod+Shift+S zone, Mod+Shift+Ctrl+S écran.
+    Mod+Shift+S { screenshot; }
+    Mod+Shift+Ctrl+S { screenshot-screen; }
     Print { screenshot; }
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
