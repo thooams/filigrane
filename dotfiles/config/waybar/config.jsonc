@@ -11,7 +11,24 @@
 
     "modules-left": ["custom/menu", "niri/workspaces", "niri/window"],
     "modules-center": ["custom/weather", "clock"],
-    "modules-right": ["mpris", "custom/rec", "custom/timer", "custom/idle", "custom/air", "custom/vpn", "custom/night", "custom/dnd", "custom/news", "custom/update", "cpu", "custom/temp", "memory", "disk", "custom/display", "custom/mic", "wireplumber", "bluetooth", "network", "battery", "custom/batwatch", "group/tray"],
+    "modules-right": ["mpris", "group/ind", "group/res", "group/audio", "custom/display", "bluetooth", "network", "battery", "custom/batwatch", "group/tray"],
+
+    // Modules regroupés dans une seule pastille chacun (gain de place, voir style.css)
+    // Indicateurs et bascules: enregistrement, minuteur, caféine, SSH, avion, VPN, veilleuse, notifications, veille, MAJ
+    "group/ind": {
+        "orientation": "inherit",
+        "modules": ["custom/rec", "custom/timer", "custom/idle", "custom/remote", "custom/air", "custom/vpn", "custom/night", "custom/dnd", "custom/news", "custom/update"]
+    },
+    // Ressources: CPU, température, mémoire, disque
+    "group/res": {
+        "orientation": "inherit",
+        "modules": ["cpu", "custom/temp", "memory", "disk"]
+    },
+    // Audio: micro et sortie
+    "group/audio": {
+        "orientation": "inherit",
+        "modules": ["custom/mic", "wireplumber"]
+    },
 
     // Bouton menu: clic = menu, clic droit = terminal
     "custom/menu": {
@@ -86,12 +103,12 @@
     },
     // Clic = btop
     "cpu": {
-        "interval": 5,
+        "interval": 10,
         "format": "\uf2db {usage}%",
         "on-click": "$HOME/.local/bin/bar-tui btop"
     },
     "memory": {
-        "interval": 10,
+        "interval": 15,
         "format": "\uf538 {used:0.1f}G",
         "on-click": "$HOME/.local/bin/bar-tui btop"
     },
@@ -99,7 +116,7 @@
     "custom/mic": {
         "exec": "$HOME/.local/bin/bar-status mic",
         "return-type": "json",
-        "interval": 30,
+        "interval": 60,
         "signal": 8,
         "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; pkill -RTMIN+8 waybar",
         "on-click-middle": "$HOME/.local/bin/bar-tui wiremix",
@@ -118,7 +135,7 @@
     },
     // Wi-Fi: clic = impala (liste des SSID, connexion, mot de passe), clic droit = menu réseau (IP, ping, débit)
     "network": {
-        "interval": 10,
+        "interval": 30,
         "format-ethernet": "\uf796 {ifname}",
         "format-wifi": "\uf1eb {essid}",
         "format-disconnected": "\uf071 hors ligne",
@@ -170,25 +187,31 @@
     "custom/timer": {
         "exec": "$HOME/.local/bin/bar-timer",
         "return-type": "json",
-        "interval": 1,
+        "interval": "once",
         "signal": 12,
         "on-click": "$HOME/.local/bin/bar-timer click",
         "on-click-right": "$HOME/.local/bin/bar-timer add"
     },
-    // Verrouillage auto désactivé (visible seulement alors), clic = réactiver
+    // Caféine: tasse jaune = verrouillage auto coupé (écran toujours allumé), grise = actif; clic = bascule
     "custom/idle": {
         "exec": "$HOME/.local/bin/bar-status idle",
         "return-type": "json",
         "interval": "once",
         "signal": 13,
-        "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-toggle idle"
+    },
+    // Session SSH entrante (visible seulement alors)
+    "custom/remote": {
+        "exec": "$HOME/.local/bin/bar-status remote",
+        "return-type": "json",
+        "interval": 30,
+        "hide-empty-text": true
     },
     // Mode avion (visible seulement actif), clic = désactiver
     "custom/air": {
         "exec": "$HOME/.local/bin/bar-status air",
         "return-type": "json",
-        "interval": 30,
+        "interval": 60,
         "signal": 14,
         "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-toggle air"
@@ -197,20 +220,20 @@
     "custom/vpn": {
         "exec": "$HOME/.local/bin/bar-status vpn",
         "return-type": "json",
-        "interval": 30,
+        "interval": 60,
         "hide-empty-text": true
     },
     // Température CPU (masquée sans sonde), clic = btop
     "custom/temp": {
         "exec": "$HOME/.local/bin/bar-status temp",
         "return-type": "json",
-        "interval": 10,
+        "interval": 15,
         "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-tui btop"
     },
     // Espace libre sur /, clic = du interactif
     "disk": {
-        "interval": 60,
+        "interval": 300,
         "path": "/",
         "format": "\uf0a0 {percentage_used}%",
         "tooltip-format": "{used} / {total} ({free} libres)",
@@ -231,7 +254,7 @@
     },
     // Clic = menu système (verrouiller, veille, quitter...)
     "battery": {
-        "interval": 30,
+        "interval": 60,
         "states": { "warning": 25, "critical": 10 },
         "format": "{icon} {capacity}%",
         "format-charging": "\uf0e7 {capacity}%",

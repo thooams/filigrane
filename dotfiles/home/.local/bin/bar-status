@@ -1,5 +1,5 @@
 #!/bin/sh
-# Indicateurs Waybar (JSON): mic | dnd | night | rec | weather | idle | air | vpn | temp | batwatch. Rafraîchis par signal (clic) ou par intervalle.
+# Indicateurs Waybar (JSON): mic | dnd | night | rec | weather | idle | remote | air | vpn | temp | batwatch. Rafraîchis par signal (clic) ou par intervalle.
 case "$1" in
     mic)
         v="$(wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null)" || { printf '{"text":""}\n'; exit 0; }
@@ -26,10 +26,19 @@ case "$1" in
             printf '{"text":""}\n'
         fi ;;
     idle)
+        # Caféine (comme "Stay Awake" d'Omarchy): tasse jaune = écran jamais verrouillé ni éteint
         if pgrep -x swayidle >/dev/null; then
-            printf '{"text":""}\n'
+            printf '{"text":"\\uf0f4","class":"idle","tooltip":"Verrouillage auto actif (clic: garder éveillé)"}\n'
         else
-            printf '{"text":"\\uf023","class":"active","tooltip":"Verrouillage auto désactivé (clic: réactiver)"}\n'
+            printf '{"text":"\\uf0f4","class":"active","tooltip":"Gardé éveillé: pas de verrouillage auto (clic: réactiver)"}\n'
+        fi ;;
+    remote)
+        # Session SSH entrante (comme RemoteSession d'Omarchy); rien sinon
+        n="$(ss -Htn state established '( sport = :22 )' 2>/dev/null | wc -l)"
+        if [ "$n" -gt 0 ]; then
+            printf '{"text":"\\uf233","class":"active","tooltip":"%s session(s) SSH entrante(s)"}\n' "$n"
+        else
+            printf '{"text":""}\n'
         fi ;;
     air)
         if rfkill list 2>/dev/null | grep -q 'Soft blocked: yes'; then

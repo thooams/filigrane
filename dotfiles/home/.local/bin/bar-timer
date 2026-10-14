@@ -1,7 +1,7 @@
 #!/bin/bash
 # Minuteur / chronomètre Waybar, sans daemon: l'état est un petit fichier dans $XDG_RUNTIME_DIR/bar-timer
 # ("T <fin>" minuteur, "S <début>" chronomètre, "done" minuteur terminé). Bash pour EPOCHSECONDS (aucun fork par rafraîchissement).
-# Usage: bar-timer (JSON pour Waybar) | click (choisir / arrêter / acquitter) | add (+5 min au minuteur)
+# Usage: bar-timer (JSON pour Waybar) | click (choisir / arrêter / acquitter) | add (+5 min au minuteur) | tick (interne)
 # Durées du minuteur: 5 (minutes), 90s, 10m, 1h.
 f="${XDG_RUNTIME_DIR:-/tmp}/bar-timer"
 icon='\\uf2f2'
@@ -9,6 +9,8 @@ kind=''; val=''
 [ -r "$f" ] && read -r kind val <"$f"
 
 refresh() { pkill -RTMIN+12 waybar; }
+# Waybar n'interroge pas ce module (interval once): un ticker d'une seconde n'existe que tant qu'un minuteur ou chronomètre tourne
+start_tick() { pgrep -f 'bar-timer tick' >/dev/null || setsid -f "$0" tick >/dev/null 2>&1; }
 fmt() { # secondes -> [H:]MM:SS
     if [ "$1" -ge 3600 ]; then printf '%d:%02d:%02d' $(($1 / 3600)) $(($1 % 3600 / 60)) $(($1 % 60))
     else printf '%02d:%02d' $(($1 / 60)) $(($1 % 60)); fi
@@ -28,10 +30,16 @@ case "$1" in
             case "$out" in *h*) s=$((n * 3600)) ;; *s*) s=$n ;; *) s=$((n * 60)) ;; esac
             echo "T $((EPOCHSECONDS + s))" >"$f"
         fi
-        refresh ;;
+        refresh; start_tick ;;
     add)
         [ "$kind" = T ] || exit 0
-        echo "T $((val + 300))" >"$f"; refresh ;;
+        echo "T $((val + 300))" >"$f"; refresh; start_tick ;;
+    tick)
+        while sleep 1; do
+            read -r kind val <"$f" 2>/dev/null || break
+            case "$kind" in S|T) refresh ;; *) break ;; esac
+        done
+        refresh ;;
     *)
         case "$kind" in
             '') printf '{"text":"%b","class":"idle","tooltip":"Minuteur / chronomètre (clic: choisir)"}\n' "$icon" ;;

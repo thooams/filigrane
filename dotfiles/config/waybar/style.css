@@ -60,6 +60,22 @@ window#waybar {
     border-radius: 10px;
 }
 
+/* Groupes (id CSS = nom sans "group/"): une seule pastille par groupe, modules internes sans fond ni arrondi */
+#ind, #res, #audio {
+    background: alpha(@base, 0.92);
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+#ind #custom-rec, #ind #custom-timer, #ind #custom-idle, #ind #custom-remote,
+#ind #custom-air, #ind #custom-vpn, #ind #custom-night, #ind #custom-dnd,
+#ind #custom-news, #ind #custom-update,
+#res #cpu, #res #custom-temp, #res #memory, #res #disk,
+#audio #custom-mic, #audio #wireplumber {
+    background: transparent;
+    padding: 0 6px;
+    border-radius: 0;
+}
+
 #workspaces { padding: 2px 4px; }
 
 #workspaces button {
@@ -111,7 +127,9 @@ tooltip {
 #custom-night.idle { color: @overlay0; }
 #custom-night.active { color: @peach; }
 #custom-rec { color: @red; }
-#custom-idle, #custom-air { color: @yellow; }
+#custom-idle.idle { color: @overlay0; }
+#custom-idle.active, #custom-air { color: @yellow; }
+#custom-remote { color: @red; }
 #custom-vpn { color: @green; }
 #custom-temp { color: @subtext0; }
 #custom-temp.critical { color: @red; }
