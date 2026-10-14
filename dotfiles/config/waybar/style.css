@@ -43,7 +43,13 @@ window#waybar {
 #custom-mic,
 #custom-weather,
 #custom-night,
+#custom-timer,
 #custom-rec,
+#custom-idle,
+#custom-air,
+#custom-vpn,
+#custom-temp,
+#disk,
 #custom-display,
 #bluetooth,
 #mpris,
@@ -103,6 +109,15 @@ tooltip {
 #custom-night.idle { color: @overlay0; }
 #custom-night.active { color: @peach; }
 #custom-rec { color: @red; }
+#custom-idle, #custom-air { color: @yellow; }
+#custom-vpn { color: @green; }
+#custom-temp { color: @subtext0; }
+#custom-temp.critical { color: @red; }
+#disk { color: @subtext0; }
+#custom-timer.idle { color: @overlay0; }
+#custom-timer.active { color: @green; }
+#custom-timer.stopwatch { color: @blue; }
+#custom-timer.done { color: @red; }
 #custom-display { color: @subtext0; }
 #bluetooth { color: @blue; }
 #bluetooth.off, #bluetooth.disabled { color: @overlay0; }

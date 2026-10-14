@@ -1,5 +1,5 @@
 #!/bin/sh
-# Actions de la barre qui changent un état, puis rafraîchissent l'indicateur par signal. Usage: bar-toggle night|rec
+# Actions de la barre qui changent un état, puis rafraîchissent l'indicateur par signal. Usage: bar-toggle night|rec|idle [start]|air|present
 case "$1" in
     night)
         if pgrep -x wlsunset >/dev/null; then pkill -x wlsunset; else setsid wlsunset -t 3500 -T 3501 -S 00:00 -s 23:59 >/dev/null 2>&1 & fi
@@ -13,4 +13,32 @@ case "$1" in
             notify-send "Enregistrement" "Démarré (clic sur l'indicateur pour arrêter)"
         fi
         sleep 0.5; pkill -RTMIN+11 waybar ;;
+    idle)
+        if [ "$2" = start ] || ! pgrep -x swayidle >/dev/null; then
+            pgrep -x swayidle >/dev/null || setsid swayidle -w \
+                timeout 300 'swaylock -f -c 1e1e2e' \
+                timeout 600 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' \
+                before-sleep 'swaylock -f -c 1e1e2e' >/dev/null 2>&1 &
+            [ "$2" = start ] || notify-send -u low "Verrouillage auto" "Activé (5 min, écran éteint à 10 min)"
+        else
+            pkill -x swayidle; notify-send -u low "Verrouillage auto" "Désactivé"
+        fi
+        sleep 0.3; pkill -RTMIN+13 waybar ;;
+    air)
+        if rfkill list 2>/dev/null | grep -q 'Soft blocked: yes'; then
+            rfkill unblock all; notify-send -u low "Mode avion" "Désactivé"
+        else
+            rfkill block all; notify-send -u low "Mode avion" "Activé (Wi-Fi et Bluetooth coupés)"
+        fi
+        sleep 0.5; pkill -RTMIN+14 waybar ;;
+    present)
+        # Mode présentation: ni verrouillage auto ni notifications
+        if pgrep -x swayidle >/dev/null; then
+            pkill -x swayidle; makoctl mode -a do-not-disturb >/dev/null
+            notify-send -u low "Présentation" "Activée"
+        else
+            "$0" idle start; makoctl mode -r do-not-disturb >/dev/null
+            notify-send -u low "Présentation" "Terminée"
+        fi
+        pkill -RTMIN+13 waybar; pkill -RTMIN+9 waybar ;;
 esac

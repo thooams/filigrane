@@ -4,7 +4,7 @@
 # Aucun démon: il n'existe que le temps du menu (0 Mo au repos).
 #
 #   menu                  catégories à vide; en tapant, recherche floue sur tout
-#   menu apps|clip|emoji|calc|system|audio|network|style|packages|capture|custom
+#   menu apps|clip|emoji|calc|windows|files|web|keys|toggles|system|audio|network|style|packages|capture|custom
 #                         ouvre directement une section (raccourcis clavier)
 #
 # Entrées perso: ~/.config/menu/entries (Libellé | mode | commande).
@@ -53,10 +53,11 @@ I_WIN="$(printf '\357\213\220')"  # U+F2D0 window-maximize
 # d'applications (fuzzel seul), custom-1 lancerait l'application sélectionnée.
 STATE="${XDG_RUNTIME_DIR:-/tmp}/menu-back.$$"
 KEYS="--override=key-bindings.custom-1=Shift+BackSpace"
-trap 'rm -f "$STATE"' EXIT
+BINDS="${XDG_RUNTIME_DIR:-/tmp}/menu-binds.$$"
+trap 'rm -f "$STATE" "$BINDS"' EXIT
 
-pick() { # pick INVITE [LIGNES]  (entrées sur stdin, sélection sur stdout; vide si annulé)
-    out="$(fuzzel --dmenu $KEYS --minimal-lines --lines "${2:-12}" --prompt "$1")"; rc=$?
+pick() { # pick INVITE [LIGNES] [LARGEUR]  (entrées sur stdin, sélection sur stdout; vide si annulé)
+    out="$(fuzzel --dmenu $KEYS --minimal-lines --lines "${2:-12}" ${3:+--width "$3"} --prompt "$1")"; rc=$?
     if [ "$rc" -eq 10 ]; then : > "$STATE"; return 0; fi
     [ -n "$out" ] && printf '%s\n' "$out"
     return 0
@@ -324,15 +325,104 @@ menu_style() {
 
 menu_capture() {
     arg="$1"
-    act="${arg:-$(printf 'Zone\nÉcran\nFenêtre\nEnregistrement vidéo\n' | pick "Capture › " 4)}"
+    act="${arg:-$(printf 'Zone\nÉcran\nFenêtre\nCouleur (pipette)\nEnregistrement vidéo\n' | pick "Capture › " 5)}"
     [ -n "$act" ] || { cancel; return $BACK; }
     sleep 0.4 # laisse fuzzel disparaître avant de capturer
     case "$act" in
         Zone) niri msg action screenshot ;;
         Écran) niri msg action screenshot-screen ;;
         Fenêtre) niri msg action screenshot-window ;;
+        "Couleur (pipette)")
+            c="$(niri msg pick-color 2>/dev/null | grep -io '#[0-9a-f]\{6\}' | head -n1)"
+            [ -n "$c" ] && { printf '%s' "$c" | wl-copy; notify "Couleur copiée" "$c"; } ;;
         "Enregistrement vidéo") exec "$HOME/.local/bin/bar-toggle" rec ;;
     esac
+}
+
+menu_windows() {
+    # Liste des fenêtres ouvertes (niri), sélection = focus
+    sel="$(niri msg -j windows | python3 -I -c '
+import json,sys
+for w in json.load(sys.stdin):
+    print("%d\t%s  ·  %s" % (w["id"], w.get("app_id") or "?", w.get("title") or ""))
+' | cut -f2- | pick "Fenêtre › " 10)"
+    [ -n "$sel" ] || { cancel; return $BACK; }
+    id="$(niri msg -j windows | python3 -I -c '
+import json,sys
+t=sys.argv[1]
+for w in json.load(sys.stdin):
+    if "%s  ·  %s" % (w.get("app_id") or "?", w.get("title") or "") == t:
+        print(w["id"]); break
+' "$sel")"
+    [ -n "$id" ] && niri msg action focus-window --id "$id"
+}
+
+menu_files() {
+    # Recherche de fichiers (fd) dans ~, ouverture avec l'application par défaut
+    q="$(ask "Fichier › ")"
+    [ -n "$q" ] || { cancel; return $BACK; }
+    sel="$(fd --type f --hidden --exclude .git --exclude node_modules --exclude .cache "$q" "$HOME" 2>/dev/null | head -200 | sed "s|^$HOME/|~/|" | pick "Fichiers › " 12)"
+    [ -n "$sel" ] || { cancel; return $BACK; }
+    setsid xdg-open "$HOME/${sel#\~/}" >/dev/null 2>&1 &
+}
+
+menu_web() {
+    # Préfixes: g (Google), ddg, yt, w (Wikipédia fr), gh (GitHub), ou toute URL
+    q="$(ask "Web (g/ddg/yt/w/gh …) › ")"
+    [ -n "$q" ] || { cancel; return $BACK; }
+    enc() { printf '%s' "$1" | python3 -I -c 'import sys,urllib.parse;print(urllib.parse.quote_plus(sys.stdin.read()))'; }
+    case "$q" in
+        g\ *) url="https://www.google.com/search?q=$(enc "${q#g }")" ;;
+        ddg\ *) url="https://duckduckgo.com/?q=$(enc "${q#ddg }")" ;;
+        yt\ *) url="https://www.youtube.com/results?search_query=$(enc "${q#yt }")" ;;
+        w\ *) url="https://fr.wikipedia.org/w/index.php?search=$(enc "${q#w }")" ;;
+        gh\ *) url="https://github.com/search?q=$(enc "${q#gh }")" ;;
+        http://*|https://*) url="$q" ;;
+        *.*) url="https://$q" ;;
+        *) url="https://duckduckgo.com/?q=$(enc "$q")" ;;
+    esac
+    setsid xdg-open "$url" >/dev/null 2>&1 &
+}
+
+menu_keys() {
+    # Raccourcis niri extraits de la config, recherche floue; Entrée copie la touche
+    cfg="${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl"
+    sel="$(awk '
+        /^binds[[:space:]]*\{/ {b=1; next}
+        b && /^\}/ {b=0}
+        b && /^[[:space:]]*[A-Za-z0-9_+]+[[:space:]]/ && !/^[[:space:]]*\/\// {
+            key=$1; t=""
+            if (match($0, /hotkey-overlay-title="[^"]*"/)) t=substr($0, RSTART+22, RLENGTH-23)
+            else {
+                a=$0; sub(/^[^{]*\{[[:space:]]*/, "", a); sub(/[[:space:];]*\}.*$/, "", a)
+                gsub(/"/, "", a); sub(/^spawn-sh /, "", a); sub(/^spawn /, "", a); gsub(/-/, " ", a)
+                t=a
+            }
+            printf "%s  —  %s\n", key, t
+        }' "$cfg" | pick "Raccourcis › " 14 70)"
+    [ -n "$sel" ] || { cancel; return $BACK; }
+    printf '%s' "${sel%% *}" | wl-copy
+}
+
+menu_toggles() {
+    arg="$1"
+    while :; do
+        act="${arg:-$(printf 'Verrouillage auto\nMode avion\nMode présentation\nVeilleuse\nNe pas déranger\nFond d'"'"'écran suivant\n' | pick "Bascules › " 6)}"
+        [ -n "$act" ] || { cancel; return $BACK; }
+        case "$act" in
+            "Verrouillage auto") "$HOME/.local/bin/bar-toggle" idle; return 0 ;;
+            "Mode avion") "$HOME/.local/bin/bar-toggle" air; return 0 ;;
+            "Mode présentation") "$HOME/.local/bin/bar-toggle" present; return 0 ;;
+            Veilleuse) "$HOME/.local/bin/bar-toggle" night; return 0 ;;
+            "Ne pas déranger") makoctl mode -t do-not-disturb; pkill -RTMIN+9 waybar; return 0 ;;
+            "Fond d'écran suivant")
+                cur="$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/wallpaper" 2>/dev/null)"
+                next="$(ls "$WALLPAPERS" | awk -v c="$(basename "$cur")" 'NR==1{f=$0} hit{print; done=1; exit} $0==c{hit=1} END{if(!done)print f}')"
+                setsid "$HOME/.local/bin/wallpaper" "$WALLPAPERS/$next" >/dev/null 2>&1 &
+                return 0 ;;
+        esac
+        [ -n "$arg" ] && return $BACK
+    done
 }
 
 menu_packages() {
@@ -389,6 +479,17 @@ $I_RELOAD Style: Recharger mako
 $I_CAM Capture: Zone
 $I_CAM Capture: Écran
 $I_CAM Capture: Fenêtre
+$I_WIN Fenêtres: Aller à une fenêtre
+$I_SEARCH Fichiers: Rechercher un fichier
+$I_GLOBE Web: Rechercher ou ouvrir une URL
+$I_CODE Raccourcis: Aide des raccourcis
+$I_LOCK Bascules: Verrouillage auto
+$I_NET Bascules: Mode avion
+$I_CHART Bascules: Mode présentation
+$I_SLEEP Bascules: Veilleuse
+$I_MUTE Bascules: Ne pas déranger
+$I_IMAGE Bascules: Fond d'écran suivant
+$I_CAM Capture: Couleur (pipette)
 $I_SEARCH Paquets: Rechercher et installer
 $I_TRASH Paquets: Supprimer
 $I_DOWN Paquets: Mettre à jour le système
@@ -404,6 +505,11 @@ $I_APPS Applications ›
 $I_CLIP Presse-papiers ›
 $I_EMOJI Émojis ›
 $I_CALC Calculatrice ›
+$I_WIN Fenêtres ›
+$I_SEARCH Fichiers ›
+$I_GLOBE Web ›
+$I_CODE Raccourcis ›
+$I_LOCK Bascules ›
 $I_SYS Système ›
 $I_AUDIO Audio ›
 $I_NET Réseau ›
@@ -425,17 +531,72 @@ app_glyph() {
     esac
 }
 
+# ---------------------------------------------------------------- raccourcis affichés à côté des noms
+
+# Table "touche<TAB>action" extraite des binds de niri (guillemets et spawn retirés)
+bind_table() {
+    awk '
+        /^binds[[:space:]]*\{/ {b=1; next}
+        b && /^\}/ {b=0}
+        b && /^[[:space:]]*[A-Za-z0-9_+]+[[:space:]]/ && !/^[[:space:]]*\/\// {
+            a=$0; sub(/^[^{]*\{[[:space:]]*/, "", a); sub(/[[:space:];]*\}.*$/, "", a)
+            gsub(/"/, "", a); sub(/^spawn-sh /, "", a); sub(/^spawn /, "", a)
+            printf "%s\t%s\n", $1, a
+        }' "${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl" > "$BINDS" 2>/dev/null
+}
+
+# hint TEXTE : première touche dont l'action est TEXTE (ou contient TEXTE si préfixé par ~)
+hint() {
+    awk -F'\t' -v n="$1" '
+        BEGIN { sub_ = (substr(n,1,1) == "~"); if (sub_) n = substr(n,2) }
+        (sub_ ? index($2, n) : $2 == n) { print $1; exit }' "$BINDS"
+}
+# Noms de touches lisibles (rangée de chiffres bépo, touches multimédia)
+pretty_key() {
+    printf '%s' "$1" | sed -E 's/\+quotedbl$/+1/; s/\+guillemotleft$/+2/; s/\+guillemotright$/+3/; s/\+parenleft$/+4/; s/\+parenright$/+5/; s/\+at$/+6/; s/\+plus$/+7/; s/\+minus$/+8/; s/\+slash$/+9/; s/\+Comma$/+,/; s/\+Period$/+./; s/^XF86AudioRaiseVolume$/Vol +/; s/^XF86AudioLowerVolume$/Vol -/; s/^XF86AudioMute$/Muet/; s/^XF86AudioMicMute$/Micro muet/'
+}
+fmt_hint() { h="$(hint "$1")"; [ -n "$h" ] && printf '  ‹%s›' "$(pretty_key "$h")"; return 0; }
+
+# Action de niri ou commande correspondant à un libellé du menu
+action_needle() {
+    case "$1" in
+        "Applications ›") echo "~fuzzel" ;;
+        "Fenêtres ›"|"Fenêtres: "*) echo "~menu windows" ;;
+        "Raccourcis ›"|"Raccourcis: "*) echo "~menu keys" ;;
+        "Système: Verrouiller") echo "~swaylock" ;;
+        "Système: Déconnexion") echo "quit" ;;
+        "Audio: Volume +") echo "~0.1+" ;;
+        "Audio: Volume -") echo "~0.1-" ;;
+        "Audio: Muet / son") echo "~SINK@ toggle" ;;
+        "Audio: Micro muet / actif") echo "~SOURCE@ toggle" ;;
+        "Bascules: Ne pas déranger") echo "~do-not-disturb" ;;
+        "Capture: Zone") echo "screenshot" ;;
+        "Capture: Écran") echo "screenshot-screen" ;;
+        "Capture: Fenêtre") echo "screenshot-window" ;;
+    esac
+}
+
+# Ajoute "  ‹touche›" aux lignes "GLYPHE Libellé" quand une touche existe
+with_hints() {
+    while IFS= read -r line; do
+        n="$(action_needle "${line#* }")"
+        if [ -n "$n" ]; then printf '%s%s\n' "$line" "$(fmt_hint "$n")"; else printf '%s\n' "$line"; fi
+    done
+}
+
 menu_main() {
-    cats="$(categories_list)"
+    bind_table
+    cats="$(categories_list | with_hints)"
     nb="$(printf '%s\n' "$cats" | wc -l | tr -d ' ')"
     customs="$(custom_labels | while IFS= read -r l; do printf '%s %s\n' "$I_CUSTOM" "$l"; done)"
-    apps="$(list_apps | while IFS="$TAB" read -r name cmd _; do printf '%s %s\n' "$(app_glyph "$name" "$cmd")" "$name"; done)"
-    items="$( { printf '%s\n' "$cats"; [ -n "$customs" ] && printf '%s\n' "$customs"; [ -n "$apps" ] && printf '%s\n' "$apps"; actions_list; } )"
+    apps="$(list_apps | while IFS="$TAB" read -r name cmd _; do printf '%s %s%s\n' "$(app_glyph "$name" "$cmd")" "$name" "$(fmt_hint "$cmd")"; done)"
+    items="$( { printf '%s\n' "$cats"; [ -n "$customs" ] && printf '%s\n' "$customs"; [ -n "$apps" ] && printf '%s\n' "$apps"; actions_list | with_hints; } )"
 
     while :; do # Échap dans une section revient ici; Échap ici quitte
         sel="$(printf '%s\n' "$items" | pick "› " "$nb")"
         [ -n "$sel" ] || exit 0
         sel="${sel#* }" # retire le glyphe et l'espace qui le suit
+        sel="$(printf '%s' "$sel" | sed 's/  ‹[^‹›]*›$//')" # retire la touche affichée
 
         rc=0
         case "$sel" in
@@ -443,6 +604,11 @@ menu_main() {
             "Presse-papiers ›") menu_clip; rc=$? ;;
             "Émojis ›") menu_emoji; rc=$? ;;
             "Calculatrice ›") menu_calc; rc=$? ;;
+            "Fenêtres ›") menu_windows; rc=$? ;;
+            "Fichiers ›") menu_files; rc=$? ;;
+            "Web ›") menu_web; rc=$? ;;
+            "Raccourcis ›") menu_keys; rc=$? ;;
+            "Bascules ›") menu_toggles; rc=$? ;;
             "Système ›") menu_system; rc=$? ;;
             "Audio ›") menu_audio; rc=$? ;;
             "Réseau ›") menu_network; rc=$? ;;
@@ -453,6 +619,11 @@ menu_main() {
                 custom_run "$sel" # exec/exit si trouvé
                 run_app "$sel"
                 case "$sel" in
+                    "Fenêtres: "*) menu_windows; rc=$? ;;
+                    "Fichiers: "*) menu_files; rc=$? ;;
+                    "Web: "*) menu_web; rc=$? ;;
+                    "Raccourcis: "*) menu_keys; rc=$? ;;
+                    "Bascules: "*) menu_toggles "${sel#Bascules: }"; rc=$? ;;
                     "Système: "*) menu_system "${sel#Système: }"; rc=$? ;;
                     "Audio: "*) menu_audio "${sel#Audio: }"; rc=$? ;;
                     "Réseau: "*) menu_network "${sel#Réseau: }"; rc=$? ;;
@@ -471,6 +642,11 @@ case "${1:-}" in
     clip) menu_clip ;;
     emoji) menu_emoji ;;
     calc) menu_calc ;;
+    windows) menu_windows ;;
+    files) menu_files ;;
+    web) menu_web ;;
+    keys) menu_keys ;;
+    toggles) menu_toggles ;;
     system) menu_system ;;
     audio) menu_audio ;;
     network) menu_network ;;
@@ -479,7 +655,7 @@ case "${1:-}" in
     capture) menu_capture ;;
     custom) menu_custom ;;
     "") menu_main ;;
-    *) echo "Usage: menu [apps|clip|emoji|calc|system|audio|network|style|packages|capture|custom]" >&2; exit 1 ;;
+    *) echo "Usage: menu [apps|clip|emoji|calc|windows|files|web|keys|toggles|system|audio|network|style|packages|capture|custom]" >&2; exit 1 ;;
 esac
 rc=$?
 [ "$rc" -eq "$BACK" ] && exit 0 # section lancée directement et annulée: sortie propre

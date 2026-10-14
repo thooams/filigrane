@@ -38,3 +38,6 @@ bluetui
 # Indicateurs de la barre: veilleuse et enregistrement d'écran
 wlsunset
 wf-recorder
+
+# Verrouillage auto et écran éteint au repos (38 Ko, bascule dans la barre)
+swayidle

@@ -11,19 +11,19 @@ margin=12
 padding=14
 border-size=2
 border-radius=12
-default-timeout=6000
+default-timeout=10000
 max-visible=4
 layer=overlay
 anchor=top-right
 
 [urgency=low]
 border-color=#6c7086
-default-timeout=3000
+default-timeout=6000
 
-[urgency=high]
+[urgency=critical]
 border-color=#fab387
 text-color=#fab387
-default-timeout=0
+default-timeout=20000
 
 [mode=do-not-disturb]
 invisible=1

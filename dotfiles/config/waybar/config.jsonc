@@ -11,11 +11,11 @@
 
     "modules-left": ["custom/menu", "niri/workspaces", "niri/window"],
     "modules-center": ["custom/weather", "clock"],
-    "modules-right": ["mpris", "custom/rec", "custom/night", "custom/dnd", "custom/update", "cpu", "memory", "custom/display", "custom/mic", "wireplumber", "bluetooth", "network", "battery", "group/tray"],
+    "modules-right": ["mpris", "custom/rec", "custom/timer", "custom/idle", "custom/air", "custom/vpn", "custom/night", "custom/dnd", "custom/update", "cpu", "custom/temp", "memory", "disk", "custom/display", "custom/mic", "wireplumber", "bluetooth", "network", "battery", "custom/batwatch", "group/tray"],
 
     // Bouton menu: clic = menu, clic droit = terminal
     "custom/menu": {
-        "format": "",
+        "format": "\uf0c9",
         "tooltip": false,
         "on-click": "$HOME/.local/bin/menu",
         "on-click-right": "alacritty"
@@ -50,7 +50,7 @@
     "mpris": {
         "format": "{status_icon} {title}  ·  {artist}",
         "format-paused": "{status_icon} {title}",
-        "status-icons": { "playing": "", "paused": "" },
+        "status-icons": { "playing": "\uf04b", "paused": "\uf04c" },
         "max-length": 40,
         "on-click": "playerctl play-pause",
         "on-click-middle": "playerctl next",
@@ -77,12 +77,12 @@
     // Clic = btop
     "cpu": {
         "interval": 5,
-        "format": " {usage}%",
+        "format": "\uf2db {usage}%",
         "on-click": "$HOME/.local/bin/bar-tui btop"
     },
     "memory": {
         "interval": 10,
-        "format": " {used:0.1f}G",
+        "format": "\uf538 {used:0.1f}G",
         "on-click": "$HOME/.local/bin/bar-tui btop"
     },
     // Micro: clic = couper/activer, molette = volume, clic milieu = mixeur
@@ -99,8 +99,8 @@
     // Sortie audio: clic = muet, molette = volume, clic droit ou milieu = mixeur (wiremix)
     "wireplumber": {
         "format": "{icon} {volume}%",
-        "format-muted": " muet",
-        "format-icons": ["", "", ""],
+        "format-muted": "\uf6a9 muet",
+        "format-icons": ["\uf026", "\uf027", "\uf028"],
         "scroll-step": 5,
         "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
         "on-click-right": "$HOME/.local/bin/bar-tui wiremix",
@@ -109,9 +109,9 @@
     // Wi-Fi: clic = impala (liste des SSID, connexion, mot de passe), clic droit = menu réseau (IP, ping, débit)
     "network": {
         "interval": 10,
-        "format-ethernet": " {ifname}",
-        "format-wifi": " {essid}",
-        "format-disconnected": " hors ligne",
+        "format-ethernet": "\uf796 {ifname}",
+        "format-wifi": "\uf1eb {essid}",
+        "format-disconnected": "\uf071 hors ligne",
         "tooltip-format-ethernet": "{ifname}: {ipaddr}\n↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}",
         "tooltip-format-wifi": "{essid} ({signalStrength}%)  {frequency} GHz\n{ipaddr}\n↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}",
         "tooltip-format-disconnected": "Aucune connexion (clic: Wi-Fi)",
@@ -120,10 +120,10 @@
     },
     // Bluetooth (masqué sans adaptateur): clic = bluetui (appairage, connexion, oubli)
     "bluetooth": {
-        "format": " {status}",
-        "format-connected": " {device_alias}",
-        "format-connected-battery": " {device_alias} {device_battery_percentage}%",
-        "format-off": " off",
+        "format": "\uf293 {status}",
+        "format-connected": "\uf293 {device_alias}",
+        "format-connected-battery": "\uf293 {device_alias} {device_battery_percentage}%",
+        "format-off": "\uf293 off",
         "format-disabled": "",
         "format-no-controller": "",
         "tooltip-format": "{controller_alias}\t{controller_address}\n{num_connections} connecté(s)",
@@ -156,9 +156,66 @@
         "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-toggle rec"
     },
+    // Minuteur / chronomètre: clic = choisir (ou arrêter), clic droit = +5 min au minuteur; notification à la fin
+    "custom/timer": {
+        "exec": "$HOME/.local/bin/bar-timer",
+        "return-type": "json",
+        "interval": 1,
+        "signal": 12,
+        "on-click": "$HOME/.local/bin/bar-timer click",
+        "on-click-right": "$HOME/.local/bin/bar-timer add"
+    },
+    // Verrouillage auto désactivé (visible seulement alors), clic = réactiver
+    "custom/idle": {
+        "exec": "$HOME/.local/bin/bar-status idle",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 13,
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/bar-toggle idle"
+    },
+    // Mode avion (visible seulement actif), clic = désactiver
+    "custom/air": {
+        "exec": "$HOME/.local/bin/bar-status air",
+        "return-type": "json",
+        "interval": 30,
+        "signal": 14,
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/bar-toggle air"
+    },
+    // VPN actif (tun/wg/tailscale; masqué sinon)
+    "custom/vpn": {
+        "exec": "$HOME/.local/bin/bar-status vpn",
+        "return-type": "json",
+        "interval": 30,
+        "hide-empty-text": true
+    },
+    // Température CPU (masquée sans sonde), clic = btop
+    "custom/temp": {
+        "exec": "$HOME/.local/bin/bar-status temp",
+        "return-type": "json",
+        "interval": 10,
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/bar-tui btop"
+    },
+    // Espace libre sur /, clic = du interactif
+    "disk": {
+        "interval": 60,
+        "path": "/",
+        "format": "\uf0a0 {percentage_used}%",
+        "tooltip-format": "{used} / {total} ({free} libres)",
+        "on-click": "$HOME/.local/bin/bar-tui sh -c 'df -h; echo; du -xh --max-depth=1 ~ 2>/dev/null | sort -h | tail -15; read _'"
+    },
+    // Alerte batterie faible (<= 10 %), invisible
+    "custom/batwatch": {
+        "exec": "$HOME/.local/bin/bar-status batwatch",
+        "return-type": "json",
+        "interval": 60,
+        "hide-empty-text": true
+    },
     // Écrans: clic = wdisplays
     "custom/display": {
-        "format": "",
+        "format": "\uf108",
         "tooltip-format": "Écrans (clic: wdisplays)",
         "on-click": "wdisplays"
     },
@@ -167,8 +224,8 @@
         "interval": 30,
         "states": { "warning": 25, "critical": 10 },
         "format": "{icon} {capacity}%",
-        "format-charging": " {capacity}%",
-        "format-icons": ["", "", "", "", ""],
+        "format-charging": "\uf0e7 {capacity}%",
+        "format-icons": ["\uf244", "\uf243", "\uf242", "\uf241", "\uf240"],
         "on-click": "$HOME/.local/bin/menu system"
     },
     // Tray repliable: s'ouvre au survol
@@ -177,6 +234,6 @@
         "drawer": { "transition-duration": 300, "transition-left-to-right": false },
         "modules": ["custom/tray-handle", "tray"]
     },
-    "custom/tray-handle": { "format": "", "tooltip": false },
+    "custom/tray-handle": { "format": "\uf053", "tooltip": false },
     "tray": { "icon-size": 16, "spacing": 8 }
 }

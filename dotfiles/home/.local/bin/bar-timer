@@ -1,0 +1,50 @@
+#!/bin/bash
+# Minuteur / chronomètre Waybar, sans daemon: l'état est un petit fichier dans $XDG_RUNTIME_DIR/bar-timer
+# ("T <fin>" minuteur, "S <début>" chronomètre, "done" minuteur terminé). Bash pour EPOCHSECONDS (aucun fork par rafraîchissement).
+# Usage: bar-timer (JSON pour Waybar) | click (choisir / arrêter / acquitter) | add (+5 min au minuteur)
+# Durées du minuteur: 5 (minutes), 90s, 10m, 1h.
+f="${XDG_RUNTIME_DIR:-/tmp}/bar-timer"
+icon='\\uf2f2'
+kind=''; val=''
+[ -r "$f" ] && read -r kind val <"$f"
+
+refresh() { pkill -RTMIN+12 waybar; }
+fmt() { # secondes -> [H:]MM:SS
+    if [ "$1" -ge 3600 ]; then printf '%d:%02d:%02d' $(($1 / 3600)) $(($1 % 3600 / 60)) $(($1 % 60))
+    else printf '%02d:%02d' $(($1 / 60)) $(($1 % 60)); fi
+}
+
+case "$1" in
+    click)
+        case "$kind" in
+            S) notify-send "Chronomètre" "$(fmt $((EPOCHSECONDS - val)))"; rm -f "$f"; refresh; exit 0 ;;
+            T|done) rm -f "$f"; refresh; exit 0 ;;
+        esac
+        out="$(printf '%s\n' Chronomètre 1m 5m 10m 15m 25m 45m 1h | fuzzel --dmenu --prompt 'Minuteur: ' --lines 8)" || exit 0
+        if [ "$out" = Chronomètre ]; then
+            echo "S $EPOCHSECONDS" >"$f"
+        else
+            n="${out//[!0-9]/}"; [ -n "$n" ] || exit 0
+            case "$out" in *h*) s=$((n * 3600)) ;; *s*) s=$n ;; *) s=$((n * 60)) ;; esac
+            echo "T $((EPOCHSECONDS + s))" >"$f"
+        fi
+        refresh ;;
+    add)
+        [ "$kind" = T ] || exit 0
+        echo "T $((val + 300))" >"$f"; refresh ;;
+    *)
+        case "$kind" in
+            '') printf '{"text":"%b","class":"idle","tooltip":"Minuteur / chronomètre (clic: choisir)"}\n' "$icon" ;;
+            S) printf '{"text":"%b %s","class":"stopwatch","tooltip":"Chronomètre (clic: arrêter)"}\n' "$icon" "$(fmt $((EPOCHSECONDS - val)))" ;;
+            T)
+                r=$((val - EPOCHSECONDS))
+                if [ "$r" -gt 0 ]; then
+                    printf '{"text":"%b %s","class":"active","tooltip":"Minuteur (clic: annuler, clic droit: +5 min)"}\n' "$icon" "$(fmt "$r")"
+                else
+                    echo done >"$f"
+                    notify-send -u critical "Minuteur" "Terminé"
+                    printf '{"text":"%b 00:00","class":"done","tooltip":"Terminé (clic: acquitter)"}\n' "$icon"
+                fi ;;
+            *) printf '{"text":"%b 00:00","class":"done","tooltip":"Terminé (clic: acquitter)"}\n' "$icon" ;;
+        esac ;;
+esac
