@@ -271,13 +271,26 @@ menu_audio() {
 menu_network() {
     arg="$1"
     while :; do
-        act="${arg:-$(printf 'Adresses IP\nTester la connexion\n' | pick "Réseau › " 2)}"
+        act="${arg:-$(printf 'Wi-Fi (impala)\nAdresses IP\nTester la connexion\nPerte de paquets\nTest de débit\n' | pick "Réseau › " 5)}"
         [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
             "Adresses IP")
                 sel="$(ip -br addr | grep -v '^lo' | pick "Adresses › " 8)"
                 if [ -n "$sel" ]; then printf '%s' "$sel" | awk '{print $3}' | wl-copy; return 0; fi
                 cancel
+                ;;
+            "Wi-Fi (impala)") exec "$HOME/.local/bin/bar-tui" impala ;;
+            "Perte de paquets")
+                notify "Réseau" "Ping en cours (10 paquets)..."
+                notify "Réseau" "$(ping -c10 -i0.3 -W2 1.1.1.1 2>&1 | tail -2 | tr '\n' ' ')"
+                return 0
+                ;;
+            "Test de débit")
+                notify "Réseau" "Test de débit (25 Mo, Cloudflare)..."
+                bps="$(curl -fsS -m 60 -o /dev/null -w '%{speed_download}' 'https://speed.cloudflare.com/__down?bytes=25000000' 2>/dev/null)" \
+                    && notify "Réseau" "Descendant: $(awk -v b="$bps" 'BEGIN{printf "%.0f Mbit/s", b*8/1e6}')" \
+                    || notify -u critical "Réseau" "Test de débit impossible"
+                return 0
                 ;;
             "Tester la connexion")
                 if ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then notify "Réseau" "Connexion OK"; else notify -u critical "Réseau" "Pas de connexion"; fi
@@ -311,13 +324,14 @@ menu_style() {
 
 menu_capture() {
     arg="$1"
-    act="${arg:-$(printf 'Zone\nÉcran\nFenêtre\n' | pick "Capture › " 3)}"
+    act="${arg:-$(printf 'Zone\nÉcran\nFenêtre\nEnregistrement vidéo\n' | pick "Capture › " 4)}"
     [ -n "$act" ] || { cancel; return $BACK; }
     sleep 0.4 # laisse fuzzel disparaître avant de capturer
     case "$act" in
         Zone) niri msg action screenshot ;;
         Écran) niri msg action screenshot-screen ;;
         Fenêtre) niri msg action screenshot-window ;;
+        "Enregistrement vidéo") exec "$HOME/.local/bin/bar-toggle" rec ;;
     esac
 }
 

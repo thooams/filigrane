@@ -1,0 +1,12 @@
+#!/bin/sh
+# Indicateur Waybar: nombre de mises à jour xbps en attente (vide si aucune, donc module masqué).
+# `bar-update run` lance la mise à jour dans un terminal flottant.
+if [ "$1" = run ]; then
+    exec "$HOME/.local/bin/bar-tui" sh -c 'sudo xbps-install -Su; printf "\nTerminé, Entrée pour fermer."; read -r _'
+fi
+n="$(xbps-install -un 2>/dev/null | wc -l)"
+if [ "$n" -gt 0 ]; then
+    printf '{"text":"\\uf021 %s","tooltip":"%s mises à jour disponibles (clic: mettre à jour)"}\n' "$n" "$n"
+else
+    printf '{"text":""}\n'
+fi

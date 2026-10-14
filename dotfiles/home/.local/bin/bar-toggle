@@ -1,0 +1,16 @@
+#!/bin/sh
+# Actions de la barre qui changent un état, puis rafraîchissent l'indicateur par signal. Usage: bar-toggle night|rec
+case "$1" in
+    night)
+        if pgrep -x wlsunset >/dev/null; then pkill -x wlsunset; else setsid wlsunset -t 3500 -T 3501 -S 00:00 -s 23:59 >/dev/null 2>&1 & fi
+        sleep 0.3; pkill -RTMIN+10 waybar ;;
+    rec)
+        if pgrep -x wf-recorder >/dev/null; then
+            pkill -INT -x wf-recorder; notify-send "Enregistrement" "Terminé: ~/Videos"
+        else
+            mkdir -p "$HOME/Videos"
+            setsid wf-recorder -f "$HOME/Videos/rec-$(date +%Y%m%d-%H%M%S).mp4" >/dev/null 2>&1 &
+            notify-send "Enregistrement" "Démarré (clic sur l'indicateur pour arrêter)"
+        fi
+        sleep 0.5; pkill -RTMIN+11 waybar ;;
+esac

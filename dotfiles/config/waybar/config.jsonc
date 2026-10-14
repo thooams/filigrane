@@ -1,4 +1,5 @@
-// Waybar léger: peu de modules, intervalles longs (cf. skill void-linux, budget ressources)
+// Waybar léger, interactions inspirées de la barre Omarchy Quattro (cf. skill void-linux, budget ressources)
+// Clic: action principale; clic droit/milieu/molette: voir chaque module. Les TUI s'ouvrent via bar-tui.
 {
     "layer": "top",
     "position": "top",
@@ -8,47 +9,174 @@
     "margin-left": 8,
     "margin-right": 8,
 
-    "modules-left": ["niri/workspaces", "niri/window"],
-    "modules-center": ["clock"],
-    "modules-right": ["cpu", "memory", "wireplumber", "network", "battery"],
+    "modules-left": ["custom/menu", "niri/workspaces", "niri/window"],
+    "modules-center": ["custom/weather", "clock"],
+    "modules-right": ["mpris", "custom/rec", "custom/night", "custom/dnd", "custom/update", "cpu", "memory", "custom/display", "custom/mic", "wireplumber", "bluetooth", "network", "battery", "group/tray"],
 
-    "niri/workspaces": {
-        "format": "{index}"
+    // Bouton menu: clic = menu, clic droit = terminal
+    "custom/menu": {
+        "format": "",
+        "tooltip": false,
+        "on-click": "$HOME/.local/bin/menu",
+        "on-click-right": "alacritty"
     },
+    // Clic = aller au workspace, molette = précédent/suivant (sans boucler)
+    "niri/workspaces": {
+        "format": "{index}",
+        "disable-scroll-wraparound": true
+    },
+    // Clic milieu ou droit = fermer la fenêtre
     "niri/window": {
         "format": "{title}",
-        "max-length": 60
+        "max-length": 60,
+        "on-click-middle": "niri msg action close-window",
+        "on-click-right": "niri msg action close-window"
     },
+    // Clic = date complète avec semaine ISO, clic droit = calendrier mois/année, clic milieu = mois courant
     "clock": {
         "format": "{:%a %d %b  %H:%M}",
-        "tooltip-format": "{:%A %d %B %Y}"
+        "format-alt": "{:%A %d %B %Y  ·  S%V  %H:%M:%S}",
+        "interval": 1,
+        "tooltip-format": "<tt>{calendar}</tt>",
+        "calendar": { "mode": "month", "weeks-pos": "left", "on-scroll": 1 },
+        "actions": {
+            "on-click-right": "mode",
+            "on-click-middle": "shift_reset",
+            "on-scroll-up": "shift_up",
+            "on-scroll-down": "shift_down"
+        }
     },
+    // Clic = lecture/pause, clic milieu = suivant, molette haut/bas = précédent/suivant
+    "mpris": {
+        "format": "{status_icon} {title}  ·  {artist}",
+        "format-paused": "{status_icon} {title}",
+        "status-icons": { "playing": "", "paused": "" },
+        "max-length": 40,
+        "on-click": "playerctl play-pause",
+        "on-click-middle": "playerctl next",
+        "on-scroll-up": "playerctl previous",
+        "on-scroll-down": "playerctl next",
+        "tooltip-format": "{player}: {title}\n{artist} · {album}"
+    },
+    // Mises à jour xbps (masqué s'il n'y en a pas), clic = mettre à jour dans un terminal flottant
+    "custom/update": {
+        "exec": "$HOME/.local/bin/bar-update",
+        "return-type": "json",
+        "interval": 3600,
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/bar-update run"
+    },
+    // Ne pas déranger (mako), clic = bascule
+    "custom/dnd": {
+        "exec": "$HOME/.local/bin/bar-status dnd",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 9,
+        "on-click": "makoctl mode -t do-not-disturb; pkill -RTMIN+9 waybar"
+    },
+    // Clic = btop
     "cpu": {
         "interval": 5,
-        "format": " {usage}%"
+        "format": " {usage}%",
+        "on-click": "$HOME/.local/bin/bar-tui btop"
     },
     "memory": {
         "interval": 10,
-        "format": " {used:0.1f}G"
+        "format": " {used:0.1f}G",
+        "on-click": "$HOME/.local/bin/bar-tui btop"
     },
+    // Micro: clic = couper/activer, molette = volume, clic milieu = mixeur
+    "custom/mic": {
+        "exec": "$HOME/.local/bin/bar-status mic",
+        "return-type": "json",
+        "interval": 30,
+        "signal": 8,
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; pkill -RTMIN+8 waybar",
+        "on-click-middle": "$HOME/.local/bin/bar-tui wiremix",
+        "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SOURCE@ 5%+",
+        "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%-"
+    },
+    // Sortie audio: clic = muet, molette = volume, clic droit ou milieu = mixeur (wiremix)
     "wireplumber": {
         "format": "{icon} {volume}%",
         "format-muted": " muet",
         "format-icons": ["", "", ""],
-        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        "scroll-step": 5,
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "$HOME/.local/bin/bar-tui wiremix",
+        "on-click-middle": "$HOME/.local/bin/bar-tui wiremix"
     },
+    // Wi-Fi: clic = impala (liste des SSID, connexion, mot de passe), clic droit = menu réseau (IP, ping, débit)
     "network": {
         "interval": 10,
         "format-ethernet": " {ifname}",
         "format-wifi": " {essid}",
         "format-disconnected": " hors ligne",
-        "tooltip-format": "{ipaddr}"
+        "tooltip-format-ethernet": "{ifname}: {ipaddr}\n↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}",
+        "tooltip-format-wifi": "{essid} ({signalStrength}%)  {frequency} GHz\n{ipaddr}\n↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}",
+        "tooltip-format-disconnected": "Aucune connexion (clic: Wi-Fi)",
+        "on-click": "$HOME/.local/bin/bar-tui impala",
+        "on-click-right": "$HOME/.local/bin/menu network"
     },
+    // Bluetooth (masqué sans adaptateur): clic = bluetui (appairage, connexion, oubli)
+    "bluetooth": {
+        "format": " {status}",
+        "format-connected": " {device_alias}",
+        "format-connected-battery": " {device_alias} {device_battery_percentage}%",
+        "format-off": " off",
+        "format-disabled": "",
+        "format-no-controller": "",
+        "tooltip-format": "{controller_alias}\t{controller_address}\n{num_connections} connecté(s)",
+        "tooltip-format-connected": "{controller_alias}\n{num_connections} connecté(s)\n\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "{device_alias}",
+        "on-click": "$HOME/.local/bin/bar-tui bluetui"
+    },
+    // Météo (wttr.in, localisation par IP), clic = prévisions
+    "custom/weather": {
+        "exec": "$HOME/.local/bin/bar-status weather",
+        "return-type": "json",
+        "interval": 1800,
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/bar-tui sh -c 'curl -fsS wttr.in/?lang=fr | less -R'"
+    },
+    // Veilleuse (wlsunset, 3500 K), clic = bascule
+    "custom/night": {
+        "exec": "$HOME/.local/bin/bar-status night",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 10,
+        "on-click": "$HOME/.local/bin/bar-toggle night"
+    },
+    // Enregistrement d'écran: visible seulement en cours, clic = arrêter (démarrage: menu › Capture)
+    "custom/rec": {
+        "exec": "$HOME/.local/bin/bar-status rec",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 11,
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/bar-toggle rec"
+    },
+    // Écrans: clic = wdisplays
+    "custom/display": {
+        "format": "",
+        "tooltip-format": "Écrans (clic: wdisplays)",
+        "on-click": "wdisplays"
+    },
+    // Clic = menu système (verrouiller, veille, quitter...)
     "battery": {
         "interval": 30,
         "states": { "warning": 25, "critical": 10 },
         "format": "{icon} {capacity}%",
         "format-charging": " {capacity}%",
-        "format-icons": ["", "", "", "", ""]
-    }
+        "format-icons": ["", "", "", "", ""],
+        "on-click": "$HOME/.local/bin/menu system"
+    },
+    // Tray repliable: s'ouvre au survol
+    "group/tray": {
+        "orientation": "inherit",
+        "drawer": { "transition-duration": 300, "transition-left-to-right": false },
+        "modules": ["custom/tray-handle", "tray"]
+    },
+    "custom/tray-handle": { "format": "", "tooltip": false },
+    "tray": { "icon-size": 16, "spacing": 8 }
 }

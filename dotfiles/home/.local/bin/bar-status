@@ -1,0 +1,32 @@
+#!/bin/sh
+# Indicateurs Waybar (JSON): mic | dnd | night | rec | weather. Rafraîchis par signal (clic) ou par intervalle.
+case "$1" in
+    mic)
+        v="$(wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null)" || { printf '{"text":""}\n'; exit 0; }
+        case "$v" in
+            *MUTED*) printf '{"text":"\\uf131","class":"muted","tooltip":"Micro coupé"}\n' ;;
+            *) printf '{"text":"\\uf130","tooltip":"Micro actif: %s"}\n' "$(echo "$v" | awk '{printf "%d%%", $2*100}')" ;;
+        esac ;;
+    dnd)
+        if makoctl mode 2>/dev/null | grep -q do-not-disturb; then
+            printf '{"text":"\\uf1f6","class":"active","tooltip":"Ne pas déranger (clic: réactiver les notifications)"}\n'
+        else
+            printf '{"text":"\\uf0f3","class":"idle","tooltip":"Notifications actives (clic: les couper)"}\n'
+        fi ;;
+    night)
+        if pgrep -x wlsunset >/dev/null; then
+            printf '{"text":"\\uf186","class":"active","tooltip":"Veilleuse active (clic: désactiver)"}\n'
+        else
+            printf '{"text":"\\uf186","class":"idle","tooltip":"Veilleuse éteinte (clic: activer)"}\n'
+        fi ;;
+    rec)
+        if pgrep -x wf-recorder >/dev/null; then
+            printf '{"text":"\\uf111","class":"active","tooltip":"Enregistrement en cours (clic: arrêter)"}\n'
+        else
+            printf '{"text":""}\n'
+        fi ;;
+    weather)
+        # Géolocalisation par IP côté wttr.in (comme Omarchy); rien n'est envoyé hors de ce module
+        w="$(curl -fsS -m 8 'https://wttr.in/?format=%c%t' 2>/dev/null)" || { printf '{"text":""}\n'; exit 0; }
+        printf '{"text":"%s","tooltip":"Météo (clic: prévisions)"}\n' "$w" ;;
+esac

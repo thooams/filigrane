@@ -1,0 +1,3 @@
+#!/bin/sh
+# Lance une TUI dans un Alacritty flottant (règle niri sur l'app-id bar-tui). Usage: bar-tui CMD [ARGS...]
+exec alacritty --class bar-tui -T "$1" -e "$@"

@@ -26,3 +26,15 @@ noto-fonts-emoji
 wdisplays
 kanshi
 python3
+# Clics de la barre Waybar: moniteur système et mixeur audio en TUI (pas de daemon)
+btop
+wiremix
+# Wi-Fi et Bluetooth (pile d'Omarchy): iwd + impala, bluez + bluetui. Démons au repos si aucun adaptateur.
+# iwd remplace wpa_supplicant (DHCP reste géré par dhcpcd).
+iwd
+impala
+bluez
+bluetui
+# Indicateurs de la barre: veilleuse et enregistrement d'écran
+wlsunset
+wf-recorder

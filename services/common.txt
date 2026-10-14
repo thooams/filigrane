@@ -2,7 +2,8 @@
 dbus
 elogind
 dhcpcd
-wpa_supplicant
+iwd
+bluetoothd
 sshd
 chronyd
 acpid

@@ -24,3 +24,6 @@ default-timeout=3000
 border-color=#fab387
 text-color=#fab387
 default-timeout=0
+
+[mode=do-not-disturb]
+invisible=1

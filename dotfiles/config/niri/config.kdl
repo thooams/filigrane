@@ -364,6 +364,14 @@ window-rule {
     clip-to-geometry true
 }
 
+// TUI lancées depuis la barre (bar-tui): fenêtre flottante
+window-rule {
+    match app-id=r#"^bar-tui$"#
+    open-floating true
+    default-column-width { fixed 960; }
+    default-window-height { fixed 600; }
+}
+
 binds {
     // Keys consist of modifiers separated by + signs, followed by an XKB key name
     // in the end. To find an XKB name for a particular key, you may use a program
@@ -384,6 +392,10 @@ binds {
     Mod+Y hotkey-overlay-title="Claude Code" { spawn "alacritty" "-e" "bash" "-lc" "cd ~/Projects/void-setup && claude --add-dir ~"; }
     Mod+P hotkey-overlay-title="Écrans: réglage visuel (wdisplays)" { spawn "wdisplays"; }
     Mod+Ctrl+P hotkey-overlay-title="Écrans: enregistrer le profil" { spawn-sh "$HOME/.local/bin/display-save"; }
+    Mod+Ctrl+A hotkey-overlay-title="Audio (wiremix)" { spawn-sh "$HOME/.local/bin/bar-tui wiremix"; }
+    Mod+Ctrl+W hotkey-overlay-title="Wi-Fi (impala)" { spawn-sh "$HOME/.local/bin/bar-tui impala"; }
+    Mod+Ctrl+B hotkey-overlay-title="Bluetooth (bluetui)" { spawn-sh "$HOME/.local/bin/bar-tui bluetui"; }
+    Mod+Ctrl+D hotkey-overlay-title="Écrans (wdisplays)" { spawn "wdisplays"; }
     Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Mod+Space hotkey-overlay-title="Menu: apps, clipboard, emoji, system..." { spawn-sh "$HOME/.local/bin/menu"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
