@@ -8,6 +8,10 @@ family = "DejaVu Sans Mono"
 [window]
 padding = { x = 10, y = 10 }
 
+[selection]
+# Sélectionner du texte le copie aussi dans le presse-papiers (Ctrl+V / Ctrl+Shift+V)
+save_to_clipboard = true
+
 [colors.primary]
 background = "#1e1e2e"
 foreground = "#cdd6f4"

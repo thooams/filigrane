@@ -40,8 +40,7 @@
       "Bash(git -C ~/void-setup push *)",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "Edit(/etc/**)",
-      "Write(/etc/**)"
+      "Edit(/etc/**)"
     ],
     "deny": [
       "Bash(*install-void.sh*)",
@@ -60,11 +59,8 @@
       "Bash(sudo passwd*)",
       "Bash(passwd*)",
       "Edit(/etc/sudoers*)",
-      "Write(/etc/sudoers*)",
       "Edit(~/.ssh/**)",
-      "Write(~/.ssh/**)",
       "Edit(~/.claude/.credentials.json)",
-      "Write(~/.claude/.credentials.json)",
       "Read(~/.claude/.credentials.json)",
       "Read(~/.ssh/id_*)"
     ]
