@@ -13,6 +13,7 @@ WALLPAPERS="$HOME/.local/share/wallpapers"
 EMOJIS="$HOME/.local/share/menu/emoji.txt"
 ENTRIES="${XDG_CONFIG_HOME:-$HOME/.config}/menu/entries"
 TAB="$(printf '\t')"
+BACK=10 # code de retour: annulé (Échap), on remonte au niveau parent
 
 # Glyphes Font Awesome 4 via Symbols Nerd Font Mono (largeur fixe: libellés alignés, 0 Mo en plus)
 I_APPS="$(printf '\357\200\211')"  # U+F009 th-large
@@ -133,112 +134,151 @@ custom_run() { # custom_run LIBELLÉ : retourne 1 si le libellé n'existe pas
 }
 
 menu_custom() {
-    case "$(printf 'Ajouter une entrée\nModifier le fichier\n' | pick "Entrées perso › " 2)" in
-        "Ajouter une entrée")
-            label="$(ask "Libellé › ")"
-            [ -n "$label" ] || exit 0
-            case "$label" in *'|'*|'#'*) notify -u critical "Menu" "Libellé invalide (pas de | ni de # au début)"; exit 1 ;; esac
-            mode="$(printf 'term  (terminal, fermé à la fin)\nhold  (terminal gardé ouvert)\nrun   (arrière-plan, appli graphique)\n' | pick "Mode › " 3)"
-            mode="${mode%% *}"
-            [ -n "$mode" ] || exit 0
-            cmd="$(ask "Commande › ")"
-            [ -n "$cmd" ] || exit 0
-            mkdir -p "$(dirname "$ENTRIES")"
-            printf '%s | %s | %s\n' "$label" "$mode" "$cmd" >> "$ENTRIES"
-            notify "Menu" "Entrée ajoutée: $label"
-            ;;
-        "Modifier le fichier") exec alacritty -e nvim "$ENTRIES" ;;
-    esac
+    arg="$1"
+    while :; do
+        act="${arg:-$(printf 'Ajouter une entrée\nModifier le fichier\n' | pick "Entrées perso › " 2)}"
+        [ -n "$act" ] || return $BACK
+        case "$act" in
+            "Ajouter une entrée")
+                label="$(ask "Libellé › ")"
+                if [ -n "$label" ]; then
+                    case "$label" in *'|'*|'#'*) notify -u critical "Menu" "Libellé invalide (pas de | ni de # au début)"; return 1 ;; esac
+                    mode="$(printf 'term  (terminal, fermé à la fin)\nhold  (terminal gardé ouvert)\nrun   (arrière-plan, appli graphique)\n' | pick "Mode › " 3)"
+                    mode="${mode%% *}"
+                    if [ -n "$mode" ]; then
+                        cmd="$(ask "Commande › ")"
+                        if [ -n "$cmd" ]; then
+                            mkdir -p "$(dirname "$ENTRIES")"
+                            printf '%s | %s | %s\n' "$label" "$mode" "$cmd" >> "$ENTRIES"
+                            notify "Menu" "Entrée ajoutée: $label"
+                            return 0
+                        fi
+                    fi
+                fi
+                ;;
+            "Modifier le fichier") exec alacritty -e nvim "$ENTRIES" ;;
+        esac
+        [ -n "$arg" ] && return $BACK # annulé depuis la liste unique
+    done
 }
 
 # ---------------------------------------------------------------- sections
-# Chaque section accepte une action en argument (liste unique) ou la demande (menu de section).
+# Navigation clavier: Échap remonte d'un niveau (section -> menu principal -> quitter).
+# Chaque section est une boucle: annuler une sous-étape revient au menu de la section.
+# Une action terminée ferme le menu. Avec un argument (liste unique), l'action est directe.
 
-menu_apps() { exec fuzzel; }
+menu_apps() { fuzzel && return 0; return $BACK; }
 
 menu_clip() {
-    command -v cliphist >/dev/null || { notify "Presse-papiers" "cliphist n'est pas installé"; exit 1; }
+    command -v cliphist >/dev/null || { notify "Presse-papiers" "cliphist n'est pas installé"; return 1; }
     sel="$(cliphist list | pick "Presse-papiers › " 15)"
-    [ -n "$sel" ] && printf '%s' "$sel" | cliphist decode | wl-copy
+    [ -n "$sel" ] || return $BACK
+    printf '%s' "$sel" | cliphist decode | wl-copy
 }
 
 menu_emoji() {
     sel="$(pick "Émoji › " 12 < "$EMOJIS")"
-    [ -n "$sel" ] || exit 0
+    [ -n "$sel" ] || return $BACK
     char="${sel%% *}"
     printf '%s' "$char" | wl-copy
     notify "Émoji copié" "$char"
 }
 
 menu_calc() {
-    command -v qalc >/dev/null || { notify "Calculatrice" "qalculate n'est pas installé"; exit 1; }
+    command -v qalc >/dev/null || { notify "Calculatrice" "qalculate n'est pas installé"; return 1; }
     while :; do
         expr="$(ask "= ")"
-        [ -n "$expr" ] || exit 0
+        [ -n "$expr" ] || return $BACK
         res="$(qalc -t "$expr" 2>&1)"
         sel="$(printf '%s\nNouveau calcul\n' "$res" | pick "$expr = " 3)"
         case "$sel" in
-            "") exit 0 ;;
+            "") return $BACK ;;
             "Nouveau calcul") continue ;;
-            *) printf '%s' "$res" | wl-copy; exit 0 ;;
+            *) printf '%s' "$res" | wl-copy; return 0 ;;
         esac
     done
 }
 
 menu_system() {
-    act="${1:-$(printf 'Verrouiller\nVeille\nDéconnexion\nRedémarrer\nÉteindre\n' | pick "Système › " 5)}"
-    case "$act" in
-        Verrouiller) exec swaylock -f -c 1e1e2e ;;
-        Veille) sudo -n zzz ;;
-        Déconnexion) confirm "Quitter la session" && exec niri msg action quit --skip-confirmation ;;
-        Redémarrer) confirm "Redémarrer" && sudo -n reboot ;;
-        Éteindre) confirm "Éteindre" && sudo -n poweroff ;;
-    esac
+    arg="$1"
+    while :; do
+        act="${arg:-$(printf 'Verrouiller\nVeille\nDéconnexion\nRedémarrer\nÉteindre\n' | pick "Système › " 5)}"
+        [ -n "$act" ] || return $BACK
+        case "$act" in
+            Verrouiller) exec swaylock -f -c 1e1e2e ;;
+            Veille) sudo -n zzz; return 0 ;;
+            Déconnexion) confirm "Quitter la session" && exec niri msg action quit --skip-confirmation ;;
+            Redémarrer) confirm "Redémarrer" && { sudo -n reboot; return 0; } ;;
+            Éteindre) confirm "Éteindre" && { sudo -n poweroff; return 0; } ;;
+        esac
+        [ -n "$arg" ] && return $BACK
+    done
 }
 
 menu_audio() {
-    act="${1:-$(printf 'Volume +\nVolume -\nMuet / son\nMicro muet / actif\nChoisir la sortie\n' | pick "Audio › " 5)}"
-    case "$act" in
-        "Volume +") wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+ ;;
-        "Volume -") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
-        "Muet / son") wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
-        "Micro muet / actif") wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle ;;
-        "Choisir la sortie")
-            sinks="$(wpctl status | awk '/Sinks:/{f=1;next} /Sources:|Filters:|Streams:/{f=0} f' \
-                | sed -E -n 's/^[^0-9]*([0-9]+)\. (.*)$/\1 \2/p')"
-            sel="$(printf '%s\n' "$sinks" | pick "Sortie audio › " 8)"
-            [ -n "$sel" ] && wpctl set-default "${sel%% *}"
-            ;;
-    esac
+    arg="$1"
+    while :; do
+        act="${arg:-$(printf 'Volume +\nVolume -\nMuet / son\nMicro muet / actif\nChoisir la sortie\n' | pick "Audio › " 5)}"
+        [ -n "$act" ] || return $BACK
+        case "$act" in
+            "Volume +") wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+; return 0 ;;
+            "Volume -") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-; return 0 ;;
+            "Muet / son") wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle; return 0 ;;
+            "Micro muet / actif") wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; return 0 ;;
+            "Choisir la sortie")
+                sinks="$(wpctl status | awk '/Sinks:/{f=1;next} /Sources:|Filters:|Streams:/{f=0} f' \
+                    | sed -E -n 's/^[^0-9]*([0-9]+)\. (.*)$/\1 \2/p')"
+                sel="$(printf '%s\n' "$sinks" | pick "Sortie audio › " 8)"
+                if [ -n "$sel" ]; then wpctl set-default "${sel%% *}"; return 0; fi
+                ;;
+        esac
+        [ -n "$arg" ] && return $BACK
+    done
 }
 
 menu_network() {
-    act="${1:-$(printf 'Adresses IP\nTester la connexion\n' | pick "Réseau › " 2)}"
-    case "$act" in
-        "Adresses IP")
-            sel="$(ip -br addr | grep -v '^lo' | pick "Adresses › " 8)"
-            [ -n "$sel" ] && printf '%s' "$sel" | awk '{print $3}' | wl-copy
-            ;;
-        "Tester la connexion")
-            if ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then notify "Réseau" "Connexion OK"; else notify -u critical "Réseau" "Pas de connexion"; fi
-            ;;
-    esac
+    arg="$1"
+    while :; do
+        act="${arg:-$(printf 'Adresses IP\nTester la connexion\n' | pick "Réseau › " 2)}"
+        [ -n "$act" ] || return $BACK
+        case "$act" in
+            "Adresses IP")
+                sel="$(ip -br addr | grep -v '^lo' | pick "Adresses › " 8)"
+                if [ -n "$sel" ]; then printf '%s' "$sel" | awk '{print $3}' | wl-copy; return 0; fi
+                ;;
+            "Tester la connexion")
+                if ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then notify "Réseau" "Connexion OK"; else notify -u critical "Réseau" "Pas de connexion"; fi
+                return 0
+                ;;
+        esac
+        [ -n "$arg" ] && return $BACK
+    done
 }
 
 menu_style() {
-    act="${1:-$(printf 'Fond d'"'"'écran\nRecharger Waybar\nRecharger mako\n' | pick "Style › " 3)}"
-    case "$act" in
-        "Fond d'écran")
-            sel="$(ls "$WALLPAPERS" 2>/dev/null | pick "Fond d'écran › " 10)"
-            [ -n "$sel" ] && { setsid "$HOME/.local/bin/wallpaper" "$WALLPAPERS/$sel" >/dev/null 2>&1 & }
-            ;;
-        "Recharger Waybar") pkill -USR2 waybar ;;
-        "Recharger mako") makoctl reload ;;
-    esac
+    arg="$1"
+    while :; do
+        act="${arg:-$(printf 'Fond d'"'"'écran\nRecharger Waybar\nRecharger mako\n' | pick "Style › " 3)}"
+        [ -n "$act" ] || return $BACK
+        case "$act" in
+            "Fond d'écran")
+                sel="$(ls "$WALLPAPERS" 2>/dev/null | pick "Fond d'écran › " 10)"
+                if [ -n "$sel" ]; then
+                    setsid "$HOME/.local/bin/wallpaper" "$WALLPAPERS/$sel" >/dev/null 2>&1 &
+                    return 0
+                fi
+                ;;
+            "Recharger Waybar") pkill -USR2 waybar; return 0 ;;
+            "Recharger mako") makoctl reload; return 0 ;;
+        esac
+        [ -n "$arg" ] && return $BACK
+    done
 }
 
 menu_capture() {
-    act="${1:-$(printf 'Zone\nÉcran\nFenêtre\n' | pick "Capture › " 3)}"
+    arg="$1"
+    act="${arg:-$(printf 'Zone\nÉcran\nFenêtre\n' | pick "Capture › " 3)}"
+    [ -n "$act" ] || return $BACK
     sleep 0.4 # laisse fuzzel disparaître avant de capturer
     case "$act" in
         Zone) niri msg action screenshot ;;
@@ -248,23 +288,30 @@ menu_capture() {
 }
 
 menu_packages() {
-    act="${1:-$(printf 'Rechercher et installer\nSupprimer\nMettre à jour le système\nNettoyer le cache\n' | pick "Paquets › " 4)}"
-    case "$act" in
-        "Rechercher et installer")
-            q="$(ask "Paquet › ")"
-            [ -n "$q" ] || exit 0
-            sel="$(xbps-query -Rs "$q" | head -60 | sed -E 's/^\[.\] //' | pick "Résultats › " 15)"
-            [ -n "$sel" ] || exit 0
-            pkg="$(printf '%s' "$sel" | awk '{print $1}' | sed -E 's/-[^-]+$//')"
-            term "echo 'Budget ressources: vérifier la taille et les dépendances avant d installer.'; xbps-query -R -p pkgver,installed_size $pkg; echo; sudo xbps-install -S $pkg"
-            ;;
-        Supprimer)
-            sel="$(xbps-query -m | sed -E 's/-[^-]+$//' | pick "Supprimer › " 15)"
-            [ -n "$sel" ] && confirm "Supprimer $sel" && term "sudo xbps-remove -R $sel"
-            ;;
-        "Mettre à jour le système") term "sudo xbps-install -Su" ;;
-        "Nettoyer le cache") term "sudo xbps-remove -yO; df -h /" ;;
-    esac
+    arg="$1"
+    while :; do
+        act="${arg:-$(printf 'Rechercher et installer\nSupprimer\nMettre à jour le système\nNettoyer le cache\n' | pick "Paquets › " 4)}"
+        [ -n "$act" ] || return $BACK
+        case "$act" in
+            "Rechercher et installer")
+                q="$(ask "Paquet › ")"
+                if [ -n "$q" ]; then
+                    sel="$(xbps-query -Rs "$q" | head -60 | sed -E 's/^\[.\] //' | pick "Résultats › " 15)"
+                    if [ -n "$sel" ]; then
+                        pkg="$(printf '%s' "$sel" | awk '{print $1}' | sed -E 's/-[^-]+$//')"
+                        term "echo 'Budget ressources: vérifier la taille et les dépendances avant d installer.'; xbps-query -R -p pkgver,installed_size $pkg; echo; sudo xbps-install -S $pkg"
+                    fi
+                fi
+                ;;
+            Supprimer)
+                sel="$(xbps-query -m | sed -E 's/-[^-]+$//' | pick "Supprimer › " 15)"
+                [ -n "$sel" ] && confirm "Supprimer $sel" && term "sudo xbps-remove -R $sel"
+                ;;
+            "Mettre à jour le système") term "sudo xbps-install -Su" ;;
+            "Nettoyer le cache") term "sudo xbps-remove -yO; df -h /" ;;
+        esac
+        [ -n "$arg" ] && return $BACK
+    done
 }
 
 # ---------------------------------------------------------------- liste unique
@@ -332,33 +379,39 @@ menu_main() {
     customs="$(custom_labels | while IFS= read -r l; do printf '%s %s\n' "$I_CUSTOM" "$l"; done)"
     apps="$(list_apps | while IFS="$TAB" read -r name cmd _; do printf '%s %s\n' "$(app_glyph "$name" "$cmd")" "$name"; done)"
     items="$( { printf '%s\n' "$cats"; [ -n "$customs" ] && printf '%s\n' "$customs"; [ -n "$apps" ] && printf '%s\n' "$apps"; actions_list; } )"
-    sel="$(printf '%s\n' "$items" | pick "› " "$nb")"
-    [ -n "$sel" ] || exit 0
-    sel="${sel#* }" # retire le glyphe et l'espace qui le suit
 
-    # catégories (ouvrent la section), puis entrées perso, applications, actions directes
-    case "$sel" in
-        "Applications ›") menu_apps ;;
-        "Presse-papiers ›") menu_clip ;;
-        "Émojis ›") menu_emoji ;;
-        "Calculatrice ›") menu_calc ;;
-        "Système ›") menu_system ;;
-        "Audio ›") menu_audio ;;
-        "Réseau ›") menu_network ;;
-        "Style ›") menu_style ;;
-        "Paquets ›") menu_packages ;;
-        "Entrées perso ›") menu_custom ;;
-    esac
-    custom_run "$sel"
-    run_app "$sel"
-    case "$sel" in
-        "Système: "*) menu_system "${sel#Système: }" ;;
-        "Audio: "*) menu_audio "${sel#Audio: }" ;;
-        "Réseau: "*) menu_network "${sel#Réseau: }" ;;
-        "Style: "*) menu_style "${sel#Style: }" ;;
-        "Paquets: "*) menu_packages "${sel#Paquets: }" ;;
-        "Capture: "*) menu_capture "${sel#Capture: }" ;;
-    esac
+    while :; do # Échap dans une section revient ici; Échap ici quitte
+        sel="$(printf '%s\n' "$items" | pick "› " "$nb")"
+        [ -n "$sel" ] || exit 0
+        sel="${sel#* }" # retire le glyphe et l'espace qui le suit
+
+        rc=0
+        case "$sel" in
+            "Applications ›") menu_apps; rc=$? ;;
+            "Presse-papiers ›") menu_clip; rc=$? ;;
+            "Émojis ›") menu_emoji; rc=$? ;;
+            "Calculatrice ›") menu_calc; rc=$? ;;
+            "Système ›") menu_system; rc=$? ;;
+            "Audio ›") menu_audio; rc=$? ;;
+            "Réseau ›") menu_network; rc=$? ;;
+            "Style ›") menu_style; rc=$? ;;
+            "Paquets ›") menu_packages; rc=$? ;;
+            "Entrées perso ›") menu_custom; rc=$? ;;
+            *)
+                custom_run "$sel" # exec/exit si trouvé
+                run_app "$sel"
+                case "$sel" in
+                    "Système: "*) menu_system "${sel#Système: }"; rc=$? ;;
+                    "Audio: "*) menu_audio "${sel#Audio: }"; rc=$? ;;
+                    "Réseau: "*) menu_network "${sel#Réseau: }"; rc=$? ;;
+                    "Style: "*) menu_style "${sel#Style: }"; rc=$? ;;
+                    "Paquets: "*) menu_packages "${sel#Paquets: }"; rc=$? ;;
+                    "Capture: "*) menu_capture "${sel#Capture: }"; rc=$? ;;
+                esac
+                ;;
+        esac
+        [ "$rc" -eq "$BACK" ] || exit "$rc"
+    done
 }
 
 case "${1:-}" in
@@ -376,3 +429,6 @@ case "${1:-}" in
     "") menu_main ;;
     *) echo "Usage: menu [apps|clip|emoji|calc|system|audio|network|style|packages|capture|custom]" >&2; exit 1 ;;
 esac
+rc=$?
+[ "$rc" -eq "$BACK" ] && exit 0 # section lancée directement et annulée: sortie propre
+exit "$rc"
