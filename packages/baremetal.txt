@@ -1,0 +1,8 @@
+# Profil machine physique (PC / Mac Intel)
+# Les paquets absents du dépôt sont ignorés avec un avertissement.
+linux-firmware-intel
+linux-firmware-amd
+linux-firmware-network
+mesa-vulkan-intel
+intel-video-accel
+brightnessctl

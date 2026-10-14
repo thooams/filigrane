@@ -1,0 +1,17 @@
+# Bureau niri (tous profils)
+niri
+Waybar
+alacritty
+fuzzel
+chromium
+swaylock
+brightnessctl
+playerctl
+pipewire
+wireplumber
+xdg-desktop-portal-gnome
+xdg-desktop-portal-gtk
+mesa-dri
+dejavu-fonts-ttf
+noto-fonts-ttf
+font-awesome6

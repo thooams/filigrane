@@ -1,0 +1,11 @@
+# Outils de base (tous profils)
+sudo
+git
+curl
+bash-completion
+neovim
+tmux
+htop
+chrony
+dbus
+elogind

@@ -1,0 +1,8 @@
+# Services runit activés partout
+dbus
+elogind
+dhcpcd
+wpa_supplicant
+sshd
+chronyd
+acpid

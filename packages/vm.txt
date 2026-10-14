@@ -1,0 +1,2 @@
+# Profil VM (VMware)
+open-vm-tools

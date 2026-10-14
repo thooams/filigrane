@@ -1,0 +1,2 @@
+# Services runit profil VM
+vmtoolsd
