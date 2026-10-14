@@ -7,7 +7,7 @@
 #   menu apps|clip|emoji|calc|system|audio|network|style|packages|capture|custom
 #                         ouvre directement une section (raccourcis clavier)
 #
-# Entrées perso: ~/.config/menu/entries (Libellé | mode | commande). Échap quitte.
+# Entrées perso: ~/.config/menu/entries (Libellé | mode | commande).
 
 WALLPAPERS="$HOME/.local/share/wallpapers"
 EMOJIS="$HOME/.local/share/menu/emoji.txt"
@@ -48,12 +48,40 @@ I_COLS="$(printf '\357\203\233')"  # U+F0DB columns
 I_CAM="$(printf '\357\200\260')"  # U+F030 camera
 I_WIN="$(printf '\357\213\220')"  # U+F2D0 window-maximize
 
-pick() { # pick INVITE [LIGNES]  (entrées sur stdin, sélection sur stdout)
-    fuzzel --dmenu --minimal-lines --lines "${2:-12}" --prompt "$1"
+# Maj+Retour arrière = custom-1 de fuzzel (code de sortie 10): remonte d'un niveau.
+# Échap = sortie vide, code 1: quitte tout le menu. Option passée ici seulement: dans le lanceur
+# d'applications (fuzzel seul), custom-1 lancerait l'application sélectionnée.
+STATE="${XDG_RUNTIME_DIR:-/tmp}/menu-back.$$"
+KEYS="--override=key-bindings.custom-1=Shift+BackSpace"
+trap 'rm -f "$STATE"' EXIT
+
+pick() { # pick INVITE [LIGNES]  (entrées sur stdin, sélection sur stdout; vide si annulé)
+    out="$(fuzzel --dmenu $KEYS --minimal-lines --lines "${2:-12}" --prompt "$1")"; rc=$?
+    if [ "$rc" -eq 10 ]; then : > "$STATE"; return 0; fi
+    [ -n "$out" ] && printf '%s\n' "$out"
+    return 0
 }
-ask() { fuzzel --dmenu --prompt-only "$1"; } # saisie libre
+ask() { # saisie libre
+    out="$(fuzzel --dmenu $KEYS --prompt-only "$1")"; rc=$?
+    if [ "$rc" -eq 10 ]; then : > "$STATE"; return 0; fi
+    [ -n "$out" ] && printf '%s\n' "$out"
+    return 0
+}
+# Appelée quand une saisie est vide: Échap quitte tout, Maj+Retour arrière revient (code BACK)
+cancel() {
+    if [ -e "$STATE" ]; then rm -f "$STATE"; return "$BACK"; fi
+    exit 0
+}
 notify() { command -v notify-send >/dev/null && notify-send -a menu "$@"; }
-confirm() { [ "$(printf 'Non\nOui\n' | pick "$1 › " 2)" = "Oui" ]; }
+confirm() { # Oui -> 0 ; Non -> 1 ; annulé -> cancel (quitte ou revient) puis 1
+    case "$(printf 'Non
+Oui
+' | pick "$1 › " 2)" in
+        Oui) return 0 ;;
+        Non) return 1 ;;
+        *) cancel; return 1 ;;
+    esac
+}
 term() { # term COMMANDE : terminal gardé ouvert à la fin
     exec alacritty -e sh -c "$1; echo; printf 'Entrée pour fermer '; read _"
 }
@@ -137,17 +165,20 @@ menu_custom() {
     arg="$1"
     while :; do
         act="${arg:-$(printf 'Ajouter une entrée\nModifier le fichier\n' | pick "Entrées perso › " 2)}"
-        [ -n "$act" ] || return $BACK
+        [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
             "Ajouter une entrée")
                 label="$(ask "Libellé › ")"
-                if [ -n "$label" ]; then
+                if [ -z "$label" ]; then cancel
+                else
                     case "$label" in *'|'*|'#'*) notify -u critical "Menu" "Libellé invalide (pas de | ni de # au début)"; return 1 ;; esac
                     mode="$(printf 'term  (terminal, fermé à la fin)\nhold  (terminal gardé ouvert)\nrun   (arrière-plan, appli graphique)\n' | pick "Mode › " 3)"
                     mode="${mode%% *}"
-                    if [ -n "$mode" ]; then
+                    if [ -z "$mode" ]; then cancel
+                    else
                         cmd="$(ask "Commande › ")"
-                        if [ -n "$cmd" ]; then
+                        if [ -z "$cmd" ]; then cancel
+                        else
                             mkdir -p "$(dirname "$ENTRIES")"
                             printf '%s | %s | %s\n' "$label" "$mode" "$cmd" >> "$ENTRIES"
                             notify "Menu" "Entrée ajoutée: $label"
@@ -163,22 +194,22 @@ menu_custom() {
 }
 
 # ---------------------------------------------------------------- sections
-# Navigation clavier: Échap remonte d'un niveau (section -> menu principal -> quitter).
+# Navigation clavier: Maj+Retour arrière remonte d'un niveau, Échap quitte tout le menu.
 # Chaque section est une boucle: annuler une sous-étape revient au menu de la section.
 # Une action terminée ferme le menu. Avec un argument (liste unique), l'action est directe.
 
-menu_apps() { fuzzel && return 0; return $BACK; }
+menu_apps() { exec fuzzel; }
 
 menu_clip() {
     command -v cliphist >/dev/null || { notify "Presse-papiers" "cliphist n'est pas installé"; return 1; }
     sel="$(cliphist list | pick "Presse-papiers › " 15)"
-    [ -n "$sel" ] || return $BACK
+    [ -n "$sel" ] || { cancel; return $BACK; }
     printf '%s' "$sel" | cliphist decode | wl-copy
 }
 
 menu_emoji() {
     sel="$(pick "Émoji › " 12 < "$EMOJIS")"
-    [ -n "$sel" ] || return $BACK
+    [ -n "$sel" ] || { cancel; return $BACK; }
     char="${sel%% *}"
     printf '%s' "$char" | wl-copy
     notify "Émoji copié" "$char"
@@ -188,11 +219,11 @@ menu_calc() {
     command -v qalc >/dev/null || { notify "Calculatrice" "qalculate n'est pas installé"; return 1; }
     while :; do
         expr="$(ask "= ")"
-        [ -n "$expr" ] || return $BACK
+        [ -n "$expr" ] || { cancel; return $BACK; }
         res="$(qalc -t "$expr" 2>&1)"
         sel="$(printf '%s\nNouveau calcul\n' "$res" | pick "$expr = " 3)"
         case "$sel" in
-            "") return $BACK ;;
+            "") cancel; return $BACK ;;
             "Nouveau calcul") continue ;;
             *) printf '%s' "$res" | wl-copy; return 0 ;;
         esac
@@ -203,7 +234,7 @@ menu_system() {
     arg="$1"
     while :; do
         act="${arg:-$(printf 'Verrouiller\nVeille\nDéconnexion\nRedémarrer\nÉteindre\n' | pick "Système › " 5)}"
-        [ -n "$act" ] || return $BACK
+        [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
             Verrouiller) exec swaylock -f -c 1e1e2e ;;
             Veille) sudo -n zzz; return 0 ;;
@@ -219,7 +250,7 @@ menu_audio() {
     arg="$1"
     while :; do
         act="${arg:-$(printf 'Volume +\nVolume -\nMuet / son\nMicro muet / actif\nChoisir la sortie\n' | pick "Audio › " 5)}"
-        [ -n "$act" ] || return $BACK
+        [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
             "Volume +") wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+; return 0 ;;
             "Volume -") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-; return 0 ;;
@@ -230,6 +261,7 @@ menu_audio() {
                     | sed -E -n 's/^[^0-9]*([0-9]+)\. (.*)$/\1 \2/p')"
                 sel="$(printf '%s\n' "$sinks" | pick "Sortie audio › " 8)"
                 if [ -n "$sel" ]; then wpctl set-default "${sel%% *}"; return 0; fi
+                cancel
                 ;;
         esac
         [ -n "$arg" ] && return $BACK
@@ -240,11 +272,12 @@ menu_network() {
     arg="$1"
     while :; do
         act="${arg:-$(printf 'Adresses IP\nTester la connexion\n' | pick "Réseau › " 2)}"
-        [ -n "$act" ] || return $BACK
+        [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
             "Adresses IP")
                 sel="$(ip -br addr | grep -v '^lo' | pick "Adresses › " 8)"
                 if [ -n "$sel" ]; then printf '%s' "$sel" | awk '{print $3}' | wl-copy; return 0; fi
+                cancel
                 ;;
             "Tester la connexion")
                 if ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then notify "Réseau" "Connexion OK"; else notify -u critical "Réseau" "Pas de connexion"; fi
@@ -259,7 +292,7 @@ menu_style() {
     arg="$1"
     while :; do
         act="${arg:-$(printf 'Fond d'"'"'écran\nRecharger Waybar\nRecharger mako\n' | pick "Style › " 3)}"
-        [ -n "$act" ] || return $BACK
+        [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
             "Fond d'écran")
                 sel="$(ls "$WALLPAPERS" 2>/dev/null | pick "Fond d'écran › " 10)"
@@ -267,6 +300,7 @@ menu_style() {
                     setsid "$HOME/.local/bin/wallpaper" "$WALLPAPERS/$sel" >/dev/null 2>&1 &
                     return 0
                 fi
+                cancel
                 ;;
             "Recharger Waybar") pkill -USR2 waybar; return 0 ;;
             "Recharger mako") makoctl reload; return 0 ;;
@@ -278,7 +312,7 @@ menu_style() {
 menu_capture() {
     arg="$1"
     act="${arg:-$(printf 'Zone\nÉcran\nFenêtre\n' | pick "Capture › " 3)}"
-    [ -n "$act" ] || return $BACK
+    [ -n "$act" ] || { cancel; return $BACK; }
     sleep 0.4 # laisse fuzzel disparaître avant de capturer
     case "$act" in
         Zone) niri msg action screenshot ;;
@@ -291,13 +325,15 @@ menu_packages() {
     arg="$1"
     while :; do
         act="${arg:-$(printf 'Rechercher et installer\nSupprimer\nMettre à jour le système\nNettoyer le cache\n' | pick "Paquets › " 4)}"
-        [ -n "$act" ] || return $BACK
+        [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
             "Rechercher et installer")
                 q="$(ask "Paquet › ")"
-                if [ -n "$q" ]; then
+                if [ -z "$q" ]; then cancel
+                else
                     sel="$(xbps-query -Rs "$q" | head -60 | sed -E 's/^\[.\] //' | pick "Résultats › " 15)"
-                    if [ -n "$sel" ]; then
+                    if [ -z "$sel" ]; then cancel
+                    else
                         pkg="$(printf '%s' "$sel" | awk '{print $1}' | sed -E 's/-[^-]+$//')"
                         term "echo 'Budget ressources: vérifier la taille et les dépendances avant d installer.'; xbps-query -R -p pkgver,installed_size $pkg; echo; sudo xbps-install -S $pkg"
                     fi
@@ -305,7 +341,9 @@ menu_packages() {
                 ;;
             Supprimer)
                 sel="$(xbps-query -m | sed -E 's/-[^-]+$//' | pick "Supprimer › " 15)"
-                [ -n "$sel" ] && confirm "Supprimer $sel" && term "sudo xbps-remove -R $sel"
+                if [ -z "$sel" ]; then cancel
+                elif confirm "Supprimer $sel"; then term "sudo xbps-remove -R $sel"
+                fi
                 ;;
             "Mettre à jour le système") term "sudo xbps-install -Su" ;;
             "Nettoyer le cache") term "sudo xbps-remove -yO; df -h /" ;;

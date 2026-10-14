@@ -22,7 +22,7 @@ Le profil (`vm` ou `baremetal`) est détecté via le flag `hypervisor` de `/proc
 
 - **Session** : sur la VM, connexion automatique sur `tty1` (`AUTOLOGIN=auto` : actif en VM, inactif sur machine physique), puis `~/.zprofile` lance `dbus-run-session niri`. Désactiver : `touch ~/.no-niri`, ou se connecter sur `tty2` à `tty6`.
 - **Thème** : Catppuccin Mocha pour niri, waybar, fuzzel, mako, alacritty, zellij, nvim.
-- **Menu** (`Mod+Space`) : catégories à vide, recherche floue sur tout dès qu'on tape (applications, actions système, entrées perso). `Mod+D` ouvre le lanceur d'applications seul. Entrées perso dans `~/.config/menu/entries` (`Libellé | mode | commande`, par exemple `Claude | term | claude`).
+- **Menu** (`Mod+Space`) : catégories à vide, recherche floue sur tout dès qu'on tape (applications, actions système, entrées perso). Clavier : `Maj+Retour arrière` remonte d'un niveau, `Échap` quitte tout le menu (`fuzzel` ne sait pas distinguer un retour arrière sur saisie vide). `Mod+D` ouvre le lanceur d'applications seul. Entrées perso dans `~/.config/menu/entries` (`Libellé | mode | commande`, par exemple `Claude | term | claude`).
 - **Captures** : outil intégré à niri, sans logiciel en plus. `Mod+Shift+S` zone, `Mod+Shift+Ctrl+S` écran, `Print` / `Ctrl+Print` / `Alt+Print`, ou le menu (`Capture: ...`). Enregistrées dans `~/Pictures/Screenshots` et copiées dans le presse-papiers.
 - **Shell** : zsh sans oh-my-zsh, zellij lancé dans chaque terminal graphique (`NO_ZELLIJ=1 zsh` pour s'en passer), outils CLI repris du Mac (`eza`, `fzf`, `zoxide`, `ripgrep`, `bat`, `lazygit`, `gh`), neovim avec LazyVim.
 - **Chromium** natif Wayland (variable `CHROME_FLAGS` posée par niri). **Conteneurs** : `podman`, alias `d`.
