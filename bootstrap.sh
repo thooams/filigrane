@@ -82,6 +82,9 @@ setup_system() {
         install_list "$ROOT/packages/nonfree-baremetal.txt"
     fi
 
+    log "Nettoyage du cache xbps (disque réduit)"
+    $SUDO xbps-remove -yO >/dev/null || true
+
     log "Services runit"
     local svc list
     for list in "$ROOT/services/common.txt" "$ROOT/services/$PROFILE.txt"; do
