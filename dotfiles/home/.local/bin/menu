@@ -86,6 +86,10 @@ Yes
 term() { # term COMMANDE : terminal gardé ouvert à la fin
     exec foot -e sh -c "$1; echo; printf 'Press Enter to close '; read _"
 }
+trim_var() { # sans sous-processus: résultat dans $TRIMMED
+    TRIMMED="${1#"${1%%[![:space:]]*}"}"
+    TRIMMED="${TRIMMED%"${TRIMMED##*[![:space:]]}"}"
+}
 trim() { printf '%s' "$1" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//'; }
 
 # ---------------------------------------------------------------- applications
@@ -138,9 +142,11 @@ run_app() { # run_app NOM : retourne 1 si aucune application de ce nom
 custom_labels() { # libellés valides du fichier d'entrées
     [ -f "$ENTRIES" ] || return 0
     while IFS='|' read -r label mode cmd; do
-        label="$(trim "$label")"
+        trim_var "$label"; label="$TRIMMED"
         case "$label" in ''|'#'*) continue ;; esac
-        [ -n "$(trim "$mode")" ] && [ -n "$(trim "$cmd")" ] && printf '%s\n' "$label"
+        trim_var "$mode"; mode="$TRIMMED"
+        trim_var "$cmd"; cmd="$TRIMMED"
+        [ -n "$mode" ] && [ -n "$cmd" ] && printf '%s\n' "$label"
     done < "$ENTRIES"
 }
 
@@ -519,18 +525,6 @@ $I_CUSTOM Custom entries ›
 EOF
 }
 
-# Glyphe d'une application selon son nom ou sa commande (repli: fenêtre générique)
-app_glyph() {
-    case "$(printf '%s %s' "$1" "$2" | tr 'A-Z' 'a-z')" in
-        *chrom*|*firefox*|*browser*|*navigat*|*brave*|*epiphany*) printf '%s' "$I_GLOBE" ;;
-        *alacritty*|*terminal*|*kitty*|*foot*|*konsole*) printf '%s' "$I_TERM" ;;
-        *nvim*|*vim*|*emacs*|*code*|*editor*|*éditeur*) printf '%s' "$I_CODE" ;;
-        *htop*|*btop*|*monitor*|*moniteur*|*top\ *) printf '%s' "$I_CHART" ;;
-        *zellij*|*tmux*) printf '%s' "$I_COLS" ;;
-        *) printf '%s' "$I_WIN" ;;
-    esac
-}
-
 # ---------------------------------------------------------------- raccourcis affichés à côté des noms
 
 # Table "touche<TAB>action" extraite des binds de niri (guillemets et spawn retirés)
@@ -558,21 +552,22 @@ pretty_key() {
 fmt_hint() { h="$(hint "$1")"; [ -n "$h" ] && printf '  ‹%s›' "$(pretty_key "$h")"; return 0; }
 
 # Action de niri ou commande correspondant à un libellé du menu
-action_needle() {
+action_needle() { # résultat dans $NEEDLE (vide si aucune touche)
+    NEEDLE=""
     case "$1" in
-        "Applications ›") echo "~fuzzel" ;;
-        "Windows ›"|"Windows: "*) echo "~menu windows" ;;
-        "Shortcuts ›"|"Shortcuts: "*) echo "~menu keys" ;;
-        "System: Lock") echo "~swaylock" ;;
-        "System: Log out") echo "quit" ;;
-        "Audio: Volume +") echo "~0.1+" ;;
-        "Audio: Volume -") echo "~0.1-" ;;
-        "Audio: Mute / unmute") echo "~SINK@ toggle" ;;
-        "Audio: Mic mute / unmute") echo "~SOURCE@ toggle" ;;
-        "Toggles: Do not disturb") echo "~do-not-disturb" ;;
-        "Capture: Region") echo "screenshot" ;;
-        "Capture: Screen") echo "screenshot-screen" ;;
-        "Capture: Window") echo "screenshot-window" ;;
+        "Applications ›") NEEDLE="~fuzzel" ;;
+        "Windows ›"|"Windows: "*) NEEDLE="~menu windows" ;;
+        "Shortcuts ›"|"Shortcuts: "*) NEEDLE="~menu keys" ;;
+        "System: Lock") NEEDLE="~swaylock" ;;
+        "System: Log out") NEEDLE="quit" ;;
+        "Audio: Volume +") NEEDLE="~0.1+" ;;
+        "Audio: Volume -") NEEDLE="~0.1-" ;;
+        "Audio: Mute / unmute") NEEDLE="~SINK@ toggle" ;;
+        "Audio: Mic mute / unmute") NEEDLE="~SOURCE@ toggle" ;;
+        "Toggles: Do not disturb") NEEDLE="~do-not-disturb" ;;
+        "Capture: Region") NEEDLE="screenshot" ;;
+        "Capture: Screen") NEEDLE="screenshot-screen" ;;
+        "Capture: Window") NEEDLE="screenshot-window" ;;
     esac
 }
 
@@ -590,12 +585,53 @@ align_hints() {
     }'
 }
 
+# Entrée "LIGNE<TAB>AIGUILLE" -> "LIGNE  ‹touche›" (un seul awk pour tout le menu; table dans $BINDS).
+# AIGUILLE: action exacte, ou sous-chaîne si préfixée par ~ (cf. hint/pretty_key ci-dessus).
+add_hints() {
+    awk -F'\t' -v binds="$BINDS" '
+        function pretty(k) {
+            sub(/\+quotedbl$/, "+1", k); sub(/\+guillemotleft$/, "+2", k); sub(/\+guillemotright$/, "+3", k)
+            sub(/\+parenleft$/, "+4", k); sub(/\+parenright$/, "+5", k); sub(/\+at$/, "+6", k)
+            sub(/\+plus$/, "+7", k); sub(/\+minus$/, "+8", k); sub(/\+slash$/, "+9", k)
+            sub(/\+Comma$/, "+,", k); sub(/\+Period$/, "+.", k)
+            if (k == "XF86AudioRaiseVolume") return "Vol +"
+            if (k == "XF86AudioLowerVolume") return "Vol -"
+            if (k == "XF86AudioMute") return "Mute"
+            if (k == "XF86AudioMicMute") return "Mic mute"
+            return k
+        }
+        BEGIN { while ((getline l < binds) > 0) { split(l, f, "\t"); n++; key[n] = f[1]; act[n] = f[2] } }
+        {
+            line = $1; nd = $2; h = ""
+            if (nd != "") {
+                sub_ = (substr(nd, 1, 1) == "~"); if (sub_) nd = substr(nd, 2)
+                for (i = 1; i <= n; i++) if (sub_ ? index(act[i], nd) : act[i] == nd) { h = key[i]; break }
+            }
+            if (h != "") line = line "  ‹" pretty(h) "›"
+            print line
+        }'
+}
+
 # Ajoute "  ‹touche›" aux lignes "GLYPHE Libellé" quand une touche existe
 with_hints() {
     while IFS= read -r line; do
-        n="$(action_needle "${line#* }")"
-        if [ -n "$n" ]; then printf '%s%s\n' "$line" "$(fmt_hint "$n")"; else printf '%s\n' "$line"; fi
-    done
+        action_needle "${line#* }"
+        printf '%s\t%s\n' "$line" "$NEEDLE"
+    done | add_hints
+}
+
+# "Nom<TAB>commande" -> "GLYPHE Nom<TAB>commande", glyphe choisi selon le nom ou la commande
+glyph_apps() {
+    awk -F'\t' -v globe="$I_GLOBE" -v term="$I_TERM" -v code="$I_CODE" -v chart="$I_CHART" -v cols="$I_COLS" -v win="$I_WIN" '{
+        t = tolower($1 " " $2)
+        if (t ~ /chrom|firefox|browser|navigat|brave|epiphany/) g = globe
+        else if (t ~ /alacritty|terminal|kitty|foot|konsole/) g = term
+        else if (t ~ /nvim|vim|emacs|code|editor|éditeur/) g = code
+        else if (t ~ /htop|btop|monitor|moniteur|top /) g = chart
+        else if (t ~ /zellij|tmux/) g = cols
+        else g = win
+        print g " " $1 "\t" $2
+    }'
 }
 
 menu_main() {
@@ -603,7 +639,7 @@ menu_main() {
     cats="$(categories_list | with_hints)"
     nb="$(printf '%s\n' "$cats" | wc -l | tr -d ' ')"
     customs="$(custom_labels | while IFS= read -r l; do printf '%s %s\n' "$I_CUSTOM" "$l"; done)"
-    apps="$(list_apps | while IFS="$TAB" read -r name cmd _; do printf '%s %s%s\n' "$(app_glyph "$name" "$cmd")" "$name" "$(fmt_hint "$cmd")"; done)"
+    apps="$(list_apps | cut -f1,2 | glyph_apps | add_hints)"
     items="$( { printf '%s\n' "$cats"; [ -n "$customs" ] && printf '%s\n' "$customs"; [ -n "$apps" ] && printf '%s\n' "$apps"; actions_list | with_hints; } )"
 
     while :; do # Échap dans une section revient ici; Échap ici quitte
