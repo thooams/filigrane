@@ -103,8 +103,11 @@ setup_system() {
     [ "$autologin" = auto ] && { [ "$PROFILE" = vm ] && autologin=1 || autologin=0; }
     if [ "$autologin" = 1 ]; then
         $SUDO sed -i -E "s|GETTY_ARGS=\"(--autologin [^ ]+ )?--noclear\"|GETTY_ARGS=\"--autologin $TARGET_USER --noclear\"|" "$conf"
+        # l'autologin doit attendre elogind (sinon /run/user est masqué, cf. le script)
+        $SUDO "$ROOT/scripts/tty1-wait-elogind.sh" on >/dev/null
     else
         $SUDO sed -i -E 's|GETTY_ARGS="--autologin [^ ]+ --noclear"|GETTY_ARGS="--noclear"|' "$conf"
+        $SUDO "$ROOT/scripts/tty1-wait-elogind.sh" off >/dev/null
     fi
     grep -n GETTY_ARGS "$conf"
 
