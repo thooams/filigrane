@@ -3,7 +3,7 @@
 # Approche inspirée d'Omarchy (install/hardware/apple/fix-t2.sh), adaptée à Void:
 # xbps + DKMS (pas de noyau linux-t2), dracut, GRUB ou Limine (/etc/kernel/cmdline), runit.
 #
-#   ./setup.sh [--check] [--only dkms|touchbar|smc|trackpad|boot|audio|fan|net|tools]
+#   ./setup.sh [--check] [--only dkms|touchbar|smc|trackpad|keys|boot|audio|fan|net|tools]
 #
 # --check: affiche si une puce T2 est détectée (code 0 = oui) puis quitte.
 # Appelé automatiquement par bootstrap.sh quand une puce T2 est détectée.
@@ -17,7 +17,7 @@ T2BCE_REPO="https://github.com/AdityaGarg8/t2bce"
 T2BCE_REF="d493b0696b133ef2a3e2192790758180d62886b0"
 T2BCE_VER="0.0+git${T2BCE_REF:0:7}"
 # Pilotes Touch Bar hors arbre (hid-appletb-kbd/bl, appletbdrm), voir appletb/: incrémenter si SHA256SUMS change
-APPLETB_VER="1"
+APPLETB_VER="2"
 # applesmc avec le SMC T2 (ventilateurs), voir applesmc/: celui du noyau Void bloque le démarrage
 APPLESMC_VER="1"
 # Trackpad multitouch (hid-apple + hid-magicmouse T2), voir trackpad/: sans lui, trackpad = simple souris
@@ -179,6 +179,10 @@ EOF
 setup_touchbar() {
     log "Pilotes Touch Bar via DKMS (appletb $APPLETB_VER)"
     local src="/usr/src/appletb-$APPLETB_VER" k
+    # anciennes versions retirées (une seule version installée par noyau)
+    dkms status -m appletb 2>/dev/null | sed -nE 's|^appletb/([^,]+),.*|\1|p' | sort -u | while read -r v; do
+        [ "$v" = "$APPLETB_VER" ] || dkms remove -m appletb -v "$v" --all || true
+    done
     rm -rf "$src"
     cp -a "$HERE/appletb" "$src"
     dkms status -m appletb -v "$APPLETB_VER" 2>/dev/null | grep -E 'added|built|installed' >/dev/null \
@@ -230,6 +234,18 @@ setup_trackpad() {
             dkms install -m t2-trackpad -v "$TRACKPAD_VER" -k "$k" || warn "t2-trackpad non compilé pour $k: trackpad en mode souris"
         fi
     done
+}
+
+setup_keys() {
+    log "Touche Command façon macOS (keyd)"
+    # Le pilote Touch Bar (appletb >= 2) écoute le clavier virtuel de keyd: Fn et réveil restent actifs
+    command -v keyd >/dev/null || xbps-install -y keyd
+    mkdir -p /etc/keyd
+    install -m 0644 "$HERE/keyd.conf" /etc/keyd/default.conf
+    install -m 0644 "$HERE/keyd-external-azerty.conf" /etc/keyd/external-azerty.conf
+    keyd check /etc/keyd/default.conf /etc/keyd/external-azerty.conf
+    ln -sfn /etc/sv/keyd /etc/runit/runsvdir/default/keyd
+    if [ -e /var/service/keyd ]; then sv restart /var/service/keyd 2>/dev/null || true; fi
 }
 
 setup_audio() {
@@ -339,6 +355,7 @@ want dkms && setup_dkms
 want touchbar && setup_touchbar
 want smc && setup_smc
 want trackpad && setup_trackpad
+want keys && setup_keys
 want audio && setup_audio
 want boot && setup_boot
 want fan && setup_fan

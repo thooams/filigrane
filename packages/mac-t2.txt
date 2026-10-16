@@ -9,3 +9,4 @@ curl
 python3
 dmg2img
 cargo
+keyd  # touche Command façon macOS (hardware/mac-t2/keyd.conf)

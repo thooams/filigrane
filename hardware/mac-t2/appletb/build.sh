@@ -25,4 +25,10 @@ if ! sha256sum -c --quiet SHA256SUMS; then
     exit 1
 fi
 
+# Correctifs locaux (ex. écoute du clavier virtuel de keyd), après vérification des sources amont
+for p in 0*.patch; do
+    [ -e "$p" ] || continue
+    git apply --directory=. -p3 "$p"
+done
+
 make -C "$ksrc" M="$PWD" modules

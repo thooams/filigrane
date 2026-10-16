@@ -7,7 +7,8 @@
 // Find the full list of options on the wiki:
 // https://niri-wm.github.io/niri/Configuration:-Input
 input {
-    mod-key "Super"
+    // Option (Alt gauche) comme Mod: Command reste aux raccourcis façon macOS (keyd)
+    mod-key "Alt"
     keyboard {
         xkb {
             // You can set rules, model, layout, variant and options.

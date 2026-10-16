@@ -14,6 +14,7 @@ Omarchy utilise un noyau `linux-t2` patché (Arch). Void n'en a pas : on garde l
 | Ventilateurs | DKMS `applesmc-t2` : `applesmc.c` de v6.18.7 + correctifs `30xx-applesmc` de t2linux (révision épinglée, vérifiés contre `applesmc/SHA256SUMS`, série 6.18 seulement). L'`applesmc` du noyau Void bloque le démarrage sur T2 : il est sur liste noire, et le service `t2fanrd` (Rust, valeurs Omarchy) charge la version DKMS après le démarrage, ou s'arrête si elle manque |
 | Audio: haut-parleurs / casque | profils ALSA UCM du dépôt t2bce |
 | Trackpad | DKMS `t2-trackpad` : `hid-apple` et `hid-magicmouse` de v6.18.7 + correctifs t2linux (partie HID de 4001, 4003-4005, révision épinglée) + `9001` (port manuel des correctifs stables jusqu'à v6.18.57, dont une correction de sécurité). Sans lui, le noyau Void voit le trackpad comme une souris (pas de défilement à deux doigts). `t2-compat.h` remplace les définitions SPI Apple Silicon absentes. Série 6.18 seulement |
+| Clavier | Option (Alt gauche) = touche Mod de niri. Command façon macOS via `keyd` (`keyd.conf`) : Cmd+lettre = Ctrl+lettre à la position QWERTY gravée, même en bépo ; Cmd+C/V/X = Ctrl+Inser / Maj+Inser / Maj+Suppr (terminal compris) ; Cmd+flèches = début/fin. Clavier Mac AZERTY externe (saisie bépo) : `keyd-external-azerty.conf`, même logique avec les lettres gravées AZERTY. keyd capture le clavier interne : le DKMS `appletb` (v2, `0001-keyd-virtual-keyboard.patch`) écoute aussi son clavier virtuel pour Fn et le réveil de la Touch Bar. Fn et Ctrl gauche inversés |
 | Touch Bar | DKMS `appletb` : `hid-appletb-kbd`, `hid-appletb-bl` (et `appletbdrm`, compilé mais non chargé), désactivés dans la config du noyau Void. Sources du tag stable `v<version>` sur git.kernel.org, vérifiées contre `appletb/SHA256SUMS`. Touches spéciales dessinées par la T2 (Fn pour F1-F12), comme Omarchy, sans démon `tiny-dfr` |
 
 Réglages appliqués : paramètres noyau `intel_iommu=on iommu=pt pm_async=off mem_sleep_default=deep` (suspension stable), `brcmfmac.feature_disable=0x82000` (wpa_supplicant 2.11+ casse le Wi-Fi Broadcom), modules chargés au démarrage (`/etc/modules-load.d/t2.conf`) et ajoutés à l'initramfs dracut.
@@ -74,6 +75,6 @@ L'ESP est montée sur `/boot/efi` : les noyaux restent dans `@void`, seul `/boot
 
 Aucune de ces étapes n'a été testée sur un vrai Mac T2 (la VM n'a pas de puce T2). Testé seulement : la syntaxe des scripts et la compilation des modules contre le noyau Void 6.18.
 
-Réutilisation : `./hardware/mac-t2/setup.sh --only dkms|touchbar|smc|trackpad|boot|audio|fan|net|tools` (`T2_FORCE=1` pour forcer sans puce détectée).
+Réutilisation : `./hardware/mac-t2/setup.sh --only dkms|touchbar|smc|trackpad|keys|boot|audio|fan|net|tools` (`T2_FORCE=1` pour forcer sans puce détectée).
 
 Sources : [t2linux](https://wiki.t2linux.org/), [t2bce](https://github.com/AdityaGarg8/t2bce), [Omarchy fix-t2.sh](https://github.com/omacom/omarchy/blob/quattro/install/hardware/apple/fix-t2.sh).

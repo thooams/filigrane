@@ -1,0 +1,73 @@
+--- a/drivers/hid/hid-appletb-kbd.c
++++ b/drivers/hid/hid-appletb-kbd.c
+@@ -30,6 +30,15 @@
+ 
+ #define APPLETB_DEVID_KEYBOARD	1
+ #define APPLETB_DEVID_TRACKPAD	2
++#define APPLETB_DEVID_KEYD	3
++
++/*
++ * keyd (remappage clavier) capture le clavier interne: le pilote ne reçoit plus ses
++ * événements. On écoute donc aussi le clavier virtuel de keyd, qui renvoie Fn en code 254.
++ */
++#define KEYD_VENDOR		0x0fac
++#define KEYD_PRODUCT		0x0ade
++#define KEYD_FN			254
+ 
+ #define HID_USAGE_MODE		0x00ff0004
+ 
+@@ -61,6 +70,7 @@
+ 	struct input_handler inp_handler;
+ 	struct input_handle kbd_handle;
+ 	struct input_handle tpd_handle;
++	struct input_handle keyd_handle;
+ 	struct backlight_device *backlight_dev;
+ 	struct delayed_work inactivity_work;
+ 	struct work_struct restore_brightness_work;
+@@ -250,6 +260,9 @@
+ 
+ 	reset_inactivity_timer(kbd);
+ 
++	if (handle == &kbd->keyd_handle && type == EV_KEY && code == KEYD_FN)
++		code = KEY_FN;
++
+ 	if (type == EV_KEY && code == KEY_FN && appletb_tb_fn_toggle &&
+ 		(kbd->current_mode == APPLETB_KBD_MODE_SPCL ||
+ 		 kbd->current_mode == APPLETB_KBD_MODE_FN)) {
+@@ -278,6 +291,9 @@
+ 	} else if (id->driver_info == APPLETB_DEVID_TRACKPAD) {
+ 		handle = &kbd->tpd_handle;
+ 		handle->name = "tbtpd";
++	} else if (id->driver_info == APPLETB_DEVID_KEYD) {
++		handle = &kbd->keyd_handle;
++		handle->name = "tbkeyd";
+ 	} else {
+ 		return -ENOENT;
+ 	}
+@@ -359,6 +375,15 @@
+ 		.keybit = { [BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH) },
+ 		.driver_info = APPLETB_DEVID_TRACKPAD,
+ 	},
++	{
++		.flags = INPUT_DEVICE_ID_MATCH_BUS |
++			INPUT_DEVICE_ID_MATCH_VENDOR |
++			INPUT_DEVICE_ID_MATCH_PRODUCT,
++		.bustype = BUS_USB,
++		.vendor = KEYD_VENDOR,
++		.product = KEYD_PRODUCT,
++		.driver_info = APPLETB_DEVID_KEYD,
++	},
+ 	{ }
+ };
+ 
+@@ -367,6 +392,10 @@
+ {
+ 	struct device *dev = &inp_dev->dev;
+ 
++	/* clavier virtuel de keyd: pas de parent USB, accepté tel quel */
++	if (inp_dev->id.vendor == KEYD_VENDOR && inp_dev->id.product == KEYD_PRODUCT)
++		return true;
++
+ 	/* in kernel: dev && !is_usb_device(dev) */
+ 	while (dev && !(dev->type && dev->type->name &&
+ 			!strcmp(dev->type->name, "usb_device")))
