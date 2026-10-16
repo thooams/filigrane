@@ -283,7 +283,8 @@ environment {
 spawn-at-startup "dbus-update-activation-environment" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP" "XDG_SESSION_TYPE" "DISPLAY"
 spawn-at-startup "pipewire"
 // This line starts waybar, a commonly used bar for Wayland compositors.
-spawn-at-startup "waybar"
+// Relancée si elle s'arrête: waybar plante quand ses écrans disparaissent (débranchement)
+spawn-sh-at-startup "while :; do waybar; sleep 1; done"
 spawn-at-startup "mako"
 // Profils d'écrans automatiques (config: ~/.config/kanshi/config)
 spawn-at-startup "kanshi"

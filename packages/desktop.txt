@@ -22,6 +22,7 @@ font-awesome6
 cliphist
 libsecret  # trousseau (Secret Service) pour la CLI Proton Drive et les applis
 gnome-keyring  # démon lancé à la demande par D-Bus
+vips  # miniatures des fonds d'écran dans le menu (vipsthumbnail)
 libnotify
 qalculate
 noto-fonts-emoji
