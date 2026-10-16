@@ -20,6 +20,8 @@ noto-fonts-ttf
 font-awesome6
 # Menu tout-en-un (dotfiles/home/.local/bin/menu)
 cliphist
+libsecret  # trousseau (Secret Service) pour la CLI Proton Drive et les applis
+gnome-keyring  # démon lancé à la demande par D-Bus
 libnotify
 qalculate
 noto-fonts-emoji

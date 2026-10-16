@@ -181,6 +181,28 @@ run_as_user() {
     fi
 }
 
+# CLI officielle Proton Drive (pas dans les dépôts Void): binaire épinglé, vérifié par SHA-512
+PROTON_DRIVE_VER="0.9.0"
+PROTON_DRIVE_SHA512="3533025ba69ae112b64e3e01fbcc1ad0688136a4043f6cf6a72886967d85fdcd9ec235479c2e113171614be5225bfba93427509a05ca5aa6071d924fa7e91ca8"
+
+setup_proton_drive() {
+    log "Proton Drive CLI $PROTON_DRIVE_VER"
+    local dir="$TARGET_HOME/.local/opt/proton-drive-$PROTON_DRIVE_VER"
+    if [ ! -x "$dir/proton-drive" ]; then
+        run_as_user mkdir -p "$dir"
+        run_as_user curl -fsSL "https://proton.me/download/drive/cli/$PROTON_DRIVE_VER/linux-x64/proton-drive" -o "$dir/proton-drive.tmp" \
+            || { warn "téléchargement de Proton Drive CLI échoué"; return 0; }
+        if ! echo "$PROTON_DRIVE_SHA512  $dir/proton-drive.tmp" | sha512sum -c --quiet; then
+            rm -f "$dir/proton-drive.tmp"; warn "somme SHA-512 de Proton Drive CLI incorrecte"; return 0
+        fi
+        run_as_user chmod 755 "$dir/proton-drive.tmp"
+        run_as_user mv "$dir/proton-drive.tmp" "$dir/proton-drive"
+    fi
+    run_as_user mkdir -p "$TARGET_HOME/.local/bin"
+    run_as_user ln -sfn "$dir/proton-drive" "$TARGET_HOME/.local/bin/proton-drive"
+    echo "connexion: proton-drive auth login (trousseau requis, voir README)"
+}
+
 setup_claude() {
     log "Claude Code"
     if [ -x "$TARGET_HOME/.local/bin/claude" ]; then
@@ -224,4 +246,5 @@ setup_dotfiles() {
 [ "$DO_SYSTEM" -eq 1 ] && setup_system
 [ "$DO_DOTFILES" -eq 1 ] && setup_dotfiles
 [ "$DO_SYSTEM" -eq 1 ] && setup_claude
+[ "$DO_SYSTEM" -eq 1 ] && setup_proton_drive
 log "Terminé"

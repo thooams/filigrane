@@ -28,6 +28,12 @@ Le profil (`vm` ou `baremetal`) est détecté via le flag `hypervisor` de `/proc
 - **Chromium** natif Wayland (variable `CHROME_FLAGS` posée par niri). **Conteneurs** : `podman`, alias `d`.
 - **Fond d'écran** : `swaybg` via `wallpaper [image]`, images dans `~/.local/share/wallpapers/`. Les images téléchargées ne sont pas dans le dépôt (licence inconnue).
 - **Veille automatique** : `cron-watch` (lancé par niri, un `bash` endormi d'environ 3 Mo, sans daemon cron) rejoue des tâches périodiques avec rattrapage après reboot. `watch-void` : notification mako des mises à jour xbps (toutes les 6 h). `watch-claude omarchy|t2` : chaque semaine, si Omarchy ou t2linux ont du neuf, `claude -p` (lecture seule, sans réseau ni Bash, plafond 1 $) compare au dépôt et écrit des propositions d'intégration dans `~/.local/state/watch/reports/`, avec notification. Prompts dans `dotfiles/config/watch/`.
+- **Proton Drive** : CLI officielle (`proton-drive`, binaire épinglé et vérifié par SHA-512, sans démon) installée par `bootstrap.sh`. Elle garde sa session dans le trousseau (`gnome-keyring`, lancé à la demande par D-Bus). Une seule fois, créer le trousseau puis se connecter :
+  ```
+  read -rs "P?Mot de passe du trousseau : " && printf '%s' "$P" | gnome-keyring-daemon --replace --unlock --components=secrets --daemonize >/dev/null; unset P
+  proton-drive auth login
+  ```
+  Puis par exemple `proton-drive filesystem upload -f skip -d merge -t ./dossier /my-files/sauvegardes`. Le trousseau est verrouillé à chaque démarrage : la première utilisation de la session le redemande.
 - **Claude Code** : installé par `bootstrap.sh` (`~/.local/bin/claude`, `/login` au premier lancement, `Mod+Y`), avec le skill `void-linux` (règles xbps/runit, budget ressources, tout changement durable reporté dans ce dépôt).
 
 ## Réinstaller un système complet
