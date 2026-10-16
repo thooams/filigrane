@@ -5,6 +5,5 @@ dhcpcd
 iwd
 bluetoothd
 chronyd
-acpid
 socklog-unix
 nanoklogd

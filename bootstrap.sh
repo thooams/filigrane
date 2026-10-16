@@ -98,6 +98,15 @@ setup_system() {
         done
     done
 
+    # Services retirés des listes: désactivés s'ils l'étaient (acpid: elogind gère le capot,
+    # et handler.sh mettait en veille capot fermé même avec des écrans externes)
+    for svc in acpid; do
+        if [ -L "/etc/runit/runsvdir/default/$svc" ]; then
+            $SUDO sv down "/var/service/$svc" 2>/dev/null || true
+            $SUDO rm -f "/etc/runit/runsvdir/default/$svc"
+        fi
+    done
+
     log "Connexion automatique tty1"
     local conf=/etc/sv/agetty-tty1/conf autologin="$AUTOLOGIN"
     [ "$autologin" = auto ] && { [ "$PROFILE" = vm ] && autologin=1 || autologin=0; }
