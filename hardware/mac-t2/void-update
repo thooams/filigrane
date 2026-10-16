@@ -1,0 +1,16 @@
+#!/bin/bash
+# Mise à jour système encadrée par deux instantanés snapper de la racine (@void).
+#   void-update [options de xbps-install]     ex.: void-update -y
+# Retour arrière: voir hardware/mac-t2/README.md (section Double démarrage).
+set -uo pipefail
+[ "$(id -u)" -eq 0 ] || exec sudo "$0" "$@"
+snap() { snapper --no-dbus -c root "$@"; }
+
+pre="$(snap create -t pre -p -c number -d "void-update")" || { echo "snapper a échoué, mise à jour annulée" >&2; exit 1; }
+echo "instantané avant: $pre"
+xbps-install -Su "$@"
+rc=$?
+post="$(snap create -t post --pre-number "$pre" -p -c number -d "void-update (code $rc)")"
+echo "instantané après: $post"
+snap cleanup number
+exit "$rc"

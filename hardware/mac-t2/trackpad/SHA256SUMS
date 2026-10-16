@@ -1,0 +1,7 @@
+55b780d2a8c3264b44f9892b4f4a4adee26c0e7656bfba53a26c94b0d8b7d766  hid-apple.c
+0fbf736e23091bebad88030f9a4093823597840c53ac1ae48da58f8663fef277  hid-magicmouse.c
+8bfc0f60ee1844b9b972a55c8c76298a56476c70d14347eaab1a12b64fe6bef4  hid-ids.h
+f985f2223b6556b2e8f1a9654cedccd40fb1a257791545da67c7700f68f91c37  4001-asahi-trackpad.patch
+4f6b587052de594771e906b000d7b764d5524719a8d4874f892a462d09382036  4003-HID-apple-ignore-the-trackpad-on-T2-Macs.patch
+b9b721084bf5059eedff3908f43a47038814967f5c76ee321f35492364cd952d  4004-HID-magicmouse-Add-support-for-trackpads-found-on-T2.patch
+a13fb701e1139ca7f36e5c6d7130f5f1ceb504aa03f7202c81ad002f747cbbb9  4005-HID-magicmouse-fix-regression-breaking-support-for-M.patch

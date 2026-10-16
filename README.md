@@ -60,8 +60,8 @@ Nouveau paquet : l'ajouter dans le bon fichier `packages/*.txt`.
 ## Limites connues
 
 - UEFI uniquement, pas de LUKS/LVM, pas de BIOS legacy ni d'EFI 32 bits (Mac Pro 2006).
-- `install-void.sh` utilise tout le disque : pas de double démarrage.
-- Mac T2 : pas de Touch Bar, firmware Wi-Fi à récupérer à la main (`t2-wifi-firmware`), voir `hardware/mac-t2/README.md`.
+- `install-void.sh` utilise tout le disque. Double démarrage sur un volume LUKS + btrfs existant : à la main, voir `hardware/mac-t2/README.md` (`dualboot.sh`).
+- Mac T2 : Touch Bar en touches spéciales seulement (pas de `tiny-dfr`), firmware Wi-Fi à récupérer à la main (`t2-wifi-firmware`, ou copie depuis un autre système ; jamais dans le dépôt), voir `hardware/mac-t2/README.md`.
 - Wi-Fi Broadcom des vieux Mac (sans T2) : pilote propriétaire non inclus.
 - Non testés de bout en bout : `install-void.sh`, le profil `baremetal`, le profil `mac-t2` (la VM de développement n'est pas réinstallable sans être effacée, et n'a pas de puce T2).
 - Les actions `Éteindre`, `Redémarrer` et `Veille` du menu passent par `sudo` sans mot de passe (règle `/etc/sudoers.d/zz-power`, limitée à `zzz`, `reboot`, `poweroff`), faute de `polkit`.

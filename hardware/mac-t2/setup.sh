@@ -1,9 +1,9 @@
 #!/bin/bash
 # Support des Mac Intel à puce T2 (MacBook Pro/Air 2018-2020, Mac mini 2018, iMac 2020, iMac Pro, Mac Pro 2019).
 # Approche inspirée d'Omarchy (install/hardware/apple/fix-t2.sh), adaptée à Void:
-# xbps + DKMS (pas de noyau linux-t2), dracut, GRUB, runit.
+# xbps + DKMS (pas de noyau linux-t2), dracut, GRUB ou Limine (/etc/kernel/cmdline), runit.
 #
-#   ./setup.sh [--check] [--only dkms|boot|audio|fan|tools]
+#   ./setup.sh [--check] [--only dkms|touchbar|smc|trackpad|boot|audio|fan|net|tools]
 #
 # --check: affiche si une puce T2 est détectée (code 0 = oui) puis quitte.
 # Appelé automatiquement par bootstrap.sh quand une puce T2 est détectée.
@@ -16,6 +16,14 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 T2BCE_REPO="https://github.com/AdityaGarg8/t2bce"
 T2BCE_REF="d493b0696b133ef2a3e2192790758180d62886b0"
 T2BCE_VER="0.0+git${T2BCE_REF:0:7}"
+# Pilotes Touch Bar hors arbre (hid-appletb-kbd/bl, appletbdrm), voir appletb/: incrémenter si SHA256SUMS change
+APPLETB_VER="1"
+# applesmc avec le SMC T2 (ventilateurs), voir applesmc/: celui du noyau Void bloque le démarrage
+APPLESMC_VER="1"
+# Trackpad multitouch (hid-apple + hid-magicmouse T2), voir trackpad/: sans lui, trackpad = simple souris
+TRACKPAD_VER="1"
+# Fn et Ctrl gauche inversés (clavier interne)
+HID_APPLE_OPTS="swap_fn_leftctrl=1"
 # Démon de ventilateurs (GPL-3.0), compilé avec cargo
 FAN_REPO="https://github.com/GnomedDev/T2FanRD"
 FAN_REF="48baf962697ec3d4d969c74cf601ee8e15b7aeaa"
@@ -121,22 +129,37 @@ cmdline_add() { # cmdline_add PARAM : ajoute à GRUB_CMDLINE_LINUX_DEFAULT s'il 
     sed -i -E "s|^(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*)\"|\1 ${p}\"|" /etc/default/grub
 }
 
+kcmdline_add() { # kcmdline_add PARAM : ajoute à /etc/kernel/cmdline (Limine, dualboot.sh) s'il manque
+    local p="$1" key="${1%%=*}"
+    grep -E "(^| )${key}(=| |$)" /etc/kernel/cmdline >/dev/null && return 0
+    sed -i -E "1s|\$| ${p}|" /etc/kernel/cmdline
+}
+
 setup_boot() {
     log "Chargement des modules, initramfs et paramètres noyau"
     mkdir -p /etc/modules-load.d /etc/dracut.conf.d
     cat > /etc/modules-load.d/t2.conf <<'EOF'
-# Clavier/trackpad internes (USB virtuel via t2bce), audio, Bluetooth, capteurs
+# Clavier/trackpad internes (USB virtuel via t2bce) et audio.
+# applesmc, hid_appletb_bl/kbd (Touch Bar) et le Bluetooth sont chargés par udev (ACPI/USB):
+# les forcer ici, avant udev, bloque le démarrage sous runit.
 t2bce_vhci
 t2bce_audio
-hci_bcm4377
-applesmc
 EOF
     # Clavier disponible dès l'initramfs (add_drivers: ignoré proprement si un module manque)
     cat > /etc/dracut.conf.d/t2.conf <<'EOF'
 add_drivers+=" t2bce_dma t2bce_core t2bce_vhci usbhid hid_apple hid_generic xhci_pci xhci_hcd "
 EOF
+    # Options du clavier interne (copiées dans l'initramfs par dracut, hid_apple y est chargé)
+    echo "options hid_apple $HID_APPLE_OPTS" > /etc/modprobe.d/hid_apple.conf
 
-    if [ -f /etc/default/grub ]; then
+    if [ -f /etc/kernel/cmdline ]; then
+        local p
+        for p in "${KERNEL_PARAMS[@]}"; do kcmdline_add "$p"; done
+        if [ -d /etc/sv/wpa_supplicant ] && [ -e /etc/runit/runsvdir/default/wpa_supplicant ]; then
+            kcmdline_add "$WIFI_PARAM"
+        fi
+        cat /etc/kernel/cmdline | sed -E 's/[0-9a-fA-F]{8}-[0-9a-fA-F-]{27}/<UUID>/g'
+    elif [ -f /etc/default/grub ]; then
         local p
         for p in "${KERNEL_PARAMS[@]}"; do cmdline_add "$p"; done
         if xbps-query wpa_supplicant >/dev/null 2>&1; then cmdline_add "$WIFI_PARAM"; fi
@@ -145,10 +168,68 @@ EOF
             grub-mkconfig -o /boot/grub/grub.cfg 2>&1 | tail -1
         fi
     else
-        warn "/etc/default/grub introuvable: ajouter à la main ${KERNEL_PARAMS[*]}"
+        warn "ni /etc/kernel/cmdline ni /etc/default/grub: ajouter à la main ${KERNEL_PARAMS[*]}"
     fi
 
     command -v dracut >/dev/null && dracut --force --regenerate-all 2>&1 | tail -2 || true
+    # Double démarrage Limine: recopier les initramfs régénérés sur l'ESP
+    if [ -x /usr/local/sbin/limine-void ]; then /usr/local/sbin/limine-void sync || warn "limine-void sync a échoué"; fi
+}
+
+setup_touchbar() {
+    log "Pilotes Touch Bar via DKMS (appletb $APPLETB_VER)"
+    local src="/usr/src/appletb-$APPLETB_VER" k
+    rm -rf "$src"
+    cp -a "$HERE/appletb" "$src"
+    dkms status -m appletb -v "$APPLETB_VER" 2>/dev/null | grep -E 'added|built|installed' >/dev/null \
+        || dkms add -m appletb -v "$APPLETB_VER"
+    for k in $(installed_kernels); do
+        if dkms status -m appletb -v "$APPLETB_VER" -k "$k" 2>/dev/null | grep -E 'installed' >/dev/null; then
+            echo "appletb déjà installé pour $k"
+        else
+            # non bloquant: sans Touch Bar, le clavier (t2bce) reste utilisable
+            dkms install -m appletb -v "$APPLETB_VER" -k "$k" || warn "appletb non compilé pour $k (voir appletb/build.sh)"
+        fi
+    done
+}
+
+setup_smc() {
+    log "applesmc pour le SMC T2 via DKMS (applesmc-t2 $APPLESMC_VER)"
+    # Jamais chargé par udev: l'applesmc du noyau Void bloque "waiting for devices to settle".
+    # Le service t2fanrd charge la version DKMS (/updates) après le démarrage, si elle existe.
+    cat > /etc/modprobe.d/t2-applesmc.conf <<'EOF'
+# void-setup: applesmc chargé par le service t2fanrd (version DKMS applesmc-t2), pas par udev
+blacklist applesmc
+EOF
+    local src="/usr/src/applesmc-t2-$APPLESMC_VER" k
+    rm -rf "$src"
+    cp -a "$HERE/applesmc" "$src"
+    dkms status -m applesmc-t2 -v "$APPLESMC_VER" 2>/dev/null | grep -E 'added|built|installed' >/dev/null \
+        || dkms add -m applesmc-t2 -v "$APPLESMC_VER"
+    for k in $(installed_kernels); do
+        if dkms status -m applesmc-t2 -v "$APPLESMC_VER" -k "$k" 2>/dev/null | grep -E 'installed' >/dev/null; then
+            echo "applesmc-t2 déjà installé pour $k"
+        else
+            dkms install -m applesmc-t2 -v "$APPLESMC_VER" -k "$k" || warn "applesmc-t2 non compilé pour $k: ventilateurs gérés par la T2 seule"
+        fi
+    done
+}
+
+setup_trackpad() {
+    log "Trackpad multitouch via DKMS (t2-trackpad $TRACKPAD_VER)"
+    local src="/usr/src/t2-trackpad-$TRACKPAD_VER" k
+    rm -rf "$src"
+    cp -a "$HERE/trackpad" "$src"
+    dkms status -m t2-trackpad -v "$TRACKPAD_VER" 2>/dev/null | grep -E 'added|built|installed' >/dev/null \
+        || dkms add -m t2-trackpad -v "$TRACKPAD_VER"
+    # T2_TRACKPAD_KERNELS: limiter à certains noyaux (ex. garder le précédent intact pour un premier essai)
+    for k in ${T2_TRACKPAD_KERNELS:-$(installed_kernels)}; do
+        if dkms status -m t2-trackpad -v "$TRACKPAD_VER" -k "$k" 2>/dev/null | grep -E 'installed' >/dev/null; then
+            echo "t2-trackpad déjà installé pour $k"
+        else
+            dkms install -m t2-trackpad -v "$TRACKPAD_VER" -k "$k" || warn "t2-trackpad non compilé pour $k: trackpad en mode souris"
+        fi
+    done
 }
 
 setup_audio() {
@@ -189,11 +270,47 @@ EOF
     mkdir -p /etc/sv/t2fanrd
     cat > /etc/sv/t2fanrd/run <<'EOF'
 #!/bin/sh
+# applesmc est sur liste noire pour udev: charger ici la version T2 (DKMS, /updates) seulement
 exec 2>&1
+if ! modinfo -F filename applesmc 2>/dev/null | grep -q '/updates/'; then
+    echo "applesmc-t2 absent pour $(uname -r): t2fanrd arrêté, ventilateurs gérés par la T2"
+    sv down /var/service/t2fanrd
+    exit 0
+fi
+timeout 30 modprobe applesmc || { echo "chargement d'applesmc échoué"; sleep 300; exit 1; }
 exec /usr/local/bin/t2fanrd
 EOF
     chmod 755 /etc/sv/t2fanrd/run
+    # Journal (sinon "Found fan: FanController {...}" s'affiche sur la console au démarrage)
+    mkdir -p /etc/sv/t2fanrd/log /var/log/t2fanrd
+    cat > /etc/sv/t2fanrd/log/run <<'EOF'
+#!/bin/sh
+exec svlogd -tt /var/log/t2fanrd
+EOF
+    chmod 755 /etc/sv/t2fanrd/log/run
+    # Au réveil, le SMC repasse les ventilateurs en automatique (fan*_manual=0): relancer t2fanrd
+    mkdir -p /etc/zzz.d/resume
+    cat > /etc/zzz.d/resume/50-t2fanrd <<'EOF'
+#!/bin/sh
+[ -e /var/service/t2fanrd ] && sv restart /var/service/t2fanrd
+exit 0
+EOF
+    chmod 755 /etc/zzz.d/resume/50-t2fanrd
     ln -sfn /etc/sv/t2fanrd /etc/runit/runsvdir/default/t2fanrd
+}
+
+setup_net() {
+    log "Interface USB interne de la T2 (cdc_ncm) ignorée par dhcpcd"
+    # Même adresse MAC sur tous les Mac T2: nom fixe, puis exclusion de dhcpcd
+    # (sinon adresse 169.254.x.x et route par défaut parasite avant le Wi-Fi)
+    mkdir -p /etc/udev/rules.d
+    cat > /etc/udev/rules.d/70-t2-ncm.rules <<'EOF'
+# void-setup: interface Ethernet USB interne de la puce T2 (pas un vrai réseau)
+SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="ac:de:48:00:11:22", NAME="t2ncm0"
+EOF
+    if [ -f /etc/dhcpcd.conf ] && ! grep -qE '^denyinterfaces.*t2ncm0' /etc/dhcpcd.conf; then
+        printf '\n# void-setup: interface interne de la T2\ndenyinterfaces t2ncm0\n' >> /etc/dhcpcd.conf
+    fi
 }
 
 setup_tools() {
@@ -219,8 +336,12 @@ fi
 
 [ -z "$ONLY" ] && setup_packages  # avec --only: dkms et linux-headers doivent déjà être installés
 want dkms && setup_dkms
+want touchbar && setup_touchbar
+want smc && setup_smc
+want trackpad && setup_trackpad
 want audio && setup_audio
 want boot && setup_boot
 want fan && setup_fan
+want net && setup_net
 want tools && setup_tools
 log "Terminé. Redémarrer, puis lancer t2-wifi-firmware pour le Wi-Fi/Bluetooth."

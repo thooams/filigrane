@@ -1,0 +1,43 @@
+#!/bin/bash
+# Retour au noyau précédent si le dernier casse le matériel T2 (clavier, Wi-Fi, Touch Bar...).
+#
+#   t2-rollback [VERSION]   bloque les mises à jour du noyau (xbps hold), met VERSION (défaut: l'avant-dernier
+#                           noyau installé) en tête du menu "Void Linux" de Limine, propose de redémarrer
+#   t2-rollback --undo      débloque les mises à jour et revient au noyau le plus récent
+#   t2-rollback --status
+set -euo pipefail
+PIN_FILE=/etc/void-setup/kernel-pin
+[ "$(id -u)" -eq 0 ] || exec sudo "$0" "$@"
+
+installed() { limine-void status | sed -n 's/^installés: //p' | tr ' ' '\n' | grep -v '^$'; }
+kernel_pkgs() { # paquets fournissant le noyau le plus récent et ses en-têtes (ex. linux6.18 linux6.18-headers)
+    local v pkg
+    v="$(installed | tail -n 1)"
+    pkg="$(xbps-query -o "/boot/vmlinuz-$v" | cut -d: -f1 | sed -E 's/-[^-]+_[0-9]+$//')"
+    echo "$pkg"
+    xbps-query "$pkg-headers" >/dev/null 2>&1 && echo "$pkg-headers"
+}
+
+case "${1:-}" in
+    --undo)
+        for p in $(kernel_pkgs); do xbps-pkgdb -m unhold "$p"; done
+        rm -f "$PIN_FILE"
+        limine-void sync
+        echo "Mises à jour du noyau débloquées; le noyau le plus récent repasse en tête du menu Void." ;;
+    --status)
+        limine-void status
+        xbps-query -H 2>/dev/null | sed 's/^/bloqué: /' || true ;;
+    -h|--help) sed -n '2,7p' "$0" ;;
+    *)
+        target="${1:-$(installed | tail -n 2 | head -n 1)}"
+        installed | grep -qxF "$target" || { echo "noyau $target non installé"; exit 1; }
+        [ "$target" != "$(installed | tail -n 1)" ] || echo "attention: $target est déjà le plus récent"
+        for p in $(kernel_pkgs); do xbps-pkgdb -m hold "$p"; done
+        mkdir -p "$(dirname "$PIN_FILE")"
+        echo "$target" > "$PIN_FILE"
+        limine-void sync
+        echo "Noyau $target épinglé, mises à jour du noyau bloquées (annuler: t2-rollback --undo)."
+        echo "Au menu Limine, choisir \"Void Linux\": $target est la première entrée."
+        read -r -p "Redémarrer maintenant ? [o/N] " r
+        [ "$r" = o ] || [ "$r" = O ] && reboot || true ;;
+esac

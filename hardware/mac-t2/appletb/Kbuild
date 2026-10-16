@@ -1,0 +1,1 @@
+obj-m += hid-appletb-kbd.o hid-appletb-bl.o appletbdrm.o

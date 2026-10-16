@@ -9,11 +9,12 @@ Omarchy utilise un noyau `linux-t2` patché (Arch). Void n'en a pas : on garde l
 | Fonction | Source |
 |---|---|
 | Clavier, trackpad (USB virtuel), audio | DKMS `t2bce` (`t2bce_core/dma/vhci/audio`, dépôt AdityaGarg8/t2bce, révision épinglée) |
-| Wi-Fi Broadcom, Bluetooth BCM4377, SMC, NVMe, `hid-apple` | noyau Void 6.18 (déjà activés) |
+| Wi-Fi Broadcom, Bluetooth, NVMe, `hid-apple` | noyau Void 6.18 (déjà activés). Clavier : Fn et Ctrl gauche inversés (`HID_APPLE_OPTS` dans `setup.sh`) |
 | Wi-Fi: firmware | script officiel t2linux, à lancer à la main (`t2-wifi-firmware`) |
-| Ventilateurs | `t2fanrd` (Rust, compilé avec cargo) + service runit, valeurs Omarchy |
+| Ventilateurs | DKMS `applesmc-t2` : `applesmc.c` de v6.18.7 + correctifs `30xx-applesmc` de t2linux (révision épinglée, vérifiés contre `applesmc/SHA256SUMS`, série 6.18 seulement). L'`applesmc` du noyau Void bloque le démarrage sur T2 : il est sur liste noire, et le service `t2fanrd` (Rust, valeurs Omarchy) charge la version DKMS après le démarrage, ou s'arrête si elle manque |
 | Audio: haut-parleurs / casque | profils ALSA UCM du dépôt t2bce |
-| **Touch Bar** | **non supporté** : la config du noyau Void n'active pas `HID_APPLETB_*` ni `DRM_APPLETBDRM` |
+| Trackpad | DKMS `t2-trackpad` : `hid-apple` et `hid-magicmouse` de v6.18.7 + correctifs t2linux (partie HID de 4001, 4003-4005, révision épinglée) + `9001` (port manuel des correctifs stables jusqu'à v6.18.57, dont une correction de sécurité). Sans lui, le noyau Void voit le trackpad comme une souris (pas de défilement à deux doigts). `t2-compat.h` remplace les définitions SPI Apple Silicon absentes. Série 6.18 seulement |
+| Touch Bar | DKMS `appletb` : `hid-appletb-kbd`, `hid-appletb-bl` (et `appletbdrm`, compilé mais non chargé), désactivés dans la config du noyau Void. Sources du tag stable `v<version>` sur git.kernel.org, vérifiées contre `appletb/SHA256SUMS`. Touches spéciales dessinées par la T2 (Fn pour F1-F12), comme Omarchy, sans démon `tiny-dfr` |
 
 Réglages appliqués : paramètres noyau `intel_iommu=on iommu=pt pm_async=off mem_sleep_default=deep` (suspension stable), `brcmfmac.feature_disable=0x82000` (wpa_supplicant 2.11+ casse le Wi-Fi Broadcom), modules chargés au démarrage (`/etc/modules-load.d/t2.conf`) et ajoutés à l'initramfs dracut.
 
@@ -33,6 +34,36 @@ Attention : `install-void.sh` utilise **tout le disque** et **efface macOS**. Pa
 
 Le bootstrap détecte la puce T2, installe les en-têtes et DKMS, compile `t2bce`, configure le démarrage, les ventilateurs et l'audio.
 
+## Double démarrage (Void à côté d'Omarchy ou d'un autre Linux)
+
+Cas visé (pas encore testé de bout en bout) : un volume LUKS2 + btrfs déjà utilisé par un autre système, démarré par Limine sur une ESP Linux séparée de celle d'Apple. Void s'installe dans des sous-volumes de premier niveau à côté:
+
+| Sous-volume | Monté sur (Void) | Rôle |
+|---|---|---|
+| `@void` | `/` | racine Void |
+| `@home-void` | `/home` | home propre de Void (dotfiles du dépôt sans conflit) |
+| `@home` (l'autre système) | `/mnt/omarchy-home`, lien `~/home.bak` | ancien home, intact |
+| `@swap` | `/swap` | swapfile No_COW (swap seulement, pas d'hibernation) |
+
+L'ESP est montée sur `/boot/efi` : les noyaux restent dans `@void`, seul `/boot/efi/void/` est écrit sur l'ESP.
+
+`./dualboot.sh` (root, idempotent) écrit `/etc/fstab`, `/etc/dracut.conf.d/10-dualboot.conf` (hostonly, `crypt btrfs resume`) et `/etc/kernel/cmdline` avec les UUID détectés à l'exécution (aucun dans le dépôt). Le clavier du prompt LUKS est `us` par défaut (`LUKS_KEYMAP`), car la phrase de passe doit se taper comme sur l'autre système. `setup.sh` ajoute ensuite ses paramètres T2 à `/etc/kernel/cmdline`.
+
+### Démarrage et retour arrière
+
+- **Limine** : `limine-void sync` (lancé par les hooks `/etc/kernel.d/post-install` et `post-remove`) copie les deux noyaux les plus récents dans `/boot/efi/void/` et réécrit uniquement le bloc `/+Void Linux` à la fin de `limine.conf` (copie précédente : `limine.conf.void-bak`). `default_entry` et les entrées de l'autre système ne sont pas touchés. Il prend le même verrou que les outils Limine d'Omarchy (`/run/lock/boot-partition.lock`).
+- **Noyaux** : ne pas utiliser `vkpurge rm all` (il ne garde que le noyau en cours). Utiliser `limine-void purge --yes`, qui garde les deux plus récents et le noyau épinglé.
+- **`t2-rollback`** : si le dernier noyau casse le matériel, `sudo t2-rollback` bloque les mises à jour du noyau (`xbps-pkgdb -m hold`), met l'avant-dernier noyau en tête du menu « Void Linux » et propose de redémarrer (Limine n'a pas de « prochain démarrage seulement » : choisir « Void Linux » au menu). `t2-rollback 6.18.56_1` pour une version précise, `t2-rollback --undo` pour revenir au plus récent, `--status` pour l'état.
+- **Mises à jour** : `void-update` (au lieu de `xbps-install -Su`) prend un instantané snapper de `@void` avant et après (10 gardés, pas d'instantanés horaires). Pas de `limine-snapper-sync` sur Void : pas d'entrée Limine par instantané. Restaurer un instantané `N` depuis l'autre système (ou une clé live), `@void` non monté :
+  ```
+  mount -o subvolid=5 /dev/mapper/<volume> /mnt/top
+  mv /mnt/top/@void /mnt/top/@void.casse
+  btrfs subvolume snapshot /mnt/top/@void.casse/.snapshots/N/snapshot /mnt/top/@void
+  ```
+  puis redémarrer sur Void. Après vérification, supprimer `@void.casse` (ses instantanés imbriqués d'abord).
+
+**Hibernation** : désactivée (`nohibernate`). Non fiable sur Mac T2 (essai raté sur ce Mac), et dangereuse en double démarrage : les deux systèmes partagent le même système de fichiers btrfs. Si l'un est en hibernation, ne jamais démarrer l'autre (corruption possible). La veille simple ne pose pas ce problème.
+
 ## Après le premier démarrage
 
 1. Wi-Fi/Bluetooth : `t2-wifi-firmware`, méthode 5 (sans macOS, télécharge l'image de récupération Apple ; choisir macOS Monterey à Sonoma), puis redémarrer.
@@ -43,6 +74,6 @@ Le bootstrap détecte la puce T2, installe les en-têtes et DKMS, compile `t2bce
 
 Aucune de ces étapes n'a été testée sur un vrai Mac T2 (la VM n'a pas de puce T2). Testé seulement : la syntaxe des scripts et la compilation des modules contre le noyau Void 6.18.
 
-Réutilisation : `./hardware/mac-t2/setup.sh --only dkms|boot|audio|fan|tools` (`T2_FORCE=1` pour forcer sans puce détectée).
+Réutilisation : `./hardware/mac-t2/setup.sh --only dkms|touchbar|smc|trackpad|boot|audio|fan|net|tools` (`T2_FORCE=1` pour forcer sans puce détectée).
 
 Sources : [t2linux](https://wiki.t2linux.org/), [t2bce](https://github.com/AdityaGarg8/t2bce), [Omarchy fix-t2.sh](https://github.com/omacom/omarchy/blob/quattro/install/hardware/apple/fix-t2.sh).

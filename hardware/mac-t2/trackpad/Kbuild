@@ -1,0 +1,2 @@
+obj-m += hid-apple.o hid-magicmouse.o
+ccflags-y += -include $(src)/t2-compat.h

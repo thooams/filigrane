@@ -1,0 +1,2 @@
+# Double démarrage (hardware/mac-t2/dualboot.sh): instantanés de la racine avant/après mise à jour
+snapper

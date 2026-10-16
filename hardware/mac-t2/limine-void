@@ -1,0 +1,139 @@
+#!/bin/bash
+# Noyaux Void sur une ESP Limine partagée avec un autre système (ex. Omarchy).
+#
+#   limine-void sync          copie les KEEP noyaux les plus récents (et l'épinglé) dans $ESP/void/
+#                             et réécrit le seul bloc "/+Void Linux" de limine.conf
+#   limine-void purge [--yes] supprime les autres noyaux installés (remplace "vkpurge rm all")
+#   limine-void status
+#
+# Appelé par /etc/kernel.d/post-install et post-remove (60-limine-void). Le reste de limine.conf
+# (entrées de l'autre système, default_entry) n'est jamais modifié; une copie précédente est
+# gardée dans limine.conf.void-bak.
+set -euo pipefail
+
+ESP="${ESP:-/boot/efi}"
+SUBDIR=void
+KEEP="${KEEP:-2}"
+TITLE="Void Linux"
+PIN_FILE=/etc/void-setup/kernel-pin
+CMDLINE_FILE=/etc/kernel/cmdline
+LOCK=/run/lock/boot-partition.lock   # même verrou que les outils Limine d'Omarchy
+
+die() { echo "limine-void: $*" >&2; exit 1; }
+[ "$(id -u)" -eq 0 ] || exec sudo "$0" "$@"
+
+installed() { # versions avec noyau et initramfs dans /boot, de la plus ancienne à la plus récente
+    local f v
+    for f in /boot/vmlinuz-*; do
+        [ -e "$f" ] || continue
+        v="${f#/boot/vmlinuz-}"
+        [ -f "/boot/initramfs-$v.img" ] && echo "$v"
+    done | sort -V
+}
+
+pinned() { [ -s "$PIN_FILE" ] && cat "$PIN_FILE" || true; }
+
+selected() { # ordre du menu: épinglé d'abord, puis du plus récent au plus ancien
+    local pin all
+    pin="$(pinned)"
+    all="$(installed)"
+    if [ -n "$pin" ]; then
+        grep -qxF "$pin" <<<"$all" || die "noyau épinglé $pin absent de /boot"
+        echo "$pin"
+    fi
+    if [ -n "$pin" ]; then
+        tail -n "$KEEP" <<<"$all" | tac | grep -vxF "$pin" || true
+    else
+        tail -n "$KEEP" <<<"$all" | tac
+    fi
+}
+
+block() {
+    local v label mid pin newest
+    pin="$(pinned)"
+    newest="$(installed | tail -n 1)"
+    mid="$(cat /etc/machine-id 2>/dev/null || cat /var/lib/dbus/machine-id)"
+    echo "/+$TITLE"
+    echo "comment: machine-id=$mid"
+    echo "comment: généré par limine-void (void-setup), ne pas éditer"
+    while read -r v; do
+        label="Linux $v"
+        if [ "$v" = "$pin" ]; then label="$label (épinglé)"
+        elif [ "$v" != "$newest" ]; then label="$label (précédent)"; fi
+        echo "  //$label"
+        echo "  protocol: linux"
+        echo "  path: boot():/$SUBDIR/vmlinuz-$v#$(b2sum "$ESP/$SUBDIR/vmlinuz-$v" | cut -d' ' -f1)"
+        echo "  module_path: boot():/$SUBDIR/initramfs-$v.img#$(b2sum "$ESP/$SUBDIR/initramfs-$v.img" | cut -d' ' -f1)"
+        echo "  cmdline: $(tr -s ' \n' ' ' < "$CMDLINE_FILE" | sed 's/ $//')"
+    done
+}
+
+sync_esp() {
+    local conf="$ESP/limine.conf" sel v f need=0 avail
+    [ -f "$conf" ] || die "$conf introuvable (ESP montée sur $ESP ?)"
+    [ -s "$CMDLINE_FILE" ] || die "$CMDLINE_FILE vide (lancer dualboot.sh)"
+    sel="$(selected)"
+    [ -n "$sel" ] || die "aucun noyau dans /boot"
+
+    mkdir -p /run/lock
+    exec 9>"$LOCK"
+    flock --timeout 60 9 || die "verrou $LOCK occupé"
+
+    mkdir -p "$ESP/$SUBDIR"
+    for v in $sel; do
+        for f in "vmlinuz-$v" "initramfs-$v.img"; do
+            cmp -s "/boot/$f" "$ESP/$SUBDIR/$f" || need=$((need + $(stat -c %s "/boot/$f")))
+        done
+    done
+    avail=$(( $(df --output=avail -B1 "$ESP" | tail -1) ))
+    [ "$need" -lt "$avail" ] || die "place insuffisante sur l'ESP ($need octets requis, $avail libres)"
+
+    for v in $sel; do
+        for f in "vmlinuz-$v" "initramfs-$v.img"; do
+            if ! cmp -s "/boot/$f" "$ESP/$SUBDIR/$f"; then
+                cp "/boot/$f" "$ESP/$SUBDIR/$f.tmp"
+                mv "$ESP/$SUBDIR/$f.tmp" "$ESP/$SUBDIR/$f"
+            fi
+        done
+    done
+    for f in "$ESP/$SUBDIR"/*; do
+        [ -e "$f" ] || continue
+        v="$(basename "$f")"; v="${v#vmlinuz-}"; v="${v#initramfs-}"; v="${v%.img}"
+        grep -qxF "$v" <<<"$sel" || rm -f "$f"
+    done
+
+    # Retire l'ancien bloc (du titre jusqu'à la prochaine entrée de premier niveau), puis l'ajoute en fin
+    cp -p "$conf" "$conf.void-bak"
+    awk -v t="$TITLE" '
+        $0 == "/" t || $0 == "/+" t { skip = 1; next }
+        skip && /^\/[^\/]/ { skip = 0 }
+        !skip { print }
+    ' "$conf" | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' > "$conf.tmp"
+    { echo; block <<<"$sel"; } >> "$conf.tmp"
+    mv "$conf.tmp" "$conf"
+    echo "limine-void: ESP à jour ($(tr '\n' ' ' <<<"$sel"))"
+}
+
+purge() {
+    local sel v rm_list=""
+    sel="$(selected)"
+    for v in $(installed); do
+        grep -qxF "$v" <<<"$sel" || rm_list="$rm_list $v"
+    done
+    [ -n "$rm_list" ] || { echo "rien à supprimer (gardés: $(tr '\n' ' ' <<<"$sel"))"; return 0; }
+    echo "à supprimer:$rm_list"
+    [ "${1:-}" = --yes ] || { echo "relancer avec --yes pour confirmer"; return 0; }
+    for v in $rm_list; do vkpurge rm "$v"; done
+    sync_esp
+}
+
+case "${1:-}" in
+    sync) sync_esp ;;
+    purge) purge "${2:-}" ;;
+    status)
+        echo "installés: $(installed | tr '\n' ' ')"
+        echo "sur l'ESP (ordre du menu): $(selected | tr '\n' ' ')"
+        echo "épinglé: $(pinned)"
+        ls -l "$ESP/$SUBDIR" 2>/dev/null || true ;;
+    *) sed -n '2,11p' "$0"; exit 1 ;;
+esac
