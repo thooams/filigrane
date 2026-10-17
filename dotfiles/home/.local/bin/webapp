@@ -1,0 +1,6 @@
+#!/bin/sh
+# Application web dans sa propre fenêtre (Chromium --app: sans barre d'onglets ni d'adresse).
+# Même profil que le navigateur: pas de second Chromium résident, session conservée.
+#   webapp https://web.whatsapp.com
+[ -n "$1" ] || { echo "usage: webapp URL" >&2; exit 1; }
+exec chromium --app="$1"

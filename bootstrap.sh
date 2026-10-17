@@ -250,6 +250,10 @@ setup_dotfiles() {
         rel="${f#"$ROOT/dotfiles/config/"}"
         link_one "$f" "$TARGET_HOME/.config/$rel"
     done < <(find "$ROOT/dotfiles/config" -type f -print0)
+    # .desktop des applications web (liste ~/.config/webapps/list)
+    HOME="$TARGET_HOME" sh "$ROOT/dotfiles/home/.local/bin/webapp-sync"
+    # Thème sombre par défaut (portail xdg: Chromium, GTK4, libadwaita); sans effet hors session D-Bus
+    gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || warn "gsettings: color-scheme non appliqué (pas de session D-Bus)"
 }
 
 [ "$DO_SYSTEM" -eq 1 ] && setup_system

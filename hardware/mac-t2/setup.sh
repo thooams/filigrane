@@ -246,6 +246,14 @@ setup_keys() {
     keyd check /etc/keyd/default.conf /etc/keyd/external-azerty.conf
     ln -sfn /etc/sv/keyd /etc/runit/runsvdir/default/keyd
     if [ -e /var/service/keyd ]; then sv restart /var/service/keyd 2>/dev/null || true; fi
+
+    # Le noyau remet le rétroéclairage clavier à 0 au boot: règle udev (le LED apparaît tard, après
+    # l'énumération USB de la T2, donc rc.local serait trop tôt). 3000 sur 14660 max, environ 20%.
+    mkdir -p /etc/udev/rules.d
+    cat > /etc/udev/rules.d/71-t2-kbd-backlight.rules <<'EOF'
+# void-setup: rétroéclairage clavier allumé dès que le LED apparaît
+SUBSYSTEM=="leds", ACTION=="add", KERNEL==":white:kbd_backlight", ATTR{brightness}="3000"
+EOF
 }
 
 setup_audio() {

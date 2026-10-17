@@ -1,0 +1,4 @@
+# Applications web (Chromium --app). Une par ligne :   Nom | URL | icône
+# Icône: nom du thème ou ~/.config/webapps/icons/x.png; vide = web-browser.
+# Ajouter: webapp-add "Nom" URL [icône]. Appliquer à la main: webapp-sync.
+WhatsApp | https://web.whatsapp.com |

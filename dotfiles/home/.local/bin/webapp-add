@@ -1,0 +1,21 @@
+#!/bin/sh
+# Ajoute une appli web au menu et à fuzzel.
+#   webapp-add "WhatsApp" https://web.whatsapp.com [icône]
+# icône: nom du thème d'icônes ou fichier PNG/SVG (copié dans le dépôt). Sans icône: web-browser.
+[ -n "$1" ] && [ -n "$2" ] || { echo 'usage: webapp-add "Nom" URL [icône]' >&2; exit 1; }
+name="$1" url="$2" icon="$3"
+list="${XDG_CONFIG_HOME:-$HOME/.config}/webapps/list"
+[ -f "$list" ] || { echo "liste introuvable: $list (lancer ./bootstrap.sh --dotfiles-only)" >&2; exit 1; }
+if grep -qiE "^[[:space:]]*$(printf '%s' "$name" | sed 's/[][\.*^$/]/\\&/g')[[:space:]]*\|" "$list"; then
+    echo "déjà présent: $name" >&2; exit 1
+fi
+if [ -f "$icon" ]; then
+    dir="$(dirname "$(readlink -f "$list")")/icons"
+    mkdir -p "$dir" "$(dirname "$list")/icons"
+    cp "$icon" "$dir/"
+    icon="~/.config/webapps/icons/$(basename "$icon")"
+    ln -sfn "$dir/$(basename "$icon")" "$HOME/.config/webapps/icons/$(basename "$icon")"
+fi
+printf '%s | %s | %s\n' "$name" "$url" "$icon" >> "$list"
+webapp-sync
+echo "ajouté: $name (web)"

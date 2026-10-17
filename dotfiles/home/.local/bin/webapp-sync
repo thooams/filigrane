@@ -1,0 +1,35 @@
+#!/bin/sh
+# Génère un .desktop par ligne de ~/.config/webapps/list (Nom | URL | icône) dans ~/.local/share/applications.
+# Le nom reçoit le suffixe "(web)" pour distinguer ces applis des applications natives.
+# Icône: nom du thème ou chemin; vide = web-browser. Les anciens webapp-*.desktop absents de la liste sont supprimés.
+LIST="${XDG_CONFIG_HOME:-$HOME/.config}/webapps/list"
+OUT="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+mkdir -p "$OUT"
+keep="$(mktemp)"
+if [ -f "$LIST" ]; then
+    grep -v '^[[:space:]]*\(#\|$\)' "$LIST" | while IFS='|' read -r name url icon; do
+        name="$(echo "$name" | sed 's/^ *//;s/ *$//')"
+        url="$(echo "$url" | sed 's/^ *//;s/ *$//')"
+        icon="$(echo "$icon" | sed 's/^ *//;s/ *$//')"
+        [ -n "$name" ] && [ -n "$url" ] || continue
+        case "$icon" in "") icon=web-browser ;; "~/"*) icon="$HOME/${icon#\~/}" ;; esac
+        file="webapp-$(echo "$name" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9\n' '-' | sed 's/-*$//').desktop"
+        cat > "$OUT/$file" <<EOT
+[Desktop Entry]
+Type=Application
+Name=$name (web)
+Comment=Application web: $url
+Exec=webapp $url
+Icon=$icon
+Categories=Network;
+Keywords=webapp;web;
+Terminal=false
+EOT
+        echo "$file" >> "$keep"
+    done
+fi
+for f in "$OUT"/webapp-*.desktop; do
+    [ -e "$f" ] || continue
+    grep -qxF "$(basename "$f")" "$keep" || rm -f "$f"
+done
+rm -f "$keep"

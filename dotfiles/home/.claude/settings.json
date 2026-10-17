@@ -21,6 +21,28 @@
       "Bash(git -C ~/void-setup diff *)",
       "Bash(git -C ~/void-setup log *)"
     ],
+    "deny": [
+      "Bash(*install-void.sh*)",
+      "Bash(*mkfs*)",
+      "Bash(*wipefs*)",
+      "Bash(*dd if=*)",
+      "Bash(parted *)",
+      "Bash(sudo parted *)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf / *)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf ~/)",
+      "Bash(rm -rf ~ *)",
+      "Bash(*chmod -R 777 /*)",
+      "Bash(sudo visudo*)",
+      "Bash(sudo passwd*)",
+      "Bash(passwd*)",
+      "Edit(/etc/sudoers*)",
+      "Edit(~/.ssh/**)",
+      "Edit(~/.claude/.credentials.json)",
+      "Read(~/.claude/.credentials.json)",
+      "Read(~/.ssh/id_*)"
+    ],
     "ask": [
       "Bash(sudo xbps-install -u*)",
       "Bash(sudo xbps-install -*u*)",
@@ -43,32 +65,14 @@
       "Bash(git commit *)",
       "Bash(git push *)",
       "Edit(/etc/**)"
-    ],
-    "deny": [
-      "Bash(*install-void.sh*)",
-      "Bash(*mkfs*)",
-      "Bash(*wipefs*)",
-      "Bash(*dd if=*)",
-      "Bash(parted *)",
-      "Bash(sudo parted *)",
-      "Bash(rm -rf /)",
-      "Bash(rm -rf / *)",
-      "Bash(rm -rf ~)",
-      "Bash(rm -rf ~/)",
-      "Bash(rm -rf ~ *)",
-      "Bash(*chmod -R 777 /*)",
-      "Bash(sudo visudo*)",
-      "Bash(sudo passwd*)",
-      "Bash(passwd*)",
-      "Edit(/etc/sudoers*)",
-      "Edit(~/.ssh/**)",
-      "Edit(~/.claude/.credentials.json)",
-      "Read(~/.claude/.credentials.json)",
-      "Read(~/.ssh/id_*)"
     ]
   },
   "statusLine": {
     "type": "command",
     "command": "/bin/bash /home/thomas/.claude/statusline-command.sh"
-  }
+  },
+  "tui": "fullscreen",
+  "theme": "dark",
+  "agentPushNotifEnabled": true,
+  "skipDangerousModePermissionPrompt": true
 }
