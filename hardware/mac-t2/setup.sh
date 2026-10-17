@@ -34,7 +34,7 @@ ASAHI_AUDIO_REF="ab1b46928d056bb02bb4ad72d522dab57dc9efe1"
 FIRMWARE_URL="https://wiki.t2linux.org/tools/firmware.sh"
 
 # Paramètres noyau (Omarchy): IOMMU, veille profonde stable avec t2bce
-KERNEL_PARAMS=(intel_iommu=on iommu=pt pm_async=off mem_sleep_default=deep)
+KERNEL_PARAMS=(intel_iommu=on iommu=pt pm_async=off mem_sleep_default=deep rd.luks.allow-discards)
 # wpa_supplicant >= 2.11 casse le Wi-Fi Broadcom (t2linux): contournement côté pilote
 WIFI_PARAM="brcmfmac.feature_disable=0x82000"
 

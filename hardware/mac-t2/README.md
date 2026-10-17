@@ -17,7 +17,7 @@ Omarchy utilise un noyau `linux-t2` patché (Arch). Void n'en a pas : on garde l
 | Clavier | Option (Alt gauche) = touche Mod de niri. Command façon macOS via `keyd` (`keyd.conf`) : Cmd+lettre = Ctrl+lettre à la position QWERTY gravée, même en bépo ; Cmd+C/V/X = Ctrl+Inser / Maj+Inser / Maj+Suppr (terminal compris) ; Cmd+flèches = début/fin. Clavier Mac AZERTY externe (saisie bépo) : `keyd-external-azerty.conf`, même logique avec les lettres gravées AZERTY. keyd capture le clavier interne : le DKMS `appletb` (v2, `0001-keyd-virtual-keyboard.patch`) écoute aussi son clavier virtuel pour Fn et le réveil de la Touch Bar. Fn et Ctrl gauche inversés |
 | Touch Bar | DKMS `appletb` : `hid-appletb-kbd`, `hid-appletb-bl` (et `appletbdrm`, compilé mais non chargé), désactivés dans la config du noyau Void. Sources du tag stable `v<version>` sur git.kernel.org, vérifiées contre `appletb/SHA256SUMS`. Touches spéciales dessinées par la T2 (Fn pour F1-F12), comme Omarchy, sans démon `tiny-dfr` |
 
-Réglages appliqués : paramètres noyau `intel_iommu=on iommu=pt pm_async=off mem_sleep_default=deep` (suspension stable), `brcmfmac.feature_disable=0x82000` (wpa_supplicant 2.11+ casse le Wi-Fi Broadcom), modules chargés au démarrage (`/etc/modules-load.d/t2.conf`) et ajoutés à l'initramfs dracut.
+Réglages appliqués : paramètres noyau `intel_iommu=on iommu=pt pm_async=off mem_sleep_default=deep` (suspension stable), `rd.luks.allow-discards` (TRIM à travers LUKS: btrfs active alors `discard=async` tout seul), `brcmfmac.feature_disable=0x82000` (wpa_supplicant 2.11+ casse le Wi-Fi Broadcom), modules chargés au démarrage (`/etc/modules-load.d/t2.conf`) et ajoutés à l'initramfs dracut.
 
 ## Avant d'installer (sur macOS)
 

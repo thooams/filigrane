@@ -7,3 +7,4 @@ bluetoothd
 chronyd
 socklog-unix
 nanoklogd
+earlyoom

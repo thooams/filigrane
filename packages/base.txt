@@ -13,3 +13,6 @@ socklog-void
 
 # Traitement JSON en ligne de commande (553 Ko)
 jq
+
+# Tue le processus gourmand avant le gel mémoire (réglages: system/earlyoom.conf)
+earlyoom
