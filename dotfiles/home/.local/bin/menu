@@ -312,7 +312,7 @@ menu_audio() {
 menu_network() {
     arg="$1"
     while :; do
-        act="${arg:-$(printf 'Wi-Fi (impala)\nIP addresses\nTest connection\nPacket loss\nSpeed test\n' | pick "Network › " 5)}"
+        act="${arg:-$(printf 'Wi-Fi (impala)\nVPN (Proton)\nIP addresses\nTest connection\nPacket loss\nSpeed test\n' | pick "Network › " 6)}"
         [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
             "IP addresses")
@@ -321,6 +321,7 @@ menu_network() {
                 cancel
                 ;;
             "Wi-Fi (impala)") exec "$HOME/.local/bin/bar-tui" impala ;;
+            "VPN (Proton)") exec "$HOME/.local/bin/bar-tui" vpn ;;
             "Packet loss")
                 notify "Network" "Ping running (10 packets)..."
                 notify "Network" "$(ping -c10 -i0.3 -W2 1.1.1.1 2>&1 | tail -2 | tr '\n' ' ')"

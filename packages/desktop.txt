@@ -63,3 +63,6 @@ udisks2
 smartmontools
 nvme-cli
 rtkit
+
+# VPN Proton via WireGuard (wg-quick, sans daemon; script dotfiles/home/.local/bin/vpn)
+wireguard-tools
