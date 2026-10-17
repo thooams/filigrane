@@ -89,7 +89,8 @@
     "command": "/bin/bash /home/thomas/.claude/statusline-command.sh"
   },
   "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
   "agentPushNotifEnabled": true,
-  "skipDangerousModePermissionPrompt": true
+  "model": "opus"
 }
