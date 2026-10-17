@@ -15,6 +15,8 @@ default-timeout=10000
 max-visible=4
 layer=overlay
 anchor=top-right
+# Clic gauche: action par défaut puis focus sur la fenêtre de l'appli (notif-focus)
+on-button-left=exec /home/thomas/.local/bin/notif-focus "$id"
 
 [urgency=low]
 border-color=#6c7086

@@ -45,3 +45,10 @@ wf-recorder
 
 # Verrouillage auto et écran éteint au repos (38 Ko, bascule dans la barre)
 swayidle
+
+# wptui (WhatsApp TUI, binaire dans ~/.local/bin): rendu des images
+libchafa
+
+# Notifications Proton Mail: pont IMAP local (démon Go, ~100-200 Mo, lancé par niri) + écoute IMAP IDLE (10 Mo)
+protonmail-bridge
+goimapnotify

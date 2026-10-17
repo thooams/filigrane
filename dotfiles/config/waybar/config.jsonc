@@ -3,11 +3,8 @@
 {
     "layer": "top",
     "position": "top",
-    "height": 32,
-    "spacing": 6,
-    "margin-top": 6,
-    "margin-left": 8,
-    "margin-right": 8,
+    "height": 24,
+    "spacing": 0,
 
     "modules-left": ["custom/menu", "niri/workspaces", "niri/window"],
     "modules-center": ["custom/weather", "clock"],

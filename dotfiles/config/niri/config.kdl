@@ -38,7 +38,7 @@ input {
     // All commented-out settings here are examples, not defaults.
     // Réglages repris d'Omarchy (Hyprland): tap, pas de défilement naturel, clic droit à deux doigts
     touchpad {
-        tap
+        // tap désactivé: la paume déclenchait des clics. Clic physique seulement.
         dwt
         click-method "clickfinger"
         scroll-factor 0.2
@@ -286,6 +286,9 @@ spawn-at-startup "pipewire"
 // Relancée si elle s'arrête: waybar plante quand ses écrans disparaissent (débranchement)
 spawn-sh-at-startup "while :; do waybar; sleep 1; done"
 spawn-at-startup "mako"
+// Proton Mail: pont IMAP local sans GUI, puis écoute des nouveaux mails (relancée si le pont n'est pas prêt)
+spawn-at-startup "protonmail-bridge" "--noninteractive"
+spawn-sh-at-startup "while :; do goimapnotify; sleep 30; done"
 // Profils d'écrans automatiques (config: ~/.config/kanshi/config)
 spawn-at-startup "kanshi"
 spawn-sh-at-startup "$HOME/.local/bin/wallpaper"

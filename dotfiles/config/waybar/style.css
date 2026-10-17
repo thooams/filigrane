@@ -18,14 +18,14 @@
 
 * {
     font-family: "DejaVu Sans", "Font Awesome 6 Free", "Font Awesome 6 Brands";
-    font-size: 13px;
+    font-size: 12px;
     border: none;
     border-radius: 0;
     min-height: 0;
 }
 
 window#waybar {
-    background: transparent;
+    background: @base;
     color: @text;
 }
 
@@ -55,16 +55,16 @@ window#waybar {
 #bluetooth,
 #mpris,
 #group-tray {
-    background: alpha(@base, 0.92);
-    padding: 2px 12px;
-    border-radius: 10px;
+    background: transparent;
+    padding: 0 6px;
+    border-radius: 0;
 }
 
 /* Groupes (id CSS = nom sans "group/"): une seule pastille par groupe, modules internes sans fond ni arrondi */
 #ind, #res, #audio {
-    background: alpha(@base, 0.92);
-    padding: 2px 6px;
-    border-radius: 10px;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
 }
 #ind #custom-rec, #ind #custom-timer, #ind #custom-idle, #ind #custom-remote,
 #ind #custom-air, #ind #custom-vpn, #ind #custom-night, #ind #custom-dnd,
@@ -72,17 +72,17 @@ window#waybar {
 #res #cpu, #res #custom-temp, #res #memory, #res #disk,
 #audio #custom-mic, #audio #wireplumber {
     background: transparent;
-    padding: 0 6px;
+    padding: 0 4px;
     border-radius: 0;
 }
 
-#workspaces { padding: 2px 4px; }
+#workspaces { padding: 0; }
 
 #workspaces button {
     color: @overlay0;
     background: transparent;
-    padding: 0 8px;
-    border-radius: 8px;
+    padding: 0 6px;
+    border-radius: 0;
 }
 #workspaces button.active {
     color: @base;
@@ -113,7 +113,7 @@ tooltip {
     border-radius: 10px;
 }
 
-#custom-menu { color: @lavender; padding: 2px 10px; }
+#custom-menu { color: @lavender; padding: 0 8px; }
 #mpris { color: @mauve; }
 #custom-update { color: @peach; }
 #custom-news { color: @mauve; }

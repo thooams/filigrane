@@ -1,0 +1,3 @@
+#!/bin/sh
+# Appelé par goimapnotify à l'arrivée d'un mail: notification mako.
+notify-send -a "Proton Mail" -i mail-unread "Nouveau mail" "Boîte de réception Proton"

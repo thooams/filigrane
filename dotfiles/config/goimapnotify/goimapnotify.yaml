@@ -1,0 +1,17 @@
+# Écoute IMAP IDLE sur le pont Proton local (protonmail-bridge --noninteractive, port 1143, STARTTLS auto-signé).
+# Identifiants dans le trousseau (rien dans le dépôt):
+#   secret-tool store --label="Proton bridge user" service proton-bridge-user
+#   secret-tool store --label="Proton bridge pass" service proton-bridge-pass
+configurations:
+  - host: 127.0.0.1
+    port: 1143
+    tls: false
+    tlsOptions:
+      starttls: true
+      rejectUnauthorized: false
+    usernameCMD: "secret-tool lookup service proton-bridge-user"
+    passwordCMD: "secret-tool lookup service proton-bridge-pass"
+    boxes:
+      - mailbox: INBOX
+        onNewMail: "$HOME/.local/bin/mail-notify"
+        onNewMailPost: SKIP
