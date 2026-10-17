@@ -14,7 +14,7 @@
     // Indicateurs et bascules: enregistrement, minuteur, caféine, SSH, avion, VPN, veilleuse, notifications, veille, MAJ
     "group/ind": {
         "orientation": "inherit",
-        "modules": ["custom/mail", "custom/cal", "custom/rec", "custom/timer", "custom/idle", "custom/remote", "custom/air", "custom/vpn", "custom/night", "custom/dnd", "custom/news", "custom/update"]
+        "modules": ["custom/mail", "custom/cal", "custom/rec", "custom/timer", "custom/idle", "custom/remote", "custom/air", "custom/vpn", "custom/night", "custom/dnd", "custom/news", "custom/update", "custom/backup"]
     },
     // Ressources: CPU, température, mémoire, disque
     "group/res": {
@@ -107,6 +107,14 @@
         "signal": 16,
         "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-update run"
+    },
+    // Sauvegarde restic vers le NAS: gris au repos, vert clignotant en cours, rouge en échec; clic = sauvegarder maintenant
+    "custom/backup": {
+        "exec": "$HOME/.local/bin/bar-backup",
+        "return-type": "json",
+        "interval": 10,
+        "signal": 18,
+        "on-click": "$HOME/.local/bin/bar-backup run"
     },
     // Ne pas déranger (mako), clic = bascule
     "custom/dnd": {
