@@ -52,3 +52,6 @@ libchafa
 # Notifications Proton Mail: pont IMAP local (démon Go, ~100-200 Mo, lancé par niri) + écoute IMAP IDLE (10 Mo)
 protonmail-bridge
 goimapnotify
+
+# Notifications Proton Calendar: lecture du lien ICS (cal-notify), sans daemon propre
+python3-icalendar

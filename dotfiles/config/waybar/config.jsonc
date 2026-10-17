@@ -7,14 +7,14 @@
     "spacing": 0,
 
     "modules-left": ["custom/menu", "niri/workspaces", "niri/window"],
-    "modules-center": ["custom/weather", "clock"],
-    "modules-right": ["mpris", "group/ind", "group/res", "group/audio", "custom/display", "bluetooth", "network", "battery", "custom/batwatch", "group/tray"],
+    "modules-center": ["group/ind", "clock"],
+    "modules-right": ["mpris", "group/res", "group/tray", "group/audio", "custom/display", "bluetooth", "network", "battery", "custom/batwatch"],
 
     // Modules regroupés dans une seule pastille chacun (gain de place, voir style.css)
     // Indicateurs et bascules: enregistrement, minuteur, caféine, SSH, avion, VPN, veilleuse, notifications, veille, MAJ
     "group/ind": {
         "orientation": "inherit",
-        "modules": ["custom/rec", "custom/timer", "custom/idle", "custom/remote", "custom/air", "custom/vpn", "custom/night", "custom/dnd", "custom/news", "custom/update"]
+        "modules": ["custom/mail", "custom/cal", "custom/rec", "custom/timer", "custom/idle", "custom/remote", "custom/air", "custom/vpn", "custom/night", "custom/dnd", "custom/news", "custom/update"]
     },
     // Ressources: CPU, température, mémoire, disque
     "group/res": {
@@ -53,6 +53,7 @@
         "interval": 1,
         "tooltip-format": "<tt>{calendar}</tt>",
         "calendar": { "mode": "month", "weeks-pos": "left", "on-scroll": 1 },
+        "on-click": "$HOME/.local/bin/webapp https://calendar.proton.me",
         "actions": {
             "on-click-right": "mode",
             "on-click-middle": "shift_reset",
@@ -71,6 +72,23 @@
         "on-scroll-up": "playerctl previous",
         "on-scroll-down": "playerctl next",
         "tooltip-format": "{player}: {title}\n{artist} · {album}"
+    },
+    // Nouveaux mails Proton / événement Proton Calendar imminent (masqués sinon, voir bar-alert), clic = ouvrir et effacer
+    "custom/mail": {
+        "exec": "$HOME/.local/bin/bar-alert mail",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 16,
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/bar-alert open mail"
+    },
+    "custom/cal": {
+        "exec": "$HOME/.local/bin/bar-alert cal",
+        "return-type": "json",
+        "interval": 60,
+        "signal": 17,
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/bar-alert open cal"
     },
     // Rapports de veille non lus (Omarchy/T2, via watch-claude; masqué s'il n'y en a pas), clic = les lire
     "custom/news": {
@@ -154,14 +172,6 @@
         "tooltip-format-connected": "{controller_alias}\n{num_connections} connecté(s)\n\n{device_enumerate}",
         "tooltip-format-enumerate-connected": "{device_alias}",
         "on-click": "$HOME/.local/bin/bar-tui bluetui"
-    },
-    // Météo (wttr.in, localisation par IP), clic = prévisions
-    "custom/weather": {
-        "exec": "$HOME/.local/bin/bar-status weather",
-        "return-type": "json",
-        "interval": 1800,
-        "hide-empty-text": true,
-        "on-click": "$HOME/.local/bin/bar-tui sh -c 'curl -fsS wttr.in/?lang=fr | less -R'"
     },
     // Veilleuse (wlsunset, 3500 K), clic = bascule
     "custom/night": {

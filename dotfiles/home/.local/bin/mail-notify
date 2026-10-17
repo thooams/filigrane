@@ -33,7 +33,9 @@ PY
     IFS= read -r subject
     if [ -n "$subject" ]; then
         notify-send -a "Proton Mail" -i mail-unread "Mail · $from" "$subject"
+        "$HOME/.local/bin/bar-alert" push mail "$from" "$subject"
     else
         notify-send -a "Proton Mail" -i mail-unread "Nouveau mail" "Boîte de réception Proton"
+        "$HOME/.local/bin/bar-alert" push mail "Proton" "Nouveau mail"
     fi
 }

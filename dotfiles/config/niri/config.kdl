@@ -292,6 +292,8 @@ spawn-sh-at-startup "while :; do goimapnotify; sleep 30; done"
 // Profils d'écrans automatiques (config: ~/.config/kanshi/config)
 spawn-at-startup "kanshi"
 spawn-sh-at-startup "$HOME/.local/bin/wallpaper"
+// Notifications Proton Calendar (lien ICS dans ~/.config/proton-calendar.url), voir ~/.local/bin/cal-notify
+spawn-sh-at-startup "$HOME/.local/bin/cal-notify"
 // Mini-cron: MAJ Void (6 h), veille Omarchy et T2 via Claude (7 j), voir ~/.local/bin/cron-watch
 spawn-sh-at-startup "$HOME/.local/bin/cron-watch"
 // Verrouillage auto (swayidle): 5 min verrou, 10 min écran éteint; bascule dans la barre

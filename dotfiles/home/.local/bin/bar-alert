@@ -1,0 +1,42 @@
+#!/bin/bash
+# Indicateurs Waybar: nouveaux mails Proton (mail) et événements Proton Calendar imminents (cal), vides sinon (module masqué).
+# Alimentés par mail-notify et cal-notify via ~/.local/state/alerts/{mail,cal}; `bar-alert open mail|cal` ouvre la webapp et efface.
+#   mail: une ligne "expéditeur<TAB>sujet" par mail arrivé depuis le dernier clic
+#   cal:  une ligne "début epoch<TAB>HH:MM<TAB>titre", affichée jusqu'à 5 min après le début
+D="$HOME/.local/state/alerts"
+mkdir -p "$D"
+sig() { case "$1" in mail) echo 16 ;; cal) echo 17 ;; esac; }
+
+case "$1" in
+    push)  # bar-alert push mail "expéditeur" "sujet" | bar-alert push cal EPOCH HH:MM titre
+        kind="$2"; shift 2
+        printf '%s\t%s\t%s\n' "$@" | sed 's/\t$//' >>"$D/$kind"
+        pkill -RTMIN+"$(sig "$kind")" waybar; exit 0 ;;
+    open)
+        : >"$D/$2"
+        pkill -RTMIN+"$(sig "$2")" waybar
+        case "$2" in
+            mail) exec "$HOME/.local/bin/webapp" https://mail.proton.me ;;
+            cal)  exec "$HOME/.local/bin/webapp" https://calendar.proton.me ;;
+        esac ;;
+esac
+
+f="$D/$1"
+[ -s "$f" ] || { printf '{"text":""}\n'; exit 0; }
+case "$1" in
+    mail)
+        n="$(wc -l <"$f")"
+        tip="$(awk -F'\t' '{print $1 ": " $2}' "$f" | tail -8)"
+        jq -nc --arg t "$n" --arg tip "$tip
+(clic: ouvrir Proton Mail)" '{text: (" " + $t), class: "active", tooltip: $tip}' ;;
+    cal)
+        now="$(date +%s)"
+        rows="$(awk -F'\t' -v lim="$((now - 300))" '$1 >= lim' "$f")"
+        printf '%s\n' "$rows" | grep -q . || { : >"$f"; printf '{"text":""}\n'; exit 0; }
+        next="$(printf '%s\n' "$rows" | sort -n | head -1)"
+        title="$(cut -f3 <<<"$next")"; hm="$(cut -f2 <<<"$next")"
+        short="$title"; [ ${#short} -gt 28 ] && short="${short:0:27}…"
+        tip="$(printf '%s\n' "$rows" | sort -n | awk -F'\t' '{print $2 " " $3}')"
+        jq -nc --arg t " $short $hm" --arg tip "$tip
+(clic: ouvrir Proton Calendar)" '{text: $t, class: "active", tooltip: $tip}' ;;
+esac

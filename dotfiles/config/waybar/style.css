@@ -42,7 +42,6 @@ window#waybar {
 #custom-news,
 #custom-dnd,
 #custom-mic,
-#custom-weather,
 #custom-night,
 #custom-timer,
 #custom-rec,
@@ -66,7 +65,7 @@ window#waybar {
     padding: 0;
     border-radius: 0;
 }
-#ind #custom-rec, #ind #custom-timer, #ind #custom-idle, #ind #custom-remote,
+#ind #custom-mail, #ind #custom-cal, #ind #custom-rec, #ind #custom-timer, #ind #custom-idle, #ind #custom-remote,
 #ind #custom-air, #ind #custom-vpn, #ind #custom-night, #ind #custom-dnd,
 #ind #custom-news, #ind #custom-update,
 #res #cpu, #res #custom-temp, #res #memory, #res #disk,
@@ -78,7 +77,7 @@ window#waybar {
 
 
 /* Marges entre sections (modules de premier niveau et groupes) */
-#custom-menu, #workspaces, #window, #custom-weather, #clock, #mpris,
+#custom-menu, #workspaces, #window, #clock, #mpris,
 #ind, #res, #audio, #custom-display, #bluetooth, #network, #battery,
 #custom-batwatch, #group-tray {
     margin: 0 6px;
@@ -125,13 +124,14 @@ tooltip {
 #mpris { color: @mauve; }
 #custom-update { color: @peach; }
 #custom-news { color: @mauve; }
+#custom-mail { color: @blue; }
+#custom-cal { color: @peach; }
 #custom-dnd.idle { color: @overlay0; }
 #custom-dnd.active { color: @yellow; }
 #custom-mic { color: @teal; }
 #custom-mic.muted { color: @red; }
 #group-tray { color: @subtext0; }
 #custom-tray-handle { padding: 0 4px; }
-#custom-weather { color: @text; }
 #custom-night.idle { color: @overlay0; }
 #custom-night.active { color: @peach; }
 #custom-rec { color: @red; }
