@@ -276,6 +276,8 @@ layout {
 environment {
     CHROME_FLAGS "--ozone-platform=wayland --enable-features=WebRTCPipeWireCapturer"
     ELECTRON_OZONE_PLATFORM_HINT "auto"
+    // Sans niri-session, rien ne le définit: les portails ignoreraient niri-portals.conf.
+    XDG_CURRENT_DESKTOP "niri"
 }
 
 // Les programmes lancés à la demande par D-Bus (trousseau, portails, demandes de mot de passe)
