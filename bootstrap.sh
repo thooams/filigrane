@@ -277,6 +277,20 @@ setup_dotfiles() {
     HOME="$TARGET_HOME" sh "$ROOT/dotfiles/home/.local/bin/webapp-sync"
     # Thème sombre par défaut (portail xdg: Chromium, GTK4, libadwaita); sans effet hors session D-Bus
     gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || warn "gsettings: color-scheme non appliqué (pas de session D-Bus)"
+    # Mac T2 (MacBookPro16,2): la route ALSA "Speaker" est cachée par le DSP (hide-parent), donc plus
+    # réglable, et un volume bas sur elle atténue tout le DSP. WirePlumber n'a pas de règle de volume
+    # par route: on la fixe à 1.0 dans son état, le volume se règle sur le DSP.
+    if [ "$(cat /sys/class/dmi/id/product_name 2>/dev/null)" = MacBookPro16,2 ]; then
+        local st="$TARGET_HOME/.local/state/wireplumber/default-routes"
+        local line='alsa_card.pci-0000_e6_00.3:output:\oOut\c\sSpeaker={"latencyOffsetNsec":0, "mute":false, "channelVolumes":[1.000000, 1.000000, 1.000000, 1.000000], "channelMap":["FL", "FR", "RL", "RR"]}'
+        run_as_user mkdir -p "${st%/*}"
+        [ -f "$st" ] || run_as_user sh -c 'printf "[default-routes]\n" > "$1"' _ "$st"
+        if ! grep -qxF "$line" "$st"; then
+            log "Mac T2: volume de la route Speaker à 1.0 (relancer wireplumber pour l'appliquer)"
+            sed -i '/:output:\\oOut\\c\\sSpeaker=/d' "$st"
+            printf '%s\n' "$line" >> "$st"
+        fi
+    fi
 }
 
 [ "$DO_SYSTEM" -eq 1 ] && setup_system
