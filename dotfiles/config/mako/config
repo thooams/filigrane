@@ -29,3 +29,7 @@ default-timeout=20000
 
 [mode=do-not-disturb]
 invisible=1
+
+# Mails Proton (goimapnotify): restent plus longtemps, la détection arrive avec un délai
+[app-name="Proton Mail"]
+default-timeout=30000

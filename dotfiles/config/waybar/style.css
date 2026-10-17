@@ -76,6 +76,14 @@ window#waybar {
     border-radius: 0;
 }
 
+
+/* Marges entre sections (modules de premier niveau et groupes) */
+#custom-menu, #workspaces, #window, #custom-weather, #clock, #mpris,
+#ind, #res, #audio, #custom-display, #bluetooth, #network, #battery,
+#custom-batwatch, #group-tray {
+    margin: 0 6px;
+}
+
 #workspaces { padding: 0; }
 
 #workspaces button {

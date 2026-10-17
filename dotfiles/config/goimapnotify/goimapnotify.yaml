@@ -2,6 +2,10 @@
 # Identifiants dans le trousseau (rien dans le dépôt):
 #   secret-tool store --label="Proton bridge user" service proton-bridge-user
 #   secret-tool store --label="Proton bridge pass" service proton-bridge-pass
+# Le test de connectivité vise le pont local (par défaut ubuntu.com:80, injoignable en IPv6 ici)
+connectivityHosts:
+  - 127.0.0.1:1143
+networkCheckInterval: 120
 configurations:
   - host: 127.0.0.1
     port: 1143

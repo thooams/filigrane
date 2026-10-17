@@ -2,6 +2,8 @@
 # Clic sur une notification (mako): invoque son action par défaut, puis met le focus sur la fenêtre de l'appli émettrice.
 # Usage: notif-focus <id notification>. Correspondance par nom d'appli ou desktop-entry contre l'app_id ou le titre
 # des fenêtres niri (minuscules, sans ponctuation: "wp-tui" retrouve l'app-id "wptui").
+# Si l'appli porte le nom d'une application web (~/.config/webapps/list), son domaine sert aussi à retrouver la fenêtre
+# (app-id Chromium "chrome-mail.proton.me__-Profile_1"), et la webapp est ouverte si aucune fenêtre n'existe.
 id="$1"
 [ -n "$id" ] || exit 1
 info="$(makoctl list | awk -v id="$id" '
@@ -11,14 +13,26 @@ info="$(makoctl list | awk -v id="$id" '
 app="$(printf '%s\n' "$info" | sed -n 's/^app=//p')"
 entry="$(printf '%s\n' "$info" | sed -n 's/^entry=//p')"
 makoctl invoke -n "$id" >/dev/null 2>&1
-win="$(niri msg -j windows | jq -r --arg a "$app" --arg e "$entry" '
+url="$(awk -F'|' -v a="$app" '
+    BEGIN { a = tolower(a) }
+    /^#/ || NF < 2 { next }
+    { n = $1; u = $2; gsub(/^ +| +$/, "", n); gsub(/^ +| +$/, "", u) }
+    tolower(n) == a { print u; exit }' "${XDG_CONFIG_HOME:-$HOME/.config}/webapps/list" 2>/dev/null)"
+host="${url#*://}"; host="${host%%/*}"
+win="$(niri msg -j windows | jq -r --arg a "$app" --arg e "$entry" --arg h "$host" '
     def n: ascii_downcase | gsub("[^a-z0-9]"; "");
-    ([$a, $e] | map(n) | map(select(length >= 3))) as $c
+    ([$a, $e, $h] | map(n) | map(select(length >= 3))) as $c
+    | ($h | n) as $hn
     | map(select(
         (.app_id // "" | n) as $i | (.title // "" | n) as $t
-        | any($c[]; . as $x | ($i != "" and ($i | contains($x) or ($x | contains($i)))) or ($t | contains($x)))))
+        | if $hn != "" then ($i | contains($hn))
+          else any($c[]; . as $x | ($i != "" and ($i | contains($x) or ($x | contains($i)))) or ($t | contains($x))) end))
     | first | .id // empty')"
-[ -n "$win" ] && niri msg action focus-window --id "$win"
+if [ -n "$win" ]; then
+    niri msg action focus-window --id "$win"
+elif [ -n "$url" ]; then
+    setsid -f "$HOME/.local/bin/webapp" "$url" >/dev/null 2>&1
+fi
 echo "$(date +%T) id=$id app=$app entry=$entry fenêtre=${win:-aucune}" >> "${XDG_RUNTIME_DIR:-/tmp}/notif-focus.log"
 makoctl dismiss -n "$id" >/dev/null 2>&1
 exit 0
