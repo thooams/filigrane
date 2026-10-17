@@ -6,6 +6,7 @@ font-size=22
 indicator-radius=90
 indicator-thickness=7
 indicator-caps-lock
+indicator-idle-visible
 show-failed-attempts
 ignore-empty-password
 
@@ -13,7 +14,7 @@ inside-color=1e1e2ecc
 inside-clear-color=1e1e2ecc
 inside-ver-color=1e1e2ecc
 inside-wrong-color=1e1e2ecc
-ring-color=45475a
+ring-color=cba6f7
 ring-clear-color=f9e2af
 ring-ver-color=89b4fa
 ring-wrong-color=f38ba8
@@ -22,7 +23,7 @@ line-clear-color=00000000
 line-ver-color=00000000
 line-wrong-color=00000000
 separator-color=00000000
-key-hl-color=cba6f7
+key-hl-color=a6e3a1
 bs-hl-color=f38ba8
 caps-lock-key-hl-color=f9e2af
 caps-lock-bs-hl-color=f38ba8
