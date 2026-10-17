@@ -1,0 +1,2 @@
+# Services runit des machines physiques
+cupsd

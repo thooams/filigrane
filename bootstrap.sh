@@ -119,7 +119,16 @@ setup_system() {
         $SUDO install -m 644 "$ROOT/system/udev/90-power-profile.rules" /etc/udev/rules.d/
         $SUDO udevadm control --reload
         $SUDO udevadm trigger --subsystem-match=power_supply --action=change
+
+        log "Pilote de l'imprimante Dell 1350cnw (HBPL v1, compilé dans /usr/local)"
+        [ -x /usr/local/bin/foo2hbpl1 ] || "$ROOT/drivers/dell-1350cnw/install.sh" || warn "pilote Dell non installé"
     fi
+
+    log "Réglages noyau (sysctl) et earlyoom"
+    $SUDO install -d /etc/sysctl.d
+    $SUDO install -m 644 "$ROOT/system/sysctl/90-hardening.conf" /etc/sysctl.d/
+    $SUDO sysctl -q --system || warn "sysctl --system a échoué"
+    [ -d /etc/sv/earlyoom ] && $SUDO install -m 644 "$ROOT/system/earlyoom.conf" /etc/sv/earlyoom/conf
 
     log "Connexion automatique tty1"
     local conf=/etc/sv/agetty-tty1/conf autologin="$AUTOLOGIN"

@@ -6,3 +6,11 @@ linux-firmware-network
 mesa-vulkan-intel
 intel-video-accel
 brightnessctl
+
+# Sauvegarde vers le NAS (dotfiles/home/.local/bin/watch-backup)
+restic
+
+# Impression (cupsd résident ~10 Mo; filtres PDF et IPP sans pilote, ghostscript ~150 Mo disque)
+cups
+cups-filters
+psutils
