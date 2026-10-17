@@ -1,5 +1,5 @@
 #!/bin/bash
-# Status line Claude Code: modèle, branche git, usage du contexte.
+# Status line Claude Code: modèle, dossier, branche git, usage du contexte.
 # Entrée: JSON sur stdin.
 input=$(cat)
 
@@ -31,7 +31,7 @@ done
 
 fmt() { awk -v n="$1" 'BEGIN{ if (n>=1000) printf "%.0fk", n/1000; else printf "%d", n }'; }
 
-out="\033[36m${model}\033[0m"
+out="\033[36m${model}\033[0m \033[90m│\033[0m \033[34m${dir/#$HOME/\~}\033[0m"
 [ -n "$branch" ] && out+=" \033[90m│\033[0m \033[35m ${branch}\033[0m"
 out+=" \033[90m│\033[0m \033[${c}m${bar} ${pct}%\033[0m \033[90m($(fmt "$used")/$(fmt "$size"))\033[0m"
 printf '%b' "$out"

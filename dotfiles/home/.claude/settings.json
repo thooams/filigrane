@@ -19,7 +19,11 @@
       "Bash(niri msg *)",
       "Bash(git -C ~/void-setup status *)",
       "Bash(git -C ~/void-setup diff *)",
-      "Bash(git -C ~/void-setup log *)"
+      "Bash(git -C ~/void-setup log *)",
+      "Read(~/Projects/void-setup/**)",
+      "Edit(~/Projects/void-setup/**)",
+      "Read(~/work/**)",
+      "Edit(~/work/**)"
     ],
     "deny": [
       "Bash(*install-void.sh*)",
@@ -65,6 +69,19 @@
       "Bash(git commit *)",
       "Bash(git push *)",
       "Edit(/etc/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/thomas/.claude/hooks/guard-destructive.sh"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
