@@ -146,7 +146,7 @@
         "scroll-step": 5,
         "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
         "on-click-right": "$HOME/.local/bin/bar-tui wiremix",
-        "on-click-middle": "$HOME/.local/bin/bar-tui wiremix"
+        "on-click-middle": "$HOME/.local/bin/bar-tui sound-tune"
     },
     // Wi-Fi: clic = impala (liste des SSID, connexion, mot de passe), clic droit = menu réseau (IP, ping, débit)
     "network": {

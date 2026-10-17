@@ -27,6 +27,9 @@ HID_APPLE_OPTS="swap_fn_leftctrl=1"
 # Démon de ventilateurs (GPL-3.0), compilé avec cargo
 FAN_REPO="https://github.com/GnomedDev/T2FanRD"
 FAN_REF="48baf962697ec3d4d969c74cf601ee8e15b7aeaa"
+# DSP haut-parleurs d'Asahi (asahi-audio, GPL-2.0/MIT): FIR du MacBook Pro 13" M1 (j293), même châssis que MacBookPro16,2
+ASAHI_AUDIO_REPO="https://github.com/AsahiLinux/asahi-audio"
+ASAHI_AUDIO_REF="ab1b46928d056bb02bb4ad72d522dab57dc9efe1"
 # Script officiel t2linux (licence MIT) pour récupérer le firmware Wi-Fi/Bluetooth
 FIRMWARE_URL="https://wiki.t2linux.org/tools/firmware.sh"
 
@@ -262,6 +265,20 @@ setup_audio() {
     [ -d "$src" ] || fetch_ref "$T2BCE_REPO" "$T2BCE_REF" "$src"
     mkdir -p /usr/share/alsa/ucm2
     cp -a "$src/t2bce_audio-alsa-ucm-conf/ucm2/." /usr/share/alsa/ucm2/
+
+    case "$(cat /sys/class/dmi/id/product_name 2>/dev/null)" in
+        MacBookPro16,2) ;;
+        *) return 0 ;;
+    esac
+    log "DSP haut-parleurs façon macOS (asahi-audio j293, bankstown, lsp-plugins)"
+    local tmp
+    tmp="$(mktemp -d)"
+    fetch_ref "$ASAHI_AUDIO_REPO" "$ASAHI_AUDIO_REF" "$tmp/asahi-audio"
+    mkdir -p /usr/share/t2-audio/j293 /usr/share/wireplumber/wireplumber.conf.d
+    install -m 0644 "$tmp"/asahi-audio/firs/j293/{front,rear}-*.wav /usr/share/t2-audio/j293/
+    install -m 0644 "$HERE/audio/speakers-j293.json" /usr/share/t2-audio/
+    install -m 0644 "$HERE/audio/51-t2-speakers-dsp.conf" /usr/share/wireplumber/wireplumber.conf.d/
+    rm -rf "$tmp"
 }
 
 setup_fan() {

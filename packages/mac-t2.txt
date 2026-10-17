@@ -10,3 +10,5 @@ python3
 dmg2img
 cargo
 keyd  # touche Command façon macOS (hardware/mac-t2/keyd.conf)
+bankstown  # DSP haut-parleurs (hardware/mac-t2/audio): basse psychoacoustique
+lsp-plugins-lv2  # DSP haut-parleurs: loudness, compresseurs, limiteurs

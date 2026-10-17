@@ -282,6 +282,8 @@ environment {
 // doivent savoir sur quel écran s'afficher: la session D-Bus est créée avant niri.
 spawn-at-startup "dbus-update-activation-environment" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP" "XDG_SESSION_TYPE" "DISPLAY"
 spawn-at-startup "pipewire"
+// Réglages du DSP haut-parleurs (sound-tune), réappliqués quand le filtre apparaît
+spawn-at-startup "sh" "-c" "$HOME/.local/bin/sound-tune --apply"
 // This line starts waybar, a commonly used bar for Wayland compositors.
 // Relancée si elle s'arrête: waybar plante quand ses écrans disparaissent (débranchement)
 spawn-sh-at-startup "while :; do waybar; sleep 1; done"
@@ -406,6 +408,7 @@ binds {
     Mod+P hotkey-overlay-title="Écrans: réglage visuel (wdisplays)" { spawn-sh "GDK_GL=disable wdisplays"; }
     Mod+Ctrl+P hotkey-overlay-title="Écrans: enregistrer le profil" { spawn-sh "$HOME/.local/bin/display-save"; }
     Mod+Ctrl+A hotkey-overlay-title="Audio (wiremix)" { spawn-sh "$HOME/.local/bin/bar-tui wiremix"; }
+    Mod+Ctrl+E hotkey-overlay-title="Son: égaliseur haut-parleurs" { spawn-sh "$HOME/.local/bin/bar-tui sound-tune"; }
     Mod+Ctrl+W hotkey-overlay-title="Wi-Fi (impala)" { spawn-sh "$HOME/.local/bin/bar-tui impala"; }
     Mod+Ctrl+B hotkey-overlay-title="Bluetooth (bluetui)" { spawn-sh "$HOME/.local/bin/bar-tui bluetui"; }
     Mod+Ctrl+D hotkey-overlay-title="Écrans (wdisplays)" { spawn-sh "GDK_GL=disable wdisplays"; }

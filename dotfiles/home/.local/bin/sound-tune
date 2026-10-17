@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+# Réglage en direct du DSP haut-parleurs (hardware/mac-t2/audio/speakers-j293.json).
+#   sound-tune           panneau TUI (↑↓ choisir, ←→ régler, s sauver, o origine Asahi, r recharger, q quitter)
+#   sound-tune --apply   réapplique ~/.config/t2-audio/tune.conf (ouverture de session niri)
+import curses, json, os, subprocess, sys, time
+
+NODE = "audio_effect.t2-speakers"
+CONF = os.path.expanduser("~/.config/t2-audio/tune.conf")
+
+# clé, libellé, min, max, pas, unité, contrôles du graphe
+PARAMS = [
+    ("bass",      "Graves (bankstown)", 0.0,   4.0,    0.1,  "",    ["bassex:amt"]),
+    ("mid_gain",  "Médiums",           -6.0,   8.0,    0.5,  "dB",  ["midl:Gain", "midr:Gain"]),
+    ("mid_freq",  "Médiums: centre",  400.0, 3000.0, 100.0,  "Hz",  ["midl:Freq", "midr:Freq"]),
+    ("treb_gain", "Aigus",             -6.0,  10.0,    0.5,  "dB",  ["trebl:Gain", "trebr:Gain"]),
+    ("treb_freq", "Aigus: à partir de", 2000.0, 10000.0, 250.0, "Hz", ["trebl:Freq", "trebr:Freq"]),
+    ("loudness",  "Loudness",           0.0,   1.0,    1.0,  "",    ["ell:enabled", "elr:enabled"]),
+]
+# Valeurs Asahi d'origine (sans correction d'aigus ni de médiums)
+ORIGIN = {"bass": 1.4, "mid_gain": 0.0, "mid_freq": 1200.0, "treb_gain": 0.0, "treb_freq": 4500.0, "loudness": 1.0}
+# Valeurs par défaut du graphe installé
+DEFAULT = {**ORIGIN, "mid_gain": 3.0, "treb_gain": 5.0}
+
+
+def load():
+    vals = dict(DEFAULT)
+    try:
+        with open(CONF) as f:
+            for line in f:
+                line = line.split("#")[0].strip()
+                if "=" in line:
+                    k, v = (x.strip() for x in line.split("=", 1))
+                    if k in vals:
+                        vals[k] = float(v)
+    except (OSError, ValueError):
+        pass
+    return vals
+
+
+def save(vals):
+    # écriture en place: le fichier est un lien vers le dépôt (dotfiles/config/t2-audio)
+    os.makedirs(os.path.dirname(CONF), exist_ok=True)
+    with open(CONF, "w") as f:
+        f.write("# Réglages du DSP haut-parleurs, écrits par sound-tune\n")
+        for k, *_ in PARAMS:
+            f.write(f"{k} = {vals[k]:g}\n")
+
+
+def node_id():
+    out = subprocess.run(["pw-dump"], capture_output=True, text=True).stdout
+    for o in json.loads(out or "[]"):
+        if o.get("info", {}).get("props", {}).get("node.name") == NODE:
+            return o["id"]
+    return None
+
+
+def apply(nid, vals):
+    pod = []
+    for k, _, _, _, _, _, ctrls in PARAMS:
+        pod += [f'"{c}" {vals[k]:.3f}' for c in ctrls]
+    subprocess.run(["pw-cli", "set-param", str(nid), "Props", "{ params = [ " + " ".join(pod) + " ] }"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def fmt(p, v):
+    key, _, _, _, _, unit, _ = p
+    if key == "loudness":
+        return "activé" if v else "désactivé"
+    if unit == "dB":
+        return f"{v:+.1f} dB"
+    return f"{v:g} {unit}".strip()
+
+
+def tui(scr, nid):
+    curses.curs_set(0)
+    curses.use_default_colors()
+    vals, saved, sel, msg = load(), load(), 0, ""
+    while True:
+        scr.erase()
+        scr.addstr(0, 2, "Son des haut-parleurs (DSP façon macOS)", curses.A_BOLD)
+        for i, p in enumerate(PARAMS):
+            key, label, lo, hi = p[:4]
+            width = 20
+            fill = int(round((vals[key] - lo) / (hi - lo) * width))
+            bar = "█" * fill + "·" * (width - fill)
+            attr = curses.A_REVERSE if i == sel else 0
+            scr.addstr(2 + i, 2, f"{label:<20}", attr)
+            scr.addstr(2 + i, 23, f" {bar}  {fmt(p, vals[key])}")
+        state = "" if vals == saved else "  (non sauvegardé)"
+        scr.addstr(3 + len(PARAMS), 2, "↑↓ choisir  ←→ régler  s sauver  o origine Asahi  r recharger  q quitter")
+        scr.addstr(4 + len(PARAMS), 2, (msg or "") + state, curses.A_DIM)
+        msg = ""
+        c = scr.getch()
+        key, _, lo, hi, step = PARAMS[sel][:5]
+        if c in (ord("q"), 27):
+            return
+        elif c in (curses.KEY_UP, ord("k")):
+            sel = (sel - 1) % len(PARAMS)
+        elif c in (curses.KEY_DOWN, ord("j")):
+            sel = (sel + 1) % len(PARAMS)
+        elif c in (curses.KEY_LEFT, curses.KEY_RIGHT, ord("h"), ord("l")):
+            d = step if c in (curses.KEY_RIGHT, ord("l")) else -step
+            vals[key] = round(min(hi, max(lo, vals[key] + d)), 3)
+            apply(nid, vals)
+        elif c == ord("s"):
+            save(vals)
+            saved = dict(vals)
+            msg = "Sauvegardé dans " + CONF
+        elif c == ord("o"):
+            vals = dict(ORIGIN)
+            apply(nid, vals)
+            msg = "Valeurs Asahi d'origine (s pour garder)"
+        elif c == ord("r"):
+            vals = load()
+            apply(nid, vals)
+            msg = "Réglages sauvegardés rechargés"
+
+
+def main():
+    if "--apply" in sys.argv:
+        # à l'ouverture de session, le filtre apparaît quelques secondes après pipewire
+        for _ in range(60):
+            nid = node_id()
+            if nid:
+                apply(nid, load())
+                return
+            time.sleep(1)
+        return
+    nid = node_id()
+    if not nid:
+        sys.exit(f"Filtre {NODE} introuvable (DSP haut-parleurs non chargé ?)")
+    curses.wrapper(tui, nid)
+
+
+main()
