@@ -16,3 +16,5 @@ jq
 
 # Tue le processus gourmand avant le gel mémoire (réglages: system/earlyoom.conf)
 earlyoom
+# Swap compressé en RAM (réglages: system/zramen.conf)
+zramen

@@ -99,8 +99,9 @@ setup_system() {
     done
 
     # Services retirés des listes: désactivés s'ils l'étaient (acpid: elogind gère le capot,
-    # et handler.sh mettait en veille capot fermé même avec des écrans externes)
-    for svc in acpid; do
+    # et handler.sh mettait en veille capot fermé même avec des écrans externes; agetty-tty3 à 6:
+    # deux consoles texte suffisent, tty1 pour la session et tty2 en secours)
+    for svc in acpid agetty-tty3 agetty-tty4 agetty-tty5 agetty-tty6; do
         if [ -L "/etc/runit/runsvdir/default/$svc" ]; then
             $SUDO sv down "/var/service/$svc" 2>/dev/null || true
             $SUDO rm -f "/etc/runit/runsvdir/default/$svc"
@@ -124,11 +125,12 @@ setup_system() {
         [ -x /usr/local/bin/foo2hbpl1 ] || "$ROOT/drivers/dell-1350cnw/install.sh" || warn "pilote Dell non installé"
     fi
 
-    log "Réglages noyau (sysctl) et earlyoom"
+    log "Réglages noyau (sysctl), earlyoom et zram"
     $SUDO install -d /etc/sysctl.d
     $SUDO install -m 644 "$ROOT/system/sysctl/90-hardening.conf" /etc/sysctl.d/
     $SUDO sysctl -q --system || warn "sysctl --system a échoué"
     [ -d /etc/sv/earlyoom ] && $SUDO install -m 644 "$ROOT/system/earlyoom.conf" /etc/sv/earlyoom/conf
+    [ -d /etc/sv/zramen ] && $SUDO install -m 644 "$ROOT/system/zramen.conf" /etc/sv/zramen/conf
 
     log "Connexion automatique tty1"
     local conf=/etc/sv/agetty-tty1/conf autologin="$AUTOLOGIN"

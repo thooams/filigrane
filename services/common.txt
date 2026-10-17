@@ -8,3 +8,4 @@ chronyd
 socklog-unix
 nanoklogd
 earlyoom
+zramen
