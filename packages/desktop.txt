@@ -38,6 +38,7 @@ wiremix
 iwd
 impala
 bluez
+libspa-bluetooth   # son Bluetooth (casques) dans PipeWire
 bluetui
 # Indicateurs de la barre: veilleuse et enregistrement d'écran
 wlsunset
