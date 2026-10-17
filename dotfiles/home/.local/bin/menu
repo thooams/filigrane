@@ -258,7 +258,7 @@ menu_system() {
         act="${arg:-$(printf 'Lock\nSleep\nLog out\nReboot\nPower off\n' | pick "System › " 5)}"
         [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
-            Lock) exec swaylock -f -c 1e1e2e ;;
+            Lock) exec "$HOME/.local/bin/lock" ;;
             Sleep) sudo -n zzz; return 0 ;;
             "Log out") confirm "Log out" && exec niri msg action quit --skip-confirmation ;;
             Reboot) confirm "Reboot" && { sudo -n reboot; return 0; } ;;

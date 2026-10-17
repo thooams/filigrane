@@ -1,0 +1,13 @@
+#!/bin/sh
+# Verrouille l'écran (swaylock, fond = fond d'écran courant). Usage: lock [auto]
+# En mode auto (inactivité, mise en veille): pas de verrou si le Wi-Fi courant est dans
+# ~/.config/lock-trusted (un SSID par ligne, fichier local hors dépôt). Le verrou manuel verrouille toujours.
+pgrep -x swaylock >/dev/null && exit 0
+if [ "$1" = auto ] && [ -f "$HOME/.config/lock-trusted" ]; then
+    dev=$(iwctl station list 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | awk '/connected/{print $1; exit}')
+    ssid=$(iwctl station "$dev" show 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | awk '/Connected network/{sub(/^.*Connected network +/,""); sub(/ +$/,""); print; exit}')
+    [ -n "$ssid" ] && grep -qxF "$ssid" "$HOME/.config/lock-trusted" && exit 0
+fi
+img=$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/wallpaper" 2>/dev/null)
+[ -f "$img" ] && exec swaylock -f -i "$img"
+exec swaylock -f

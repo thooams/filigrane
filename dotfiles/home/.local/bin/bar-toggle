@@ -16,9 +16,9 @@ case "$1" in
     idle)
         if [ "$2" = start ] || ! pgrep -x swayidle >/dev/null; then
             pgrep -x swayidle >/dev/null || setsid swayidle -w \
-                timeout 300 'swaylock -f -c 1e1e2e' \
+                timeout 300 '$HOME/.local/bin/lock auto' \
                 timeout 600 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' \
-                before-sleep 'swaylock -f -c 1e1e2e' >/dev/null 2>&1 &
+                before-sleep '$HOME/.local/bin/lock auto' >/dev/null 2>&1 &
             [ "$2" = start ] || notify-send -u low "Verrouillage auto" "Activé (5 min, écran éteint à 10 min)"
         else
             pkill -x swayidle; notify-send -u low "Verrouillage auto" "Désactivé"
