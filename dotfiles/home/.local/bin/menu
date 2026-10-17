@@ -252,13 +252,32 @@ menu_calc() {
     done
 }
 
+# Volumes amovibles: choisir pour monter (udisksctl, sans root) ou démonter
+menu_usb() {
+    list="$(lsblk -rpno NAME,TYPE,HOTPLUG | awk '$2=="part" && $3==1 {print $1}' | while read -r dev; do
+        printf '%s  %s  %s%s\n' "$dev" "$(lsblk -dno LABEL "$dev")" "$(lsblk -dno SIZE "$dev")" \
+            "$(lsblk -dno MOUNTPOINT "$dev" | sed 's/^./  (monté: &)/')"
+    done)"
+    [ -n "$list" ] || { notify-send -u low "USB" "Aucun volume amovible"; return 0; }
+    sel="$(printf '%s\n' "$list" | pick "USB drives › " 6)"
+    [ -n "$sel" ] || { cancel; return $BACK; }
+    dev="${sel%% *}"
+    if [ -n "$(lsblk -dno MOUNTPOINT "$dev")" ]; then
+        out="$(udisksctl unmount -b "$dev" 2>&1)" && notify-send -u low "USB" "Démonté: $dev" || notify-send -u normal "USB" "$out"
+    else
+        out="$(udisksctl mount -b "$dev" 2>&1)" && notify-send -u low "USB" "$out" || notify-send -u normal "USB" "$out"
+    fi
+    return 0
+}
+
 menu_system() {
     arg="$1"
     while :; do
-        act="${arg:-$(printf 'Lock\nSleep\nLog out\nReboot\nPower off\n' | pick "System › " 5)}"
+        act="${arg:-$(printf 'Lock\nSleep\nUSB drives\nLog out\nReboot\nPower off\n' | pick "System › " 6)}"
         [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
             Lock) exec "$HOME/.local/bin/lock" ;;
+            "USB drives") menu_usb; rc=$?; [ "$rc" = "$BACK" ] || return $rc ;;
             Sleep) sudo -n zzz; return 0 ;;
             "Log out") confirm "Log out" && exec niri msg action quit --skip-confirmation ;;
             Reboot) confirm "Reboot" && { sudo -n reboot; return 0; } ;;

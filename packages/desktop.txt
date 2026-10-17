@@ -55,3 +55,11 @@ goimapnotify
 
 # Notifications Proton Calendar: lecture du lien ICS (cal-notify), sans daemon propre
 python3-icalendar
+
+# Gestionnaire de fichiers, visionneuse, USB sans daemon (udisks2 à la demande), santé du disque
+yazi
+imv
+udisks2
+smartmontools
+nvme-cli
+rtkit

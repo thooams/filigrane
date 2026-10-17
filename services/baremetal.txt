@@ -1,2 +1,4 @@
 # Services runit des machines physiques
 cupsd
+polkitd
+rtkit

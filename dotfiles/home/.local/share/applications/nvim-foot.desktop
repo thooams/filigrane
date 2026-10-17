@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Éditeur (nvim)
+Comment=Neovim dans foot
+Exec=foot --app-id nvim -e nvim %F
+Icon=nvim
+Categories=Utility;TextEditor;
+MimeType=text/plain;text/markdown;application/json;text/x-shellscript;text/x-csv;
+Terminal=false
