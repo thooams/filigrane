@@ -65,6 +65,8 @@ L'ESP est montée sur `/boot/efi` : les noyaux restent dans `@void`, seul `/boot
 
 **Hibernation** : désactivée (`nohibernate`). Non fiable sur Mac T2 (essai raté sur ce Mac), et dangereuse en double démarrage : les deux systèmes partagent le même système de fichiers btrfs. Si l'un est en hibernation, ne jamais démarrer l'autre (corruption possible). La veille simple ne pose pas ce problème.
 
+**Veille** : la carte Wi-Fi (ARPT) ne réveille plus la machine (`72-t2-wifi-nowake.rules`), elle provoquait des réveils parasites capot fermé. Le message `e-suspend: segfault` au réveil est un bug connu d'elogind 252 ([elogind #341](https://github.com/elogind/elogind/issues/341), corrigé en 255) : il survient après la veille, sans effet.
+
 ## Après le premier démarrage
 
 1. Wi-Fi/Bluetooth : `t2-wifi-firmware`, méthode 5 (sans macOS, télécharge l'image de récupération Apple ; choisir macOS Monterey à Sonoma), puis redémarrer.

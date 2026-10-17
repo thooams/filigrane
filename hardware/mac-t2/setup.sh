@@ -352,6 +352,14 @@ EOF
     if [ -f /etc/dhcpcd.conf ] && ! grep -qE '^denyinterfaces.*t2ncm0' /etc/dhcpcd.conf; then
         printf '\n# void-setup: interface interne de la T2\ndenyinterfaces t2ncm0\n' >> /etc/dhcpcd.conf
     fi
+
+    log "Wi-Fi Broadcom: pas de réveil de la veille"
+    # Capot fermé, la machine se réveillait seule ~35 s après la mise en veille (ARPT dans
+    # /proc/acpi/wakeup). Le capot (LID0) et le clavier (T2) réveillent toujours la machine.
+    cat > /etc/udev/rules.d/72-t2-wifi-nowake.rules <<'EOF'
+# void-setup: la carte Wi-Fi Broadcom (ARPT) ne réveille pas la machine en veille
+SUBSYSTEM=="pci", ACTION=="add", ATTR{vendor}=="0x14e4", ATTR{class}=="0x028000", ATTR{power/wakeup}="disabled"
+EOF
 }
 
 setup_tools() {
