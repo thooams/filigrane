@@ -107,6 +107,13 @@ setup_system() {
         fi
     done
 
+    log "Pare-feu (iptables/ip6tables: entrant refusé par défaut)"
+    $SUDO install -d /etc/iptables
+    $SUDO install -m 644 "$ROOT/system/iptables/iptables.rules" "$ROOT/system/iptables/ip6tables.rules" /etc/iptables/
+    for svc in iptables ip6tables; do
+        $SUDO ln -sfn "/etc/sv/$svc" "/etc/runit/runsvdir/default/$svc"
+    done
+
     log "Connexion automatique tty1"
     local conf=/etc/sv/agetty-tty1/conf autologin="$AUTOLOGIN"
     [ "$autologin" = auto ] && { [ "$PROFILE" = vm ] && autologin=1 || autologin=0; }

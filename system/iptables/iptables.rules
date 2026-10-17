@@ -1,0 +1,16 @@
+# Pare-feu IPv4: poste client, rien n'écoute depuis l'extérieur.
+# Entrant refusé par défaut; sortant libre. Podman rootless n'a pas besoin de FORWARD.
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -m conntrack --ctstate INVALID -j DROP
+# Réponses DHCP (dhcpcd, avant que conntrack ne les associe)
+-A INPUT -p udp --sport 67 --dport 68 -j ACCEPT
+# Ping entrant limité
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 5/second -j ACCEPT
+-A INPUT -p icmp --icmp-type destination-unreachable -j ACCEPT
+-A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT
+COMMIT
