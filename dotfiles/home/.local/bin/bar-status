@@ -61,13 +61,16 @@ case "$1" in
         [ "$c" -ge 80 ] && cl="critical"
         printf '{"text":"\\uf2c9 %s°","class":"%s","tooltip":"Température CPU: %s°C"}\n' "$c" "$cl" "$c" ;;
     batwatch)
-        # Alerte batterie faible (<=10 %, une seule fois par décharge); aucun affichage
+        # Alerte batterie faible (<=10 %) puis veille (<=5 %), une seule fois par décharge; aucun affichage
         printf '{"text":""}\n'
         b=/sys/class/power_supply/BAT0; [ -r "$b/capacity" ] || exit 0
         f="${XDG_RUNTIME_DIR:-/tmp}/battery-notified"
         if [ "$(cat "$b/status")" = "Discharging" ] && [ "$(cat "$b/capacity")" -le 10 ]; then
             [ -e "$f" ] || { notify-send -u critical "Batterie faible" "$(cat "$b/capacity")%: brancher le chargeur"; : > "$f"; }
+            if [ "$(cat "$b/capacity")" -le 5 ] && [ ! -e "$f.zzz" ]; then
+                : > "$f.zzz"; notify-send -u critical "Batterie critique" "Mise en veille"; (sleep 3; sudo -n zzz) >/dev/null 2>&1 &
+            fi
         else
-            rm -f "$f"
+            rm -f "$f" "$f.zzz"
         fi ;;
 esac

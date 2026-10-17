@@ -296,7 +296,7 @@ spawn-sh-at-startup "$HOME/.local/bin/wallpaper"
 spawn-sh-at-startup "$HOME/.local/bin/cal-notify"
 // Mini-cron: MAJ Void (6 h), veille Omarchy et T2 via Claude (7 j), voir ~/.local/bin/cron-watch
 spawn-sh-at-startup "$HOME/.local/bin/cron-watch"
-// Verrouillage auto (swayidle): 5 min verrou, 10 min écran éteint; bascule dans la barre
+// Verrouillage auto (swayidle): 5 min verrou, 10 min écran éteint, 15 min veille sur batterie; bascule dans la barre
 spawn-sh-at-startup "$HOME/.local/bin/bar-toggle idle start"
 // Historique du presse-papiers pour le menu (cliphist), texte et images
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"

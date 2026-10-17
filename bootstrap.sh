@@ -114,6 +114,13 @@ setup_system() {
         $SUDO ln -sfn "/etc/sv/$svc" "/etc/runit/runsvdir/default/$svc"
     done
 
+    if [ "$PROFILE" != vm ]; then
+        log "Profil CPU selon batterie/secteur (règle udev)"
+        $SUDO install -m 644 "$ROOT/system/udev/90-power-profile.rules" /etc/udev/rules.d/
+        $SUDO udevadm control --reload
+        $SUDO udevadm trigger --subsystem-match=power_supply --action=change
+    fi
+
     log "Connexion automatique tty1"
     local conf=/etc/sv/agetty-tty1/conf autologin="$AUTOLOGIN"
     [ "$autologin" = auto ] && { [ "$PROFILE" = vm ] && autologin=1 || autologin=0; }

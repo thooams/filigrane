@@ -18,8 +18,9 @@ case "$1" in
             pgrep -x swayidle >/dev/null || setsid swayidle -w \
                 timeout 300 '$HOME/.local/bin/lock auto' \
                 timeout 600 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' \
+                timeout 900 'grep -q Discharging /sys/class/power_supply/BAT0/status && sudo -n zzz' \
                 before-sleep '$HOME/.local/bin/lock auto' >/dev/null 2>&1 &
-            [ "$2" = start ] || notify-send -u low "Verrouillage auto" "Activé (5 min, écran éteint à 10 min)"
+            [ "$2" = start ] || notify-send -u low "Verrouillage auto" "Activé (5 min, écran éteint à 10 min, veille à 15 min sur batterie)"
         else
             pkill -x swayidle; notify-send -u low "Verrouillage auto" "Désactivé"
         fi
