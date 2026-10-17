@@ -263,8 +263,8 @@
     },
     "playback.props": {
         "node.name": "effect_output.t2-speakers",
-        "node.description": "MacBook Pro 13" (T2) DSP Out",
-        "media.name": "MacBook Pro 13" (T2) DSP Out",
+        "node.description": "MacBook Pro 13 (T2) DSP Out",
+        "media.name": "MacBook Pro 13 (T2) DSP Out",
         "target.object": "alsa_output.pci-0000_e6_00.3.HiFi__Speaker__sink",
         "node.dont-fallback": "true",
         "node.passive": "true",
