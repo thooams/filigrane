@@ -71,6 +71,7 @@
       "Edit(/etc/**)"
     ]
   },
+  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -91,6 +92,5 @@
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
-  "agentPushNotifEnabled": true,
-  "model": "opus"
+  "agentPushNotifEnabled": true
 }

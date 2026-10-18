@@ -97,7 +97,7 @@ MANAGED='^(rd\.luks\.uuid|root|rootflags|rootfstype|resume|resume_offset|rd\.vco
 keep=""
 if [ -f /etc/kernel/cmdline ]; then
     for p in $(cat /etc/kernel/cmdline); do
-        [[ "$p" =~ $MANAGED ]] || keep="$keep $p"
+        [[ "$p" =~ $MANAGED || " $keep " == *" $p "* ]] || keep="$keep $p"   # sans doublons
     done
 fi
 echo "rd.luks.uuid=$LUKS_UUID root=/dev/mapper/luks-$LUKS_UUID rootflags=subvol=$ROOT_SUBVOL rootfstype=btrfs rw nohibernate rd.vconsole.keymap=$LUKS_KEYMAP${BOOT_QUIET:+ $BOOT_QUIET}$keep" \
