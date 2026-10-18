@@ -1,11 +1,15 @@
 #!/bin/bash
-# Indicateurs Waybar: nouveaux mails Proton (mail) et événements Proton Calendar imminents (cal), vides sinon (module masqué).
-# Alimentés par mail-notify et cal-notify via ~/.local/state/alerts/{mail,cal}; `bar-alert open mail|cal` ouvre la webapp et efface.
+# Indicateurs Waybar: nouveaux mails Proton (mail), événements Proton Calendar imminents (cal) et messages des autres
+# webapps suivies par webapp-notify (whatsapp...), vides sinon (module masqué).
+# Alimentés par mail-notify, cal-notify et webapp-notify via ~/.local/state/alerts/<kind>; `bar-alert open <kind>` ouvre la webapp et efface.
+# Ajouter une webapp: son nom dans ~/.config/webapps/notify, un signal ici, un module custom/<kind> dans Waybar.
 #   mail: une ligne "expéditeur<TAB>sujet" par mail arrivé depuis le dernier clic
 #   cal:  une ligne "début epoch<TAB>HH:MM<TAB>titre", affichée jusqu'à 5 min après le début
 D="$HOME/.local/state/alerts"
 mkdir -p "$D"
-sig() { case "$1" in mail) echo 16 ;; cal) echo 17 ;; esac; }
+sig() { case "$1" in mail) echo 16 ;; cal) echo 17 ;; whatsapp) echo 19 ;; esac; }
+# URL d'une webapp de la liste d'après son kind (nom en minuscules sans espace)
+webapp_url() { awk -F'|' -v k="$1" '/^#/ || NF < 2 { next } { n = tolower($1); gsub(/[^a-z0-9]/, "", n); if (n == k) { gsub(/^ +| +$/, "", $2); print $2; exit } }' "${XDG_CONFIG_HOME:-$HOME/.config}/webapps/list"; }
 
 case "$1" in
     push)  # bar-alert push mail "expéditeur" "sujet" | bar-alert push cal EPOCH HH:MM titre
@@ -18,10 +22,20 @@ case "$1" in
         case "$2" in
             mail) exec "$HOME/.local/bin/webapp" https://mail.proton.me ;;
             cal)  exec "$HOME/.local/bin/webapp" https://calendar.proton.me ;;
+            *)    exec "$HOME/.local/bin/webapp" "$(webapp_url "$2")" ;;
         esac ;;
 esac
 
 f="$D/$1"
+# Compteur réel de non-lus (wa-count): prioritaire sur les lignes de notifications, le badge reste tant que ce n'est pas lu
+if [ -f "$f.count" ]; then
+    n="$(cat "$f.count")"
+    [ "${n:-0}" -gt 0 ] 2>/dev/null || { printf '{"text":""}\n'; exit 0; }
+    tip="$(awk -F'\t' '{print $1 ": " $2}' "$f" 2>/dev/null | tail -8)"
+    jq -nc --arg t "$n" --arg tip "${tip:+$tip
+}$n non lu(s) (clic: ouvrir la webapp)" '{text: ("󰖣 " + $t), class: "active", tooltip: $tip}'
+    exit 0
+fi
 [ -s "$f" ] || { printf '{"text":""}\n'; exit 0; }
 case "$1" in
     mail)
@@ -39,4 +53,9 @@ case "$1" in
         tip="$(printf '%s\n' "$rows" | sort -n | awk -F'\t' '{print $2 " " $3}')"
         jq -nc --arg t " $short $hm" --arg tip "$tip
 (clic: ouvrir Proton Calendar)" '{text: $t, class: "active", tooltip: $tip}' ;;
+    *)
+        n="$(wc -l <"$f")"
+        tip="$(awk -F'\t' '{print $1 ": " $2}' "$f" | tail -8)"
+        jq -nc --arg t "$n" --arg tip "$tip
+(clic: ouvrir la webapp)" '{text: ("󰖣 " + $t), class: "active", tooltip: $tip}' ;;
 esac

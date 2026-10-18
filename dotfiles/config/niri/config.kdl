@@ -296,6 +296,10 @@ spawn-sh-at-startup "while :; do goimapnotify; sleep 30; done"
 // Profils d'écrans automatiques (config: ~/.config/kanshi/config)
 spawn-at-startup "kanshi"
 spawn-sh-at-startup "$HOME/.local/bin/wallpaper"
+// WhatsApp sans navigateur: whatsapp-unreadd + compteur de non-lus (appairage: wa-pair), voir ~/.local/bin/wa-daemon
+spawn-at-startup "wa-daemon"
+// Notifications des webapps listées dans ~/.config/webapps/notify (WhatsApp...): indicateur Waybar, voir ~/.local/bin/webapp-notify
+spawn-sh-at-startup "while :; do $HOME/.local/bin/webapp-notify; sleep 30; done"
 // Notifications Proton Calendar (lien ICS dans ~/.config/proton-calendar.url), voir ~/.local/bin/cal-notify
 spawn-sh-at-startup "$HOME/.local/bin/cal-notify"
 // Mini-cron: MAJ Void (6 h), veille Omarchy et T2 via Claude (7 j), voir ~/.local/bin/cron-watch

@@ -14,7 +14,7 @@
     // Indicateurs et bascules: enregistrement, minuteur, caféine, SSH, avion, VPN, veilleuse, notifications, veille, MAJ
     "group/ind": {
         "orientation": "inherit",
-        "modules": ["custom/mail", "custom/cal", "custom/rec", "custom/timer", "custom/idle", "custom/remote", "custom/air", "custom/vpn", "custom/night", "custom/dnd", "custom/news", "custom/update", "custom/backup"]
+        "modules": ["custom/mail", "custom/whatsapp", "custom/cal", "custom/rec", "custom/timer", "custom/idle", "custom/remote", "custom/air", "custom/vpn", "custom/night", "custom/dnd", "custom/news", "custom/update", "custom/backup"]
     },
     // Ressources: CPU, température, mémoire, disque
     "group/res": {
@@ -81,6 +81,14 @@
         "signal": 16,
         "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-alert open mail"
+    },
+    "custom/whatsapp": {
+        "exec": "$HOME/.local/bin/bar-alert whatsapp",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 19,
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/bar-alert open whatsapp"
     },
     "custom/cal": {
         "exec": "$HOME/.local/bin/bar-alert cal",

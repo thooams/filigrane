@@ -237,6 +237,31 @@ setup_proton_drive() {
     echo "connexion: proton-drive auth login (trousseau requis, voir README)"
 }
 
+# whatsapp-unreadd (démon Go, ~23 Mo: compteur de non-lus WhatsApp + notifications, pas dans les dépôts Void):
+# compilé depuis un commit épinglé (le hash fixe le contenu, go.sum celui des dépendances)
+WA_UNREADD_COMMIT="44a1688cb55d93236e886d242cc008ff8c3cbfa9"
+
+setup_whatsapp_unreadd() {
+    log "whatsapp-unreadd ${WA_UNREADD_COMMIT:0:7}"
+    local dir="$TARGET_HOME/.local/opt/whatsapp-unreadd-${WA_UNREADD_COMMIT:0:7}"
+    if [ ! -x "$dir/whatsapp-unreadd" ]; then
+        command -v go >/dev/null || { warn "go absent (packages/dev.txt): whatsapp-unreadd non compilé"; return 0; }
+        local src; src="$(run_as_user mktemp -d)"
+        if run_as_user git clone -q https://github.com/m-brl/whatsapp-unreadd "$src" \
+            && run_as_user git -C "$src" checkout -q "$WA_UNREADD_COMMIT" \
+            && run_as_user mkdir -p "$dir" \
+            && (cd "$src" && run_as_user env CGO_ENABLED=0 GOFLAGS=-mod=readonly go build -trimpath -ldflags='-s -w' -o "$dir/whatsapp-unreadd" .); then
+            :
+        else
+            warn "compilation de whatsapp-unreadd échouée"; run_as_user rm -rf "$src" "$dir"; return 0
+        fi
+        run_as_user rm -rf "$src"
+    fi
+    run_as_user mkdir -p "$TARGET_HOME/.local/bin"
+    run_as_user ln -sfn "$dir/whatsapp-unreadd" "$TARGET_HOME/.local/bin/whatsapp-unreadd"
+    [ -e "$TARGET_HOME/.config/whatsapp-unread/paired" ] || echo "appairage: wa-pair (QR code à scanner depuis WhatsApp > Appareils liés)"
+}
+
 setup_claude() {
     log "Claude Code"
     if [ -x "$TARGET_HOME/.local/bin/claude" ]; then
@@ -299,4 +324,5 @@ setup_dotfiles() {
 [ "$DO_DOTFILES" -eq 1 ] && setup_dotfiles
 [ "$DO_SYSTEM" -eq 1 ] && setup_claude
 [ "$DO_SYSTEM" -eq 1 ] && setup_proton_drive
+[ "$DO_SYSTEM" -eq 1 ] && setup_whatsapp_unreadd
 log "Terminé"

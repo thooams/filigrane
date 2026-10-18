@@ -1,0 +1,59 @@
+#!/bin/sh
+# Notifications d'applications web -> indicateur Waybar + clic qui ouvre/focalise la webapp (WhatsApp Web n'a pas à être ouvert).
+# Écoute les appels Notify sur le bus D-Bus de session (dbus-monitor + awk, aucun interpréteur résident de plus). Une notification
+# est rattachée à une webapp de ~/.config/webapps/list suivie dans ~/.config/webapps/notify ("Nom | émetteur", un par ligne):
+#   - émetteur natif (WhatsApp | whatsapp-unreadd): client sans navigateur, reconnu par son nom d'application
+#   - sans émetteur: webapp Chromium ouverte, reconnue par son nom ou son hôte dans l'appli émettrice, le titre ou le corps
+# La notification d'origine est retirée puis ré-émise sous le nom de la webapp (notif-focus la focalise ou la rouvre au clic)
+# et poussée dans bar-alert (kind = nom en minuscules sans espace).
+# Notifications Chromium non reconnues: consignées dans $XDG_RUNTIME_DIR/webapp-notify.log. Proton Mail a déjà mail-notify.
+# Lancé par niri au démarrage (boucle de relance).
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}/webapps"
+RUN="${XDG_RUNTIME_DIR:-/tmp}"
+BIN="$HOME/.local/bin"
+US="$(printf '\037')"
+
+# Règles "nom|kind|hôte|icône|émetteur natif" (minuscules sauf nom et icône)
+awk -F'|' '
+    function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+    FILENAME ~ /notify$/ { if ($0 !~ /^#/ && trim($1) != "") native[tolower(trim($1))] = tolower(trim($2)); next }
+    /^#/ || NF < 2 { next }
+    { n = trim($1); if (!(tolower(n) in native)) next
+      h = trim($2); sub(/^[a-z]+:\/\//, "", h); sub(/\/.*/, "", h)
+      k = tolower(n); gsub(/[^a-z0-9]/, "", k)
+      ic = trim($3); sub(/^~/, ENVIRON["HOME"], ic); if (ic == "") ic = "web-browser"
+      print n "|" k "|" tolower(h) "|" ic "|" native[tolower(n)] }
+' "$CONF/notify" "$CONF/list" >"$RUN/webapp-notify.rules" 2>/dev/null
+[ -s "$RUN/webapp-notify.rules" ] || exit 0
+
+# dbus-monitor -> awk: un enregistrement "nom<US>kind<US>icône<US>hôte<US>titre<US>corps" par notification reconnue
+dbus-monitor --session "interface='org.freedesktop.Notifications',member='Notify'" 2>/dev/null | awk -v rules="$RUN/webapp-notify.rules" -v lf="$RUN/webapp-notify.log" '
+    function str(s,   p, e) {  # prochaine chaîne D-Bus de s: renvoie la valeur, laisse le reste dans rest
+        p = index(s, "string \""); if (!p) { rest = ""; return "" }
+        s = substr(s, p + 8); e = index(s, "\"\n"); if (!e) e = length(s) + 1
+        rest = substr(s, e + 1); return substr(s, 1, e - 1)
+    }
+    BEGIN { while ((getline l < rules) > 0) { split(l, f, "|"); n++; nm[n] = f[1]; kd[n] = f[2]; ho[n] = f[3]; ic[n] = f[4]; na[n] = f[5] } }
+    /^method call/ { blk = "" }
+    { blk = blk $0 "\n" }
+    /^   int32 -?[0-9]+$/ {
+        app = str(blk); r = rest; ico = str(r); r = rest; summary = str(r); r = rest; body = str(r)
+        p = index(blk, "\"desktop-entry\""); entry = ""
+        if (p) entry = str(substr(blk, p + 15))
+        gsub(/\n/, " ", body); gsub(/\n/, " ", summary)
+        hay = tolower(app " " summary " " body); chrom = tolower(app entry) ~ /chrom/; hit = 0
+        for (i = 1; i <= n && !hit; i++) {
+            if (na[i] != "") { if (tolower(app) == na[i]) hit = i }
+            else if (chrom && (index(hay, ho[i]) || index(hay, tolower(nm[i])))) hit = i
+        }
+        if (hit) { sub(ho[hit], "", body); printf "%s\037%s\037%s\037%s\037%s\n", nm[hit], kd[hit], ic[hit], summary, body; fflush() }
+        else if (chrom) print strftime("%T") " non reconnue: " app " " entry " " summary " " body >> lf
+        blk = ""
+    }
+' | while IFS="$US" read -r name kind icon summary body; do
+    sleep 0.15   # laisse mako enregistrer la notification d'origine
+    id="$(makoctl list | awk -v sum="$summary" '$1 == "Notification" && substr($0, index($0, ": ") + 2) == sum { m = $2 + 0 } END { if (m) print m }')"
+    [ -n "$id" ] && makoctl dismiss -n "$id" >/dev/null 2>&1
+    notify-send -a "$name" -i "$icon" "$summary" "$body"
+    "$BIN/bar-alert" push "$kind" "$summary" "$body"
+done
