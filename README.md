@@ -36,6 +36,22 @@ Le profil (`vm` ou `baremetal`) est détecté via le flag `hypervisor` de `/proc
   Puis par exemple `proton-drive filesystem upload -f skip -d merge -t ./dossier /my-files/sauvegardes`. Le trousseau est verrouillé à chaque démarrage : la première utilisation de la session le redemande.
 - **Claude Code** : installé par `bootstrap.sh` (`~/.local/bin/claude`, `/login` au premier lancement, `Mod+Y`), avec le skill `void-linux` (règles xbps/runit, budget ressources, tout changement durable reporté dans ce dépôt).
 
+## Ce que Void + niri apporte par rapport à macOS
+
+Mesures sur le même MacBook (T2), au repos, après démarrage récent. Côté Mac, l'indexation Spotlight est coupée (sinon `mds_stores` fait monter le load à 40).
+
+| | Void + niri | macOS (indexation coupée) |
+|---|---|---|
+| RAM, système seul (hors applications) | ~0,8 Go | ~6,5 Go (dont 2,7 Go de noyau « wired ») |
+| CPU au repos | 92-94 % d'inactivité | ~94 % |
+| Puissance totale (machine entière, écran compris, sur batterie) | 19,4 W, Chromium ouvert | ~24 W, sans navigateur |
+| Swap | 0 | 0 |
+
+- **RAM** : macOS pèse environ 8 fois plus que Void hors applications. Son noyau seul fait plus de 3 fois tout le système Linux.
+- **CPU** : équivalent au repos une fois l'indexation finie. `WindowServer` reste pourtant à ~16 % pour un affichage statique, sans équivalent sous niri.
+- **Énergie** : le Mac tire ~4,6 W de plus (+24 %) avec moins d'applications ouvertes.
+- **Conséquence** : la RAM et la batterie libérées reviennent au navigateur, aux agents et aux conteneurs, d'où la règle « l'OS doit se faire oublier ».
+
 ## Réinstaller un système complet
 
 1. Démarrer sur l'ISO live Void (glibc x86_64), réseau actif, `root` / `voidlinux`.
