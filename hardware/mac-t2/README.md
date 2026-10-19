@@ -65,7 +65,7 @@ L'ESP est montée sur `/boot/efi` : les noyaux restent dans `@void`, seul `/boot
 
 **Hibernation** : désactivée (`nohibernate`). Non fiable sur Mac T2 (essai raté sur ce Mac), et dangereuse en double démarrage : les deux systèmes partagent le même système de fichiers btrfs. Si l'un est en hibernation, ne jamais démarrer l'autre (corruption possible). La veille simple ne pose pas ce problème.
 
-**Veille** : la carte Wi-Fi (ARPT) ne réveille plus la machine (`72-t2-wifi-nowake.rules`), elle provoquait des réveils parasites capot fermé. Le message `e-suspend: segfault` au réveil est un bug connu d'elogind 252 ([elogind #341](https://github.com/elogind/elogind/issues/341), corrigé en 255) : il survient après la veille, sans effet.
+**Veille** : la carte Wi-Fi (ARPT) ne réveille plus la machine (`72-t2-wifi-nowake.rules`), elle provoquait des réveils parasites capot fermé. Pas de veille automatique sur inactivité (verrou à 5 min, écran éteint à 10 min, comme Omarchy): le 18 oct. 2026, une veille S3 lancée sur batterie n'a jamais repris (démarrage à froid le lendemain, `tree-log replay` btrfs, aucune trace après `suspend entry`), et la session a été perdue. Cause non tranchée entre batterie vidée et plantage au réveil: les hooks `/etc/zzz.d/{suspend,resume}/10-sleeplog` (`setup.sh --only sleeplog`) journalisent la batterie (`grep sleeplog /var/log/socklog/user/current`). Omarchy a la même cmdline T2 et aucun contournement de veille. La veille manuelle reste possible. Le message `e-suspend: segfault` au réveil est un bug connu d'elogind 252 ([elogind #341](https://github.com/elogind/elogind/issues/341), corrigé en 255) : il survient après la veille, sans effet.
 
 ## Après le premier démarrage
 

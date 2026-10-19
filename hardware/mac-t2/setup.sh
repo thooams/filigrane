@@ -3,7 +3,7 @@
 # Approche inspirée d'Omarchy (install/hardware/apple/fix-t2.sh), adaptée à Void:
 # xbps + DKMS (pas de noyau linux-t2), dracut, GRUB ou Limine (/etc/kernel/cmdline), runit.
 #
-#   ./setup.sh [--check] [--only dkms|touchbar|smc|trackpad|keys|boot|audio|fan|net|tools]
+#   ./setup.sh [--check] [--only dkms|touchbar|smc|trackpad|keys|boot|audio|fan|sleeplog|net|tools]
 #
 # --check: affiche si une puce T2 est détectée (code 0 = oui) puis quitte.
 # Appelé automatiquement par bootstrap.sh quand une puce T2 est détectée.
@@ -340,6 +340,22 @@ EOF
     ln -sfn /etc/sv/t2fanrd /etc/runit/runsvdir/default/t2fanrd
 }
 
+setup_sleeplog() {
+    log "Journal de veille (batterie avant/après, dans le journal socklog)"
+    local ev
+    for ev in suspend resume; do
+        mkdir -p "/etc/zzz.d/$ev"
+        cat > "/etc/zzz.d/$ev/10-sleeplog" <<EOF
+#!/bin/sh
+# Niveau de batterie à l'entrée et à la sortie de veille: distingue batterie vidée et plantage au réveil
+b=/sys/class/power_supply/BAT0
+logger -t sleeplog "$ev batterie=\$(cat \$b/capacity)% etat=\$(cat \$b/status) charge=\$(cat \$b/charge_now)/\$(cat \$b/charge_full)"
+exit 0
+EOF
+        chmod 755 "/etc/zzz.d/$ev/10-sleeplog"
+    done
+}
+
 setup_net() {
     log "Interface USB interne de la T2 (cdc_ncm) ignorée par dhcpcd"
     # Même adresse MAC sur tous les Mac T2: nom fixe, puis exclusion de dhcpcd
@@ -392,6 +408,7 @@ want keys && setup_keys
 want audio && setup_audio
 want boot && setup_boot
 want fan && setup_fan
+want sleeplog && setup_sleeplog
 want net && setup_net
 want tools && setup_tools
 log "Terminé. Redémarrer, puis lancer t2-wifi-firmware pour le Wi-Fi/Bluetooth."
