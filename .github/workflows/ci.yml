@@ -1,8 +1,11 @@
 name: CI
 
-# Uniquement sur main. Rien n'installe de système: on vérifie la logique de sélection
+# Sur les pull requests vers main et sur les push vers main (pas sur develop).
+# Rien n'installe de système: on vérifie la logique de sélection
 # (profil, machine, CPU, GPU, architecture), l'existence des paquets et la pose des dotfiles.
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
 
