@@ -89,6 +89,14 @@
     "type": "command",
     "command": "/bin/bash /home/thomas/.claude/statusline-command.sh"
   },
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "high"
+    },
+    "claude-sonnet-5-5": {
+      "effortLevel": "medium"
+    }
+  },
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",

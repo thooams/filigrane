@@ -8,7 +8,7 @@
 
     "modules-left": ["custom/menu", "niri/workspaces", "niri/window"],
     "modules-center": ["group/ind", "clock"],
-    "modules-right": ["mpris", "group/res", "group/tray", "group/audio", "custom/display", "bluetooth", "network", "battery", "custom/batwatch"],
+    "modules-right": ["mpris", "group/res", "group/tray", "group/audio", "niri/language", "custom/display", "bluetooth", "network", "battery", "custom/batwatch"],
 
     // Modules regroupés dans une seule pastille chacun (gain de place, voir style.css)
     // Indicateurs et bascules: enregistrement, minuteur, caféine, SSH, avion, VPN, veilleuse, notifications, veille, MAJ
@@ -145,14 +145,15 @@
         "interval": 15,
         "on-click": "$HOME/.local/bin/bar-tui htop"
     },
-    // Micro: clic = couper/activer, molette = volume, clic milieu = mixeur
+    // Micro: clic = couper/activer, molette = volume, clic droit ou milieu = mixeur (onglet entrées)
     "custom/mic": {
         "exec": "$HOME/.local/bin/bar-status mic",
         "return-type": "json",
         "interval": 60,
         "signal": 8,
         "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; pkill -RTMIN+8 waybar",
-        "on-click-middle": "$HOME/.local/bin/bar-tui wiremix",
+        "on-click-right": "$HOME/.local/bin/bar-tui wiremix --tab input",
+        "on-click-middle": "$HOME/.local/bin/bar-tui wiremix --tab input",
         "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SOURCE@ 5%+",
         "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%-"
     },
@@ -163,7 +164,7 @@
         "format-icons": ["\uf026", "\uf027", "\uf028"],
         "scroll-step": 5,
         "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
-        "on-click-right": "$HOME/.local/bin/bar-tui wiremix",
+        "on-click-right": "$HOME/.local/bin/bar-tui wiremix --tab output",
         "on-click-middle": "$HOME/.local/bin/bar-tui sound-tune"
     },
     // Wi-Fi: clic = impala (liste des SSID, connexion, mot de passe), clic droit = menu réseau (IP, ping, débit)
@@ -270,6 +271,12 @@
         "return-type": "json",
         "interval": 60,
         "hide-empty-text": true
+    },
+    // Disposition clavier (bépo / qwerty australien): clic = bascule
+    "niri/language": {
+        "format": "\uf11c {short}",
+        "tooltip-format": "Clavier: {long} (clic: changer)",
+        "on-click": "niri msg action switch-layout next"
     },
     // Écrans: clic = wdisplays
     "custom/display": {

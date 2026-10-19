@@ -52,6 +52,7 @@ window#waybar {
 #custom-temp,
 #disk,
 #custom-display,
+#language,
 #bluetooth,
 #mpris,
 #group-tray {
@@ -79,7 +80,7 @@ window#waybar {
 
 /* Marges entre sections (modules de premier niveau et groupes) */
 #custom-menu, #workspaces, #window, #clock, #mpris,
-#ind, #res, #audio, #custom-display, #bluetooth, #network, #battery,
+#ind, #res, #audio, #language, #custom-display, #bluetooth, #network, #battery,
 #custom-batwatch, #group-tray {
     margin: 0 6px;
 }
@@ -152,7 +153,7 @@ tooltip {
 #custom-timer.active { color: @green; }
 #custom-timer.stopwatch { color: @blue; }
 #custom-timer.done { color: @red; }
-#custom-display { color: @subtext0; }
+#custom-display, #language { color: @subtext0; }
 #bluetooth { color: @blue; }
 #bluetooth.off, #bluetooth.disabled { color: @overlay0; }
 #bluetooth.connected { color: @teal; }

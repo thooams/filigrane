@@ -361,6 +361,38 @@ exit 0
 EOF
         chmod 755 "/etc/zzz.d/$ev/10-sleeplog"
     done
+
+    log "Hooks zzz.d aussi pour la veille d'elogind (capot, menu)"
+    # elogind met en veille sans passer par zzz: ses hooks system-sleep relaient vers /etc/zzz.d
+    mkdir -p /usr/libexec/elogind/system-sleep
+    cat > /usr/libexec/elogind/system-sleep/50-zzz.d <<'EOF'
+#!/bin/sh
+# void-setup: elogind appelle ce hook avec pre|post; on lance les hooks zzz.d correspondants
+case "$1" in
+    pre) d=/etc/zzz.d/suspend ;;
+    post) d=/etc/zzz.d/resume ;;
+    *) exit 0 ;;
+esac
+for h in "$d"/*; do [ -x "$h" ] && "$h"; done
+exit 0
+EOF
+    chmod 755 /usr/libexec/elogind/system-sleep/50-zzz.d
+
+    log "Cœurs secondaires arrêtés pendant la veille"
+    # Au réveil S3, le noyau rallume les cœurs 1-7 en 10 à 35 s (firmware Apple): écran noir,
+    # le capot semble ne pas réveiller. Arrêtés avant la veille, rallumés après: quelques ms.
+    cat > /etc/zzz.d/suspend/90-cpu-offline <<'EOF'
+#!/bin/sh
+for c in /sys/devices/system/cpu/cpu[1-9]*/online; do echo 0 > "$c"; done
+exit 0
+EOF
+    cat > /etc/zzz.d/resume/05-cpu-online <<'EOF'
+#!/bin/sh
+for c in /sys/devices/system/cpu/cpu[1-9]*/online; do echo 1 > "$c"; done
+logger -t sleeplog "resume cpus=$(cat /sys/devices/system/cpu/online)"
+exit 0
+EOF
+    chmod 755 /etc/zzz.d/suspend/90-cpu-offline /etc/zzz.d/resume/05-cpu-online
 }
 
 setup_net() {

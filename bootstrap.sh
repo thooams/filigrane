@@ -142,7 +142,9 @@ install_list() {
     local -a ok=()
     [ -f "$file" ] || return 0  # ex. cpu-other.txt: rien à installer
     for pkg in $(read_list "$file"); do
-        if xbps-query -R "$pkg" >/dev/null 2>&1; then ok+=("$pkg"); else warn "paquet introuvable: $pkg"; fi
+        if xbps-query "$pkg" >/dev/null 2>&1; then echo "SKIP: $pkg déjà installé"
+        elif xbps-query -R "$pkg" >/dev/null 2>&1; then ok+=("$pkg")
+        else warn "paquet introuvable: $pkg"; fi
     done
     [ ${#ok[@]} -gt 0 ] && $SUDO xbps-install -y "${ok[@]}"
     return 0
@@ -166,7 +168,8 @@ setup_system() {
     local list
     for list in $(package_lists); do install_list "$list"; done
     if [ "$PROFILE" = baremetal ]; then
-        $SUDO xbps-install -y void-repo-nonfree
+        if xbps-query void-repo-nonfree >/dev/null 2>&1; then echo "SKIP: void-repo-nonfree déjà installé"
+        else $SUDO xbps-install -y void-repo-nonfree; fi
         $SUDO xbps-install -S
         for list in $(hardware_package_lists); do install_list "$list"; done
     fi
@@ -220,6 +223,10 @@ setup_system() {
     $SUDO sysctl -q --system || warn "sysctl --system a échoué"
     [ -d /etc/sv/earlyoom ] && $SUDO install -m 644 "$ROOT/system/earlyoom.conf" /etc/sv/earlyoom/conf
     [ -d /etc/sv/zramen ] && $SUDO install -m 644 "$ROOT/system/zramen.conf" /etc/sv/zramen/conf
+
+    log "Capot géré par niri (~/.local/bin/lid), pas par elogind"
+    $SUDO install -d /etc/elogind/logind.conf.d
+    $SUDO install -m 644 "$ROOT/system/elogind/10-lid.conf" /etc/elogind/logind.conf.d/
 
     log "Connexion automatique tty1"
     local conf=/etc/sv/agetty-tty1/conf autologin="$AUTOLOGIN"
