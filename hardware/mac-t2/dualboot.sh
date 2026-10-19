@@ -26,8 +26,8 @@ SWAP_SIZE="${SWAP_SIZE:-16g}"
 ESP_MNT="${ESP_MNT:-/boot/efi}"
 # Disposition du clavier au prompt LUKS: doit être celle avec laquelle la phrase de passe a été définie
 LUKS_KEYMAP="${LUKS_KEYMAP:-us}"
-# Console lisible (prompt LUKS, login): seuls les messages runit et les erreurs noyau. BOOT_QUIET="" pour tout voir.
-BOOT_QUIET="${BOOT_QUIET-quiet loglevel=3 rd.udev.log_level=3}"
+# Démarrage silencieux avec écran Plymouth (system/plymouth) pour le prompt LUKS. BOOT_QUIET="" pour tout voir.
+BOOT_QUIET="${BOOT_QUIET-quiet splash loglevel=3 rd.udev.log_level=3}"
 OPTS="noatime,compress=zstd:3,ssd,space_cache=v2"
 
 DRY=0
@@ -79,7 +79,7 @@ put /etc/dracut.conf.d/10-dualboot.conf <<'EOF'
 # Généré par void-setup/hardware/mac-t2/dualboot.sh
 hostonly="yes"
 hostonly_cmdline="no"
-add_dracutmodules+=" crypt btrfs "
+add_dracutmodules+=" crypt btrfs plymouth "
 omit_dracutmodules+=" resume "
 compress="zstd"
 EOF
@@ -93,7 +93,7 @@ else
 fi
 
 # Paramètres gérés ici (remplacés à chaque passage); les autres sont conservés
-MANAGED='^(rd\.luks\.uuid|root|rootflags|rootfstype|resume|resume_offset|rd\.vconsole\.keymap|rw|ro|quiet|loglevel|rd\.udev\.log_level|nohibernate)(=|$)'
+MANAGED='^(rd\.luks\.uuid|root|rootflags|rootfstype|resume|resume_offset|rd\.vconsole\.keymap|rw|ro|quiet|splash|loglevel|rd\.udev\.log_level|nohibernate)(=|$)'
 keep=""
 if [ -f /etc/kernel/cmdline ]; then
     for p in $(cat /etc/kernel/cmdline); do
@@ -128,6 +128,16 @@ if [ ! -f /etc/snapper/configs/root ]; then
 fi
 # Pas d'instantanés horaires (pas de cron): seulement avant/après void-update, 10 gardés
 snapper --no-dbus -c root set-config TIMELINE_CREATE=no NUMBER_LIMIT=10 NUMBER_LIMIT_IMPORTANT=5
+
+# Écran de démarrage Plymouth: invite de passphrase LUKS avec points, puis session en autologin
+if [[ " $BOOT_QUIET " == *" splash "* ]]; then
+    echo "[dualboot] Plymouth (thème void) et initramfs du noyau courant"
+    xbps-install -y plymouth >/dev/null
+    install -d /usr/share/plymouth/themes/void /etc/plymouth
+    install -m 0644 "$ROOT"/system/plymouth/void/* /usr/share/plymouth/themes/void/
+    install -m 0644 "$ROOT/system/plymouth/plymouthd.conf" /etc/plymouth/plymouthd.conf
+    dracut --force --kver "$(uname -r)"
+fi
 
 if [ -f "$ESP_MNT/limine.conf" ]; then
     ESP="$ESP_MNT" /usr/local/sbin/limine-void sync

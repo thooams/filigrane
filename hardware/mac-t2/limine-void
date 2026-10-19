@@ -6,15 +6,18 @@
 #   limine-void purge [--yes] supprime les autres noyaux installés (remplace "vkpurge rm all")
 #   limine-void status
 #
-# Appelé par /etc/kernel.d/post-install et post-remove (60-limine-void). Le reste de limine.conf
-# (entrées de l'autre système, default_entry) n'est jamais modifié; une copie précédente est
-# gardée dans limine.conf.void-bak.
+# Appelé par /etc/kernel.d/post-install et post-remove (60-limine-void). Le bloc Void est placé
+# avant les entrées de l'autre système (order-priority=90 > 50 d'Omarchy, que limine-entry-tool
+# respecte quand il réécrit le fichier): avec default_entry: 2, Limine démarre le noyau Void le plus
+# récent. Le reste de limine.conf n'est jamais modifié; une copie précédente est gardée dans
+# limine.conf.void-bak.
 set -euo pipefail
 
 ESP="${ESP:-/boot/efi}"
 SUBDIR=void
 KEEP="${KEEP:-2}"
 TITLE="Void Linux"
+PRIORITY=90   # ordre des entrées de premier niveau dans limine.conf (plus grand = plus haut)
 PIN_FILE=/etc/void-setup/kernel-pin
 CMDLINE_FILE=/etc/kernel/cmdline
 LOCK=/run/lock/boot-partition.lock   # même verrou que les outils Limine d'Omarchy
@@ -54,7 +57,7 @@ block() {
     newest="$(installed | tail -n 1)"
     mid="$(cat /etc/machine-id 2>/dev/null || cat /var/lib/dbus/machine-id)"
     echo "/+$TITLE"
-    echo "comment: machine-id=$mid"
+    echo "comment: machine-id=$mid order-priority=$PRIORITY"
     echo "comment: généré par limine-void (void-setup), ne pas éditer"
     while read -r v; do
         label="Linux $v"
@@ -102,14 +105,19 @@ sync_esp() {
         grep -qxF "$v" <<<"$sel" || rm -f "$f"
     done
 
-    # Retire l'ancien bloc (du titre jusqu'à la prochaine entrée de premier niveau), puis l'ajoute en fin
+    # Retire l'ancien bloc (du titre jusqu'à la prochaine entrée de premier niveau), puis l'insère
+    # avant la première entrée de premier niveau (après les options globales)
     cp -p "$conf" "$conf.void-bak"
-    awk -v t="$TITLE" '
+    block <<<"$sel" > "$conf.block"
+    awk -v t="$TITLE" -v bf="$conf.block" '
         $0 == "/" t || $0 == "/+" t { skip = 1; next }
         skip && /^\/[^\/]/ { skip = 0 }
-        !skip { print }
-    ' "$conf" | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' > "$conf.tmp"
-    { echo; block <<<"$sel"; } >> "$conf.tmp"
+        skip { next }
+        !done && /^\/[^\/]/ { while ((getline l < bf) > 0) print l; print ""; done = 1 }
+        { print }
+        END { if (!done) { print ""; while ((getline l < bf) > 0) print l } }
+    ' "$conf" | cat -s > "$conf.tmp"
+    rm -f "$conf.block"
     mv "$conf.tmp" "$conf"
     echo "limine-void: ESP à jour ($(tr '\n' ' ' <<<"$sel"))"
 }
