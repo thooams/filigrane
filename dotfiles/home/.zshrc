@@ -25,6 +25,7 @@ PROMPT='%(?:%F{green}➜:%F{red}➜) %F{cyan}%c%f${vcs_info_msg_0_} '
 
 # Outils
 command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
+command -v mise >/dev/null && eval "$(mise activate zsh)"
 for f in /usr/share/fzf/key-bindings.zsh /usr/share/fzf/completion.zsh; do
     [ -r "$f" ] && . "$f"
 done

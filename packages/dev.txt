@@ -8,6 +8,7 @@ fd
 fzf
 ripgrep
 zoxide
+mise  # versions Ruby/Rust/Node par projet; binaire seul, aucun démon (118 Mo disque)
 bat
 lazygit
 github-cli
