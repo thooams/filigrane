@@ -27,7 +27,7 @@ Deux axes indépendants, détectés puis forçables (utile pour tester) :
 
 `./bootstrap.sh --plan [options]` affiche les listes retenues pour une configuration et quitte, sans rien modifier.
 
-**CI** (`.github/workflows/ci.yml`, uniquement sur `main`) : syntaxe et shellcheck, `--plan` sur 8 configurations (VM, PC Intel/AMD/NVIDIA/hybride, Mac T2, ARM, RISC-V), existence des paquets dans le dépôt Void (`scripts/check-packages.sh`, aarch64 à titre indicatif), pose des dotfiles dans un HOME vierge pour `generic` et `mac-t2`. Aucune installation système n'est testée en CI.
+**CI** (`.github/workflows/ci.yml`, pull requests vers `main` et push sur `main`, pas sur `develop`) : syntaxe et shellcheck, `--plan` sur 8 configurations (VM, PC Intel/AMD/NVIDIA/hybride, Mac T2, ARM, RISC-V), existence des paquets dans le dépôt Void (`scripts/check-packages.sh`, aarch64 à titre indicatif), pose des dotfiles dans un HOME vierge pour `generic` et `mac-t2`. Aucune installation système n'est testée en CI.
 
 `install-void.sh` (x86_64 UEFI seulement) accepte les mêmes options et les transmet à `bootstrap.sh`.
 
