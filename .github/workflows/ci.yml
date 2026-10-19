@@ -64,14 +64,13 @@ jobs:
       matrix:
         # aarch64 est informatif: des paquets Intel ou propriétaires y manquent normalement
         arch: [x86_64, aarch64]
-    continue-on-error: ${{ matrix.arch != 'x86_64' }}
     steps:
       - uses: actions/checkout@v4
       - name: bash (absent de l'image)
         run: |
           xbps-install -Syu xbps || true
           xbps-install -Sy bash
-      - run: bash scripts/check-packages.sh ${{ matrix.arch }}
+      - run: bash scripts/check-packages.sh ${{ matrix.arch }} ${{ matrix.arch != 'x86_64' && '--warn-only' || '' }}
 
   # Pose des dotfiles dans un HOME vierge pour chaque machine: aucun lien cassé, fichiers T2 seulement sur mac-t2
   dotfiles:

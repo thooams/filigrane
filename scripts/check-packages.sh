@@ -1,7 +1,7 @@
 #!/bin/bash
 # Vérifie que chaque paquet des listes packages/*.txt existe dans le dépôt Void d'une architecture.
 #
-#   scripts/check-packages.sh [x86_64|aarch64|riscv64]     (défaut: architecture courante)
+#   scripts/check-packages.sh [x86_64|aarch64|riscv64] [--warn-only]     (défaut: architecture courante)
 #
 # Sans modifier le système: la base de dépôt va dans un dossier temporaire. Code 1 si des paquets manquent.
 set -euo pipefail
@@ -29,4 +29,6 @@ for list in "$ROOT"/packages/*.txt; do
     done
 done
 [ "$missing" -eq 0 ] && echo "$ARCH: tous les paquets existent"
+# --warn-only: manquants signalés sans échec (autre architecture: des paquets x86 y manquent normalement)
+[ "${2:-}" = --warn-only ] && exit 0
 exit "$missing"
