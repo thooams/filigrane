@@ -3,8 +3,9 @@
 #
 #   ./bootstrap.sh [--profile auto|vm|baremetal] [--machine auto|generic|mac-t2]
 #                  [--cpu auto|intel|amd|other] [--gpu auto|none|intel,amd,nvidia]
-#                  [--arch auto|x86_64|aarch64|riscv64] [--system-only | --dotfiles-only]
+#                  [--arch auto|x86_64|aarch64|riscv64] [--system-only | --dotfiles-only | --plan]
 #
+# --plan: affiche les listes retenues pour la configuration et quitte, sans rien modifier (CI).
 # --profile: environnement (VM ou machine physique). --machine: matériel, pour tout ce qui est
 # spécifique à un modèle (hardware/<machine>/). --cpu/--gpu: firmware et pilotes (packages/cpu-*.txt,
 # gpu-*.txt, machine physique seulement). --arch: architecture (binaires x86_64 seulement ignorés ailleurs).
@@ -27,6 +28,7 @@ TARGET_ARCH="${TARGET_ARCH:-auto}"
 [ -z "${T2_FORCE:-}" ] || MACHINE=mac-t2  # ancien nom
 DO_SYSTEM=1
 DO_DOTFILES=1
+PLAN=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --profile) PROFILE="${2:?profil manquant}"; shift 2 ;;
@@ -34,9 +36,10 @@ while [ $# -gt 0 ]; do
         --cpu) CPU_VENDOR="${2:?cpu manquant}"; shift 2 ;;
         --gpu) GPU_VENDORS="${2:?gpu manquant}"; shift 2 ;;
         --arch) TARGET_ARCH="${2:?architecture manquante}"; shift 2 ;;
+        --plan) PLAN=1; shift ;;
         --system-only) DO_DOTFILES=0; shift ;;
         --dotfiles-only) DO_SYSTEM=0; shift ;;
-        -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,18p' "$0"; exit 0 ;;
         *) echo "Option inconnue: $1" >&2; exit 1 ;;
     esac
 done
@@ -108,9 +111,36 @@ log "Profil: $PROFILE, machine: $MACHINE, arch: $TARGET_ARCH, cpu: $CPU_VENDOR, 
 # Liste sans commentaires ni lignes vides
 read_list() { sed -e 's/#.*//' -e 's/[[:space:]]*$//' "$1" | grep -v '^$' || true; }
 
+# Listes retenues pour la configuration (profil, CPU, GPU, machine), dans l'ordre d'installation
+package_lists() {
+    echo "$ROOT/packages/base.txt" "$ROOT/packages/desktop.txt" "$ROOT/packages/dev.txt" "$ROOT/packages/$PROFILE.txt"
+}
+hardware_package_lists() { # dépôt nonfree requis (microcode), machine physique seulement
+    local g
+    echo "$ROOT/packages/cpu-$CPU_VENDOR.txt"
+    for g in $GPU_VENDORS; do echo "$ROOT/packages/gpu-$g.txt"; done
+}
+service_lists() { echo "$ROOT/services/common.txt" "$ROOT/services/$PROFILE.txt"; }
+
+# --plan: affiche la configuration résolue et vérifie que les listes existent, sans rien modifier
+print_plan() {
+    local f rc=0 pkgs=""
+    pkgs="$(package_lists)"
+    [ "$PROFILE" = baremetal ] && pkgs="$pkgs $(hardware_package_lists)"
+    [ "$MACHINE" = mac-t2 ] && pkgs="$pkgs $ROOT/packages/mac-t2.txt"
+    for f in $pkgs $(service_lists); do
+        if [ -f "$f" ]; then echo "${f#"$ROOT/"}"; elif [[ "$f" == */cpu-other.txt ]]; then echo "${f#"$ROOT/"} (aucune liste)"; else
+            echo "MANQUANT: ${f#"$ROOT/"}" >&2; rc=1
+        fi
+    done
+    [ -d "$ROOT/hardware/$MACHINE" ] && echo "hardware/$MACHINE"
+    return $rc
+}
+
 install_list() {
     local file="$1" pkg
     local -a ok=()
+    [ -f "$file" ] || return 0  # ex. cpu-other.txt: rien à installer
     for pkg in $(read_list "$file"); do
         if xbps-query -R "$pkg" >/dev/null 2>&1; then ok+=("$pkg"); else warn "paquet introuvable: $pkg"; fi
     done
@@ -133,23 +163,20 @@ setup_system() {
     $SUDO xbps-install -Syu
 
     log "Paquets"
-    install_list "$ROOT/packages/base.txt"
-    install_list "$ROOT/packages/desktop.txt"
-    install_list "$ROOT/packages/dev.txt"
-    install_list "$ROOT/packages/$PROFILE.txt"
+    local list
+    for list in $(package_lists); do install_list "$list"; done
     if [ "$PROFILE" = baremetal ]; then
         $SUDO xbps-install -y void-repo-nonfree
         $SUDO xbps-install -S
-        [ -f "$ROOT/packages/cpu-$CPU_VENDOR.txt" ] && install_list "$ROOT/packages/cpu-$CPU_VENDOR.txt"
-        for g in $GPU_VENDORS; do install_list "$ROOT/packages/gpu-$g.txt"; done
+        for list in $(hardware_package_lists); do install_list "$list"; done
     fi
 
     log "Nettoyage du cache xbps (disque réduit)"
     $SUDO xbps-remove -yO >/dev/null || true
 
     log "Services runit"
-    local svc list
-    for list in "$ROOT/services/common.txt" "$ROOT/services/$PROFILE.txt"; do
+    local svc
+    for list in $(service_lists); do
         [ -f "$list" ] || continue
         for svc in $(read_list "$list"); do
             if [ -d "/etc/sv/$svc" ]; then
@@ -392,6 +419,7 @@ setup_dotfiles() {
     fi
 }
 
+if [ "$PLAN" -eq 1 ]; then print_plan; exit; fi
 [ "$DO_SYSTEM" -eq 1 ] && setup_system
 [ "$DO_DOTFILES" -eq 1 ] && setup_dotfiles
 [ "$DO_SYSTEM" -eq 1 ] && setup_claude

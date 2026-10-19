@@ -25,6 +25,10 @@ Deux axes indépendants, détectés puis forçables (utile pour tester) :
 - **gpu** (liste `intel,amd,nvidia`, ou `none`) : fabricants lus dans `/sys/class/drm`, ou `--gpu`. Machine physique seulement : `packages/gpu-<x>.txt` (Vulkan, accélération vidéo). NVIDIA = pilote libre nouveau. Un GPU inconnu (VM, SoC) n'ajoute rien, Mesa de base suffit.
 - **arch** (`x86_64`, `aarch64`, `riscv64`) : `uname -m`, ou `--arch`. Sert à ignorer les binaires x86_64 (Proton Drive CLI). Les paquets absents du dépôt de l'architecture sont déjà ignorés avec un avertissement.
 
+`./bootstrap.sh --plan [options]` affiche les listes retenues pour une configuration et quitte, sans rien modifier.
+
+**CI** (`.github/workflows/ci.yml`, uniquement sur `main`) : syntaxe et shellcheck, `--plan` sur 8 configurations (VM, PC Intel/AMD/NVIDIA/hybride, Mac T2, ARM, RISC-V), existence des paquets dans le dépôt Void (`scripts/check-packages.sh`, aarch64 à titre indicatif), pose des dotfiles dans un HOME vierge pour `generic` et `mac-t2`. Aucune installation système n'est testée en CI.
+
 `install-void.sh` (x86_64 UEFI seulement) accepte les mêmes options et les transmet à `bootstrap.sh`.
 
 ## Ce que contient le bureau

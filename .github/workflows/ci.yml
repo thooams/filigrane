@@ -1,0 +1,96 @@
+name: CI
+
+# Uniquement sur main. Rien n'installe de système: on vérifie la logique de sélection
+# (profil, machine, CPU, GPU, architecture), l'existence des paquets et la pose des dotfiles.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntaxe bash
+        run: |
+          for f in bootstrap.sh install-void.sh scripts/*.sh hardware/mac-t2/*.sh; do
+            bash -n "$f"
+          done
+      - name: shellcheck (erreurs seulement)
+        run: shellcheck -S error bootstrap.sh install-void.sh scripts/*.sh hardware/mac-t2/setup.sh hardware/mac-t2/dualboot.sh
+
+  # Une ligne par configuration à valider: bootstrap.sh --plan doit résoudre toutes les listes
+  plan:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: vm,                 args: "--profile vm --machine generic --cpu other --gpu none --arch x86_64" }
+          - { name: pc-intel,           args: "--profile baremetal --machine generic --cpu intel --gpu intel --arch x86_64" }
+          - { name: pc-amd-amd,         args: "--profile baremetal --machine generic --cpu amd --gpu amd --arch x86_64" }
+          - { name: pc-amd-nvidia,      args: "--profile baremetal --machine generic --cpu amd --gpu nvidia --arch x86_64" }
+          - { name: pc-hybride,         args: "--profile baremetal --machine generic --cpu intel --gpu intel,nvidia --arch x86_64" }
+          - { name: mac-t2,             args: "--profile baremetal --machine mac-t2 --cpu intel --gpu intel --arch x86_64" }
+          - { name: arm,                args: "--profile baremetal --machine generic --cpu other --gpu none --arch aarch64" }
+          - { name: riscv,              args: "--profile baremetal --machine generic --cpu other --gpu none --arch riscv64" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Plan (${{ matrix.name }})
+        run: ./bootstrap.sh --plan ${{ matrix.args }}
+      - name: Machine générique sans hardware/
+        if: matrix.name != 'mac-t2'
+        run: |
+          out="$(./bootstrap.sh --plan ${{ matrix.args }})"
+          if grep -qE '^hardware/mac-t2|mac-t2\.txt' <<<"$out"; then
+            echo "mac-t2 ne doit pas apparaître hors de la machine mac-t2"; exit 1
+          fi
+      - name: Options invalides refusées
+        run: |
+          for bad in "--machine inconnue" "--cpu arm" "--gpu inconnu"; do
+            # shellcheck disable=SC2086
+            if ./bootstrap.sh --plan $bad >/dev/null 2>&1; then echo "accepté à tort: $bad"; exit 1; fi
+          done
+
+  # Les paquets des listes existent dans le dépôt Void de l'architecture
+  packages:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/void-linux/void-glibc-full:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # aarch64 est informatif: des paquets Intel ou propriétaires y manquent normalement
+        arch: [x86_64, aarch64]
+    continue-on-error: ${{ matrix.arch != 'x86_64' }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/check-packages.sh ${{ matrix.arch }}
+
+  # Pose des dotfiles dans un HOME vierge pour chaque machine: aucun lien cassé, fichiers T2 seulement sur mac-t2
+  dotfiles:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [generic, mac-t2]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dotfiles (${{ matrix.machine }})
+        run: ./bootstrap.sh --dotfiles-only --profile baremetal --machine ${{ matrix.machine }} --cpu other --gpu none --arch x86_64
+      - name: Liens cassés
+        run: |
+          broken="$(find "$HOME" -xdev -xtype l -not -path "$HOME/.cache/*" -not -path "$HOME/.local/state/*" 2>/dev/null || true)"
+          [ -z "$broken" ] || { echo "$broken"; exit 1; }
+      - name: Fichiers T2
+        run: |
+          t2="$HOME/.config/t2-audio/tune.conf"
+          if [ "${{ matrix.machine }}" = mac-t2 ]; then
+            test -e "$t2"
+          else
+            test ! -e "$t2"
+          fi
+      - name: Idempotence
+        run: ./bootstrap.sh --dotfiles-only --profile baremetal --machine ${{ matrix.machine }} --cpu other --gpu none --arch x86_64
