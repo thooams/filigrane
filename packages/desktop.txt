@@ -62,6 +62,14 @@ smartmontools
 nvme-cli
 rtkit
 
+# Explorateur graphique: Thunar, montage auto des disques externes (volman) via gvfs; gvfs/thunar démarrent à la demande, pas de daemon résident
+Thunar
+thunar-volman
+gvfs
+# Icônes du Thunar/GTK (fichiers statiques, ~100 Mo disque)
+papirus-icon-theme
+papirus-folders  # couleur des dossiers: sudo papirus-folders -C violet -t Papirus-Dark (à relancer après mise à jour des icônes)
+
 # VPN Proton via WireGuard (wg-quick, sans daemon; script dotfiles/home/.local/bin/vpn)
 wireguard-tools
 
