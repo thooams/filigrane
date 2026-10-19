@@ -16,6 +16,7 @@ wl-clipboard
 cmus
 # Conteneurs sans démon (remplace docker du Mac)
 podman
+lazydocker  # TUI conteneurs (binaire Go de 13 Mo, rien de résident); a besoin du socket podman (DOCKER_HOST)
 # LazyVim: compilation des parsers treesitter (gcc = 234 Mo)
 gcc
 make
