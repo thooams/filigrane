@@ -1,0 +1,2 @@
+# CPU AMD (machine physique); le microcode est dans linux-firmware-amd
+linux-firmware-amd

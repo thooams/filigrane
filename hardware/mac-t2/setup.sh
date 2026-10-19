@@ -6,7 +6,7 @@
 #   ./setup.sh [--check] [--only dkms|touchbar|smc|trackpad|keys|boot|audio|fan|sleeplog|net|tools]
 #
 # --check: affiche si une puce T2 est détectée (code 0 = oui) puis quitte.
-# Appelé automatiquement par bootstrap.sh quand une puce T2 est détectée.
+# Appelé automatiquement par bootstrap.sh quand la machine est mac-t2 (détectée, ou forcée avec --machine).
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -41,8 +41,15 @@ WIFI_PARAM="brcmfmac.feature_disable=0x82000"
 log() { printf '\n[t2] %s\n' "$*"; }
 warn() { printf '[t2] AVERTISSEMENT: %s\n' "$*" >&2; }
 
-# Pas de `grep -q` dans un pipe: avec pipefail, SIGPIPE ferait croire à "pas de T2" (cf. Omarchy #6608)
-is_t2() { lspci -nn 2>/dev/null | grep -E '106b:180[12]' >/dev/null; }
+# Via sysfs (lspci n'est pas forcément installé avant setup_packages)
+is_t2() {
+    local d
+    for d in /sys/bus/pci/devices/*; do
+        [ "$(cat "$d/vendor" 2>/dev/null)" = 0x106b ] || continue
+        case "$(cat "$d/device" 2>/dev/null)" in 0x1801|0x1802) return 0 ;; esac
+    done
+    return 1
+}
 
 ONLY=""
 while [ $# -gt 0 ]; do

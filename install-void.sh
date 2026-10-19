@@ -3,6 +3,7 @@
 # À lancer en root depuis l'ISO live Void, réseau actif, dépôt cloné/copié sur le live.
 #
 #   ./install-void.sh --disk /dev/sda [--user thomas] [--hostname void] [--profile auto|vm|baremetal]
+#                    [--machine auto|generic|mac-t2] [--cpu auto|intel|amd|other] [--gpu auto|none|intel,amd,nvidia]
 #
 # ATTENTION: efface TOUT le disque cible.
 set -euo pipefail
@@ -12,6 +13,9 @@ DISK=""
 USERNAME="thomas"
 HOSTNAME_="void"
 PROFILE="auto"
+MACHINE="auto"
+CPU="auto"
+GPU="auto"
 REPO="${REPO:-https://repo-default.voidlinux.org/current}"
 
 while [ $# -gt 0 ]; do
@@ -20,7 +24,10 @@ while [ $# -gt 0 ]; do
         --user) USERNAME="${2:?}"; shift 2 ;;
         --hostname) HOSTNAME_="${2:?}"; shift 2 ;;
         --profile) PROFILE="${2:?}"; shift 2 ;;
-        -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
+        --machine) MACHINE="${2:?}"; shift 2 ;;
+        --cpu) CPU="${2:?}"; shift 2 ;;
+        --gpu) GPU="${2:?}"; shift 2 ;;
+        -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
         *) echo "Option inconnue: $1" >&2; exit 1 ;;
     esac
 done
@@ -81,7 +88,7 @@ echo "Mot de passe de $USERNAME:"; chroot /mnt passwd "$USERNAME"
 echo "==> Bootstrap (paquets, services, dotfiles)"
 cp -a "$ROOT" "/mnt/home/$USERNAME/void-setup"
 chroot /mnt chown -R "$USERNAME:" "/home/$USERNAME/void-setup"
-chroot /mnt env TARGET_USER="$USERNAME" "/home/$USERNAME/void-setup/bootstrap.sh" --profile "$PROFILE"
+chroot /mnt env TARGET_USER="$USERNAME" "/home/$USERNAME/void-setup/bootstrap.sh" --profile "$PROFILE" --machine "$MACHINE" --cpu "$CPU" --gpu "$GPU"
 
 echo "==> Chargeur de démarrage"
 # --removable: fonctionne sur tout PC/Mac Intel sans entrée NVRAM dédiée

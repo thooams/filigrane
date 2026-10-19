@@ -1,2 +1,0 @@
-# Dépôt nonfree, machine physique uniquement
-intel-ucode

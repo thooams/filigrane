@@ -1,10 +1,6 @@
-# Profil machine physique (PC / Mac Intel)
-# Les paquets absents du dépôt sont ignorés avec un avertissement.
-linux-firmware-intel
-linux-firmware-amd
+# Profil machine physique, tout matériel (firmware et pilotes propres au CPU/GPU: cpu-*.txt, gpu-*.txt)
+# Les paquets absents du dépôt (autre architecture) sont ignorés avec un avertissement.
 linux-firmware-network
-mesa-vulkan-intel
-intel-video-accel
 brightnessctl
 
 # Sauvegarde vers le NAS (dotfiles/home/.local/bin/watch-backup)

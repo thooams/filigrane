@@ -38,7 +38,7 @@ def load():
 
 
 def save(vals):
-    # écriture en place: le fichier est un lien vers le dépôt (dotfiles/config/t2-audio)
+    # écriture en place: le fichier est un lien vers le dépôt (hardware/mac-t2/dotfiles/config/t2-audio)
     os.makedirs(os.path.dirname(CONF), exist_ok=True)
     with open(CONF, "w") as f:
         f.write("# Réglages du DSP haut-parleurs, écrits par sound-tune\n")

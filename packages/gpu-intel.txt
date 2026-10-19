@@ -1,0 +1,3 @@
+# GPU Intel (Mesa: mesa-dri est dans desktop.txt)
+mesa-vulkan-intel
+intel-video-accel

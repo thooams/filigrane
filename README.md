@@ -10,13 +10,22 @@ Objectif: un système léger qui s'efface, pour laisser la RAM et le CPU au navi
 | `install-void.sh` | Depuis l'ISO live : partitionne le disque, installe la base, appelle `bootstrap.sh`, installe GRUB |
 | `bootstrap.sh` | Sur un Void existant : paquets, services runit, clavier/fuseau, groupes, sudo, dotfiles, Claude Code. Idempotent |
 | `config.env` | Clavier (`fr-bepo`), fuseau, locale, groupes, autologin |
-| `packages/*.txt` | Listes xbps : `base`, `desktop`, `dev`, `vm`, `baremetal`, `nonfree-baremetal`, `mac-t2` |
+| `packages/*.txt` | Listes xbps : `base`, `desktop`, `dev`, `vm`, `baremetal`, `cpu-{intel,amd}`, `gpu-{intel,amd,nvidia}`, `mac-t2` |
 | `services/*.txt` | Services runit : `common`, `vm` |
 | `dotfiles/home`, `dotfiles/config` | Fichiers liés par symlink dans `~` et `~/.config` |
-| `hardware/mac-t2/` | Support des Mac Intel à puce T2 (voir son README) |
+| `hardware/<machine>/` | Tout ce qui est propre à un matériel : `mac-t2/` (Mac Intel à puce T2, voir son README). `dotfiles/{home,config}` y est lié en plus des dotfiles communs |
 | `scripts/` | `pull-from-vm.sh`, `gen-wallpaper.py`, `gen-emoji.py` |
 
-Le profil (`vm` ou `baremetal`) est détecté via le flag `hypervisor` de `/proc/cpuinfo`, ou forcé avec `--profile`. Sur machine physique, une puce T2 est détectée et `hardware/mac-t2/setup.sh` est lancé.
+Deux axes indépendants, détectés puis forçables (utile pour tester) :
+
+- **profil** (`vm` ou `baremetal`) : flag `hypervisor` de `/proc/cpuinfo`, ou `--profile` / `PROFILE=`.
+- **machine** (`generic` ou `mac-t2`) : puce T2 Apple trouvée dans `/sys/bus/pci`, ou `--machine` / `MACHINE=`. `generic` n'exécute rien de `hardware/`. Pour une nouvelle machine : créer `hardware/<nom>/` (avec `setup.sh` et éventuellement `dotfiles/`) et l'ajouter au `case` de `bootstrap.sh`.
+
+- **cpu** (`intel`, `amd`, `other`) : `vendor_id` de `/proc/cpuinfo`, ou `--cpu`. Machine physique seulement : `packages/cpu-<x>.txt` (firmware, microcode). `other` (ARM, RISC-V) n'ajoute rien.
+- **gpu** (liste `intel,amd,nvidia`, ou `none`) : fabricants lus dans `/sys/class/drm`, ou `--gpu`. Machine physique seulement : `packages/gpu-<x>.txt` (Vulkan, accélération vidéo). NVIDIA = pilote libre nouveau. Un GPU inconnu (VM, SoC) n'ajoute rien, Mesa de base suffit.
+- **arch** (`x86_64`, `aarch64`, `riscv64`) : `uname -m`, ou `--arch`. Sert à ignorer les binaires x86_64 (Proton Drive CLI). Les paquets absents du dépôt de l'architecture sont déjà ignorés avec un avertissement.
+
+`install-void.sh` (x86_64 UEFI seulement) accepte les mêmes options et les transmet à `bootstrap.sh`.
 
 ## Ce que contient le bureau
 

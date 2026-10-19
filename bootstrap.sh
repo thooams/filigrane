@@ -1,7 +1,15 @@
 #!/bin/bash
 # Rejoue la configuration Void sur un système fraîchement installé. Idempotent.
 #
-#   ./bootstrap.sh [--profile auto|vm|baremetal] [--system-only | --dotfiles-only]
+#   ./bootstrap.sh [--profile auto|vm|baremetal] [--machine auto|generic|mac-t2]
+#                  [--cpu auto|intel|amd|other] [--gpu auto|none|intel,amd,nvidia]
+#                  [--arch auto|x86_64|aarch64|riscv64] [--system-only | --dotfiles-only]
+#
+# --profile: environnement (VM ou machine physique). --machine: matériel, pour tout ce qui est
+# spécifique à un modèle (hardware/<machine>/). --cpu/--gpu: firmware et pilotes (packages/cpu-*.txt,
+# gpu-*.txt, machine physique seulement). --arch: architecture (binaires x86_64 seulement ignorés ailleurs).
+# auto détecte; forcer permet de tester ailleurs (variables PROFILE, MACHINE, CPU_VENDOR,
+# GPU_VENDORS, TARGET_ARCH équivalentes).
 #
 # Lancé en utilisateur normal (sudo requis) ou en root avec TARGET_USER=<nom>
 # (cas du chroot de install-void.sh).
@@ -11,15 +19,24 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=config.env
 source "$ROOT/config.env"
 
-PROFILE="auto"
+PROFILE="${PROFILE:-auto}"
+MACHINE="${MACHINE:-auto}"
+CPU_VENDOR="${CPU_VENDOR:-auto}"
+GPU_VENDORS="${GPU_VENDORS:-auto}"
+TARGET_ARCH="${TARGET_ARCH:-auto}"
+[ -z "${T2_FORCE:-}" ] || MACHINE=mac-t2  # ancien nom
 DO_SYSTEM=1
 DO_DOTFILES=1
 while [ $# -gt 0 ]; do
     case "$1" in
         --profile) PROFILE="${2:?profil manquant}"; shift 2 ;;
+        --machine) MACHINE="${2:?machine manquante}"; shift 2 ;;
+        --cpu) CPU_VENDOR="${2:?cpu manquant}"; shift 2 ;;
+        --gpu) GPU_VENDORS="${2:?gpu manquant}"; shift 2 ;;
+        --arch) TARGET_ARCH="${2:?architecture manquante}"; shift 2 ;;
         --system-only) DO_DOTFILES=0; shift ;;
         --dotfiles-only) DO_SYSTEM=0; shift ;;
-        -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
         *) echo "Option inconnue: $1" >&2; exit 1 ;;
     esac
 done
@@ -42,7 +59,51 @@ detect_profile() {
 }
 [ "$PROFILE" = auto ] && PROFILE="$(detect_profile)"
 case "$PROFILE" in vm|baremetal) ;; *) echo "Profil invalide: $PROFILE" >&2; exit 1 ;; esac
-log "Profil: $PROFILE, utilisateur: $TARGET_USER"
+
+# Mac Intel à puce T2 (Apple 106b:1801/1802), via sysfs: lspci n'est pas forcément installé
+detect_machine() {
+    local d
+    for d in /sys/bus/pci/devices/*; do
+        [ "$(cat "$d/vendor" 2>/dev/null)" = 0x106b ] || continue
+        case "$(cat "$d/device" 2>/dev/null)" in 0x1801|0x1802) echo mac-t2; return ;; esac
+    done
+    echo generic
+}
+[ "$MACHINE" = auto ] && MACHINE="$(detect_machine)"
+case "$MACHINE" in generic|mac-t2) ;; *) echo "Machine invalide: $MACHINE (generic|mac-t2)" >&2; exit 1 ;; esac
+export MACHINE
+
+# Fabricant du CPU (intel|amd|other: ARM et RISC-V n'ont pas de vendor_id)
+detect_cpu() {
+    case "$(grep -m1 '^vendor_id' /proc/cpuinfo 2>/dev/null)" in
+        *GenuineIntel*) echo intel ;;
+        *AuthenticAMD*) echo amd ;;
+        *) echo other ;;
+    esac
+}
+# GPU présents (intel amd nvidia), via sysfs; vide si aucun reconnu (virtio, vmware, SoC...)
+detect_gpus() {
+    local d v out=""
+    for d in /sys/class/drm/card[0-9]*/device/vendor; do
+        [ -e "$d" ] || continue
+        case "$(cat "$d")" in
+            0x8086) v=intel ;; 0x1002) v=amd ;; 0x10de) v=nvidia ;; *) continue ;;
+        esac
+        case " $out " in *" $v "*) ;; *) out="${out:+$out }$v" ;; esac
+    done
+    echo "$out"
+}
+[ "$CPU_VENDOR" = auto ] && CPU_VENDOR="$(detect_cpu)"
+[ "$TARGET_ARCH" = auto ] && TARGET_ARCH="$(uname -m)"
+if [ "$GPU_VENDORS" = auto ]; then GPU_VENDORS="$(detect_gpus)"; fi
+[ "$GPU_VENDORS" = none ] && GPU_VENDORS=""
+GPU_VENDORS="${GPU_VENDORS//,/ }"
+case "$CPU_VENDOR" in intel|amd|other) ;; *) echo "CPU invalide: $CPU_VENDOR (intel|amd|other)" >&2; exit 1 ;; esac
+case "$TARGET_ARCH" in x86_64|aarch64|riscv64) ;; *) warn "architecture non prévue: $TARGET_ARCH" ;; esac
+for g in $GPU_VENDORS; do
+    [ -f "$ROOT/packages/gpu-$g.txt" ] || { echo "GPU invalide: $g (intel|amd|nvidia|none)" >&2; exit 1; }
+done
+log "Profil: $PROFILE, machine: $MACHINE, arch: $TARGET_ARCH, cpu: $CPU_VENDOR, gpu: ${GPU_VENDORS:-aucun}, utilisateur: $TARGET_USER"
 
 # Liste sans commentaires ni lignes vides
 read_list() { sed -e 's/#.*//' -e 's/[[:space:]]*$//' "$1" | grep -v '^$' || true; }
@@ -79,7 +140,8 @@ setup_system() {
     if [ "$PROFILE" = baremetal ]; then
         $SUDO xbps-install -y void-repo-nonfree
         $SUDO xbps-install -S
-        install_list "$ROOT/packages/nonfree-baremetal.txt"
+        [ -f "$ROOT/packages/cpu-$CPU_VENDOR.txt" ] && install_list "$ROOT/packages/cpu-$CPU_VENDOR.txt"
+        for g in $GPU_VENDORS; do install_list "$ROOT/packages/gpu-$g.txt"; done
     fi
 
     log "Nettoyage du cache xbps (disque réduit)"
@@ -193,17 +255,15 @@ setup_system() {
     $SUDO chmod 440 /etc/sudoers.d/zz-claude
     $SUDO visudo -cf /etc/sudoers.d/zz-claude >/dev/null
 
-    # Double démarrage LUKS + btrfs + Limine (fichier créé par hardware/mac-t2/dualboot.sh)
-    if [ -f /etc/kernel/cmdline ]; then
-        log "Double démarrage (dualboot.sh)"
-        $SUDO "$ROOT/hardware/mac-t2/dualboot.sh"
-    fi
-
-    if [ "$PROFILE" = baremetal ] || [ -n "${T2_FORCE:-}" ]; then
-        if "$ROOT/hardware/mac-t2/setup.sh" --check >/dev/null 2>&1 || [ -n "${T2_FORCE:-}" ]; then
-            log "Mac à puce T2 détecté"
-            $SUDO env T2_FORCE="${T2_FORCE:-}" "$ROOT/hardware/mac-t2/setup.sh"
+    # Matériel spécifique: hardware/<machine>/ (generic n'a rien)
+    if [ "$MACHINE" = mac-t2 ]; then
+        # Double démarrage LUKS + btrfs + Limine (fichier créé par hardware/mac-t2/dualboot.sh)
+        if [ -f /etc/kernel/cmdline ]; then
+            log "Double démarrage (dualboot.sh)"
+            $SUDO "$ROOT/hardware/mac-t2/dualboot.sh"
         fi
+        log "Mac à puce T2"
+        $SUDO env T2_FORCE=1 "$ROOT/hardware/mac-t2/setup.sh"
     fi
 }
 
@@ -221,6 +281,7 @@ PROTON_DRIVE_SHA512="3533025ba69ae112b64e3e01fbcc1ad0688136a4043f6cf6a72886967d8
 
 setup_proton_drive() {
     log "Proton Drive CLI $PROTON_DRIVE_VER"
+    [ "$TARGET_ARCH" = x86_64 ] || { warn "Proton Drive CLI: binaire x86_64 seulement, ignoré sur $TARGET_ARCH"; return 0; }
     local dir="$TARGET_HOME/.local/opt/proton-drive-$PROTON_DRIVE_VER"
     if [ ! -x "$dir/proton-drive" ]; then
         run_as_user mkdir -p "$dir"
@@ -289,17 +350,28 @@ link_one() { # link_one SOURCE DESTINATION
     fi
 }
 
+link_tree() { # link_tree DOSSIER : DOSSIER/home -> ~, DOSSIER/config -> ~/.config
+    local f
+    if [ -d "$1/home" ]; then
+        while IFS= read -r -d '' f; do
+            link_one "$f" "$TARGET_HOME/${f#"$1/home/"}"
+        done < <(find "$1/home" -type f -print0)
+    fi
+    if [ -d "$1/config" ]; then
+        while IFS= read -r -d '' f; do
+            link_one "$f" "$TARGET_HOME/.config/${f#"$1/config/"}"
+        done < <(find "$1/config" -type f -print0)
+    fi
+}
+
 setup_dotfiles() {
     log "Dotfiles (liens symboliques vers $ROOT/dotfiles)"
-    local f rel
-    while IFS= read -r -d '' f; do
-        rel="${f#"$ROOT/dotfiles/home/"}"
-        link_one "$f" "$TARGET_HOME/$rel"
-    done < <(find "$ROOT/dotfiles/home" -type f -print0)
-    while IFS= read -r -d '' f; do
-        rel="${f#"$ROOT/dotfiles/config/"}"
-        link_one "$f" "$TARGET_HOME/.config/$rel"
-    done < <(find "$ROOT/dotfiles/config" -type f -print0)
+    link_tree "$ROOT/dotfiles"
+    # Dotfiles propres au matériel (hardware/<machine>/dotfiles/{home,config})
+    if [ -d "$ROOT/hardware/$MACHINE/dotfiles" ]; then
+        log "Dotfiles de la machine $MACHINE"
+        link_tree "$ROOT/hardware/$MACHINE/dotfiles"
+    fi
     # .desktop des applications web (liste ~/.config/webapps/list)
     HOME="$TARGET_HOME" sh "$ROOT/dotfiles/home/.local/bin/webapp-sync"
     # Thème sombre par défaut (portail xdg: Chromium, GTK4, libadwaita); sans effet hors session D-Bus
@@ -307,7 +379,7 @@ setup_dotfiles() {
     # Mac T2 (MacBookPro16,2): la route ALSA "Speaker" est cachée par le DSP (hide-parent), donc plus
     # réglable, et un volume bas sur elle atténue tout le DSP. WirePlumber n'a pas de règle de volume
     # par route: on la fixe à 1.0 dans son état, le volume se règle sur le DSP.
-    if [ "$(cat /sys/class/dmi/id/product_name 2>/dev/null)" = MacBookPro16,2 ]; then
+    if [ "$MACHINE" = mac-t2 ] && [ "$(cat /sys/class/dmi/id/product_name 2>/dev/null)" = MacBookPro16,2 ]; then
         local st="$TARGET_HOME/.local/state/wireplumber/default-routes"
         local line='alsa_card.pci-0000_e6_00.3:output:\oOut\c\sSpeaker={"latencyOffsetNsec":0, "mute":false, "channelVolumes":[1.000000, 1.000000, 1.000000, 1.000000], "channelMap":["FL", "FR", "RL", "RR"]}'
         run_as_user mkdir -p "${st%/*}"

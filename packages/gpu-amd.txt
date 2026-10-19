@@ -1,0 +1,4 @@
+# GPU AMD (pilote libre amdgpu/radeon via Mesa)
+linux-firmware-amd
+mesa-vulkan-radeon
+mesa-vaapi
