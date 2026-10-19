@@ -32,8 +32,8 @@ window#waybar {
 #workspaces,
 #window,
 #clock,
-#cpu,
-#memory,
+#custom-cpu,
+#custom-mem,
 #wireplumber,
 #network,
 #battery,
@@ -69,7 +69,7 @@ window#waybar {
 #ind #custom-mail, #ind #custom-whatsapp, #ind #custom-cal, #ind #custom-rec, #ind #custom-timer, #ind #custom-idle, #ind #custom-remote,
 #ind #custom-air, #ind #custom-vpn, #ind #custom-night, #ind #custom-dnd,
 #ind #custom-news, #ind #custom-update, #ind #custom-backup,
-#res #cpu, #res #custom-temp, #res #memory, #res #disk,
+#res #custom-cpu, #res #custom-temp, #res #custom-mem, #res #disk,
 #audio #custom-mic, #audio #wireplumber {
     background: transparent;
     padding: 0 4px;
@@ -103,8 +103,8 @@ window#waybar {
 
 #window { color: @subtext0; }
 #clock { color: @text; font-weight: bold; }
-#cpu { color: @blue; }
-#memory { color: @mauve; }
+#custom-cpu { color: @blue; }
+#custom-mem { color: @mauve; }
 #wireplumber { color: @teal; }
 #wireplumber.muted { color: @overlay0; }
 #network { color: @green; }
