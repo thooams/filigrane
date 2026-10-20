@@ -7,14 +7,19 @@
     "spacing": 0,
 
     "modules-left": ["custom/menu", "niri/workspaces", "niri/window"],
-    "modules-center": ["group/ind", "clock"],
-    "modules-right": ["mpris", "group/res", "group/tray", "group/audio", "niri/language", "custom/display", "bluetooth", "network", "battery", "custom/batwatch"],
+    "modules-center": ["group/ind", "group/quick", "clock"],
+    "modules-right": ["mpris", "group/res", "group/audio", "niri/language", "custom/display", "bluetooth", "network", "battery", "custom/batwatch"],
 
     // Modules regroupés dans une seule pastille chacun (gain de place, voir style.css)
-    // Indicateurs et bascules: enregistrement, minuteur, caféine, SSH, avion, VPN, veilleuse, notifications, veille, MAJ
+    // Indicateurs et bascules: enregistrement, SSH, avion, VPN, veille, MAJ
     "group/ind": {
         "orientation": "inherit",
-        "modules": ["custom/mail", "custom/whatsapp", "custom/cal", "custom/rec", "custom/timer", "custom/idle", "custom/remote", "custom/air", "custom/vpn", "custom/night", "custom/dnd", "custom/news", "custom/update", "custom/backup"]
+        "modules": ["custom/mail", "custom/whatsapp", "custom/cal", "custom/rec", "custom/remote", "custom/air", "custom/vpn", "custom/news", "custom/update"]
+    },
+    // Tiroir à gauche de l'horloge (bar-tray): replié, seuls les indicateurs en cours d'usage restent visibles; clic sur le chevron = tout afficher
+    "group/quick": {
+        "orientation": "inherit",
+        "modules": ["tray", "custom/timer", "custom/idle", "custom/dnd", "custom/night", "custom/backup", "custom/tray-handle"]
     },
     // Ressources: CPU, température, mémoire, disque
     "group/res": {
@@ -118,18 +123,20 @@
     },
     // Sauvegarde restic vers le NAS: gris au repos, vert clignotant en cours, rouge en échec; clic = sauvegarder maintenant
     "custom/backup": {
-        "exec": "$HOME/.local/bin/bar-backup",
+        "exec": "$HOME/.local/bin/bar-tray backup",
         "return-type": "json",
         "interval": 10,
         "signal": 18,
+        "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-backup run"
     },
     // Ne pas déranger (mako), clic = bascule
     "custom/dnd": {
-        "exec": "$HOME/.local/bin/bar-status dnd",
+        "exec": "$HOME/.local/bin/bar-tray dnd",
         "return-type": "json",
         "interval": "once",
         "signal": 9,
+        "hide-empty-text": true,
         "on-click": "makoctl mode -t do-not-disturb; pkill -RTMIN+9 waybar"
     },
     // Usage et top 5 processus en infobulle, clic = htop
@@ -194,10 +201,11 @@
     },
     // Veilleuse (wlsunset, 3500 K), clic = bascule
     "custom/night": {
-        "exec": "$HOME/.local/bin/bar-status night",
+        "exec": "$HOME/.local/bin/bar-tray night",
         "return-type": "json",
         "interval": "once",
         "signal": 10,
+        "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-toggle night"
     },
     // Enregistrement d'écran: visible seulement en cours, clic = arrêter (démarrage: menu › Capture)
@@ -211,19 +219,21 @@
     },
     // Minuteur / chronomètre: clic = choisir (ou arrêter), clic droit = +5 min au minuteur; notification à la fin
     "custom/timer": {
-        "exec": "$HOME/.local/bin/bar-timer",
+        "exec": "$HOME/.local/bin/bar-tray timer",
         "return-type": "json",
         "interval": "once",
         "signal": 12,
+        "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-timer click",
         "on-click-right": "$HOME/.local/bin/bar-timer add"
     },
     // Caféine: tasse jaune = verrouillage auto coupé (écran toujours allumé), grise = actif; clic = bascule
     "custom/idle": {
-        "exec": "$HOME/.local/bin/bar-status idle",
+        "exec": "$HOME/.local/bin/bar-tray idle",
         "return-type": "json",
         "interval": "once",
         "signal": 13,
+        "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-toggle idle"
     },
     // Session SSH entrante (visible seulement alors)
@@ -293,12 +303,13 @@
         "format-icons": ["\uf244", "\uf243", "\uf242", "\uf241", "\uf240"],
         "on-click": "setsid -f $HOME/.local/bin/menu system"
     },
-    // Tray repliable: s'ouvre au survol
-    "group/tray": {
-        "orientation": "inherit",
-        "drawer": { "transition-duration": 300, "transition-left-to-right": false },
-        "modules": ["custom/tray-handle", "tray"]
+    // Chevron du tiroir group/quick: clic = afficher / replier
+    "custom/tray-handle": {
+        "exec": "$HOME/.local/bin/bar-tray handle",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 20,
+        "on-click": "$HOME/.local/bin/bar-tray toggle"
     },
-    "custom/tray-handle": { "format": "\uf053", "tooltip": false },
     "tray": { "icon-size": 16, "spacing": 8 }
 }

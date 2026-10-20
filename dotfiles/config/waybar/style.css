@@ -54,22 +54,22 @@ window#waybar {
 #custom-display,
 #language,
 #bluetooth,
-#mpris,
-#group-tray {
+#mpris {
     background: transparent;
     padding: 0 6px;
     border-radius: 0;
 }
 
 /* Groupes (id CSS = nom sans "group/"): une seule pastille par groupe, modules internes sans fond ni arrondi */
-#ind, #res, #audio {
+#ind, #res, #audio, #quick {
     background: transparent;
     padding: 0;
     border-radius: 0;
 }
-#ind #custom-mail, #ind #custom-whatsapp, #ind #custom-cal, #ind #custom-rec, #ind #custom-timer, #ind #custom-idle, #ind #custom-remote,
-#ind #custom-air, #ind #custom-vpn, #ind #custom-night, #ind #custom-dnd,
-#ind #custom-news, #ind #custom-update, #ind #custom-backup,
+#ind #custom-mail, #ind #custom-whatsapp, #ind #custom-cal, #ind #custom-rec, #ind #custom-remote,
+#ind #custom-air, #ind #custom-vpn, #ind #custom-news, #ind #custom-update,
+#quick #tray, #quick #custom-timer, #quick #custom-idle, #quick #custom-dnd,
+#quick #custom-night, #quick #custom-backup, #quick #custom-tray-handle,
 #res #custom-cpu, #res #custom-temp, #res #custom-mem, #res #disk,
 #audio #custom-mic, #audio #wireplumber {
     background: transparent;
@@ -81,7 +81,7 @@ window#waybar {
 /* Marges entre sections (modules de premier niveau et groupes) */
 #custom-menu, #workspaces, #window, #clock, #mpris,
 #ind, #res, #audio, #language, #custom-display, #bluetooth, #network, #battery,
-#custom-batwatch, #group-tray {
+#custom-batwatch, #quick {
     margin: 0 6px;
 }
 
@@ -137,8 +137,8 @@ tooltip {
 #custom-dnd.active { color: @yellow; }
 #custom-mic { color: @teal; }
 #custom-mic.muted { color: @red; }
-#group-tray { color: @subtext0; }
-#custom-tray-handle { padding: 0 4px; }
+#custom-tray-handle { color: @overlay0; }
+#custom-tray-handle.open { color: @subtext0; }
 #custom-night.idle { color: @overlay0; }
 #custom-night.active { color: @peach; }
 #custom-rec { color: @red; }
