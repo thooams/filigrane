@@ -295,6 +295,7 @@ spawn-at-startup "sh" "-c" "$HOME/.local/bin/sound-tune --apply"
 // Relancée si elle s'arrête: waybar plante quand ses écrans disparaissent (débranchement)
 spawn-sh-at-startup "while :; do waybar; sleep 1; done"
 spawn-at-startup "mako"
+spawn-at-startup "sh" "-c" "$HOME/.local/bin/bar-toggle night start"
 // Proton Mail: pont IMAP local sans GUI, puis écoute des nouveaux mails (relancée si le pont n'est pas prêt)
 spawn-at-startup "protonmail-bridge" "--noninteractive"
 spawn-sh-at-startup "while :; do goimapnotify; sleep 30; done"

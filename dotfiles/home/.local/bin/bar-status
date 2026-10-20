@@ -15,9 +15,9 @@ case "$1" in
         fi ;;
     night)
         if pgrep -x wlsunset >/dev/null; then
-            printf '{"text":"\\uf186","class":"active","tooltip":"Veilleuse active (clic: désactiver)"}\n'
+            printf '{"text":"\\uf186","class":"active","tooltip":"Veilleuse automatique 20h–7h (clic: désactiver)"}\n'
         else
-            printf '{"text":"\\uf186","class":"idle","tooltip":"Veilleuse éteinte (clic: activer)"}\n'
+            printf '{"text":"\\uf186","class":"idle","tooltip":"Veilleuse coupée (clic: réactiver l’automatique)"}\n'
         fi ;;
     rec)
         if pgrep -x wf-recorder >/dev/null; then
