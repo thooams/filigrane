@@ -25,3 +25,5 @@ unzip
 tree-sitter-cli
 # Compilation de whatsapp-unreadd (bootstrap.sh, setup_whatsapp_unreadd): outil de build seulement, 217 Mo sur disque, rien de résident
 go
+# Diagnostic Android en USB (adb); binaires seuls, le serveur adb ne tourne que sur demande
+android-tools
