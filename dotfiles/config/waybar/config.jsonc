@@ -292,7 +292,7 @@
     "custom/display": {
         "format": "\uf108",
         "tooltip-format": "Écrans (clic: wdisplays)",
-        "on-click": "setsid -f wdisplays"
+        "on-click": "$HOME/.local/bin/focus-or-run wdisplays wdisplays"
     },
     // Clic = menu système (verrouiller, veille, quitter...)
     "battery": {
