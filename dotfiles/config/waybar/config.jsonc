@@ -8,7 +8,7 @@
 
     "modules-left": ["custom/menu", "niri/workspaces", "niri/window"],
     "modules-center": ["group/ind", "group/quick", "clock"],
-    "modules-right": ["mpris", "group/res", "group/audio", "niri/language", "custom/display", "bluetooth", "network", "battery", "custom/batwatch"],
+    "modules-right": ["mpris", "group/res", "group/sys", "battery", "custom/batwatch"],
 
     // Modules regroupés dans une seule pastille chacun (gain de place, voir style.css)
     // Indicateurs et bascules: enregistrement, SSH, avion, VPN, veille, MAJ
@@ -26,10 +26,10 @@
         "orientation": "inherit",
         "modules": ["custom/cpu", "custom/temp", "custom/mem", "disk"]
     },
-    // Audio: micro et sortie
-    "group/audio": {
+    // Système: micro, sortie audio, clavier, écrans, Bluetooth, réseau
+    "group/sys": {
         "orientation": "inherit",
-        "modules": ["custom/mic", "wireplumber"]
+        "modules": ["custom/mic", "wireplumber", "niri/language", "custom/display", "bluetooth", "network"]
     },
 
     // Bouton menu: clic = menu, clic droit = terminal

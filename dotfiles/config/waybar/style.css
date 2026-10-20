@@ -61,7 +61,7 @@ window#waybar {
 }
 
 /* Groupes (id CSS = nom sans "group/"): une seule pastille par groupe, modules internes sans fond ni arrondi */
-#ind, #res, #audio, #quick {
+#ind, #res, #sys, #quick {
     background: transparent;
     padding: 0;
     border-radius: 0;
@@ -71,7 +71,7 @@ window#waybar {
 #quick #tray, #quick #custom-timer, #quick #custom-idle, #quick #custom-dnd,
 #quick #custom-night, #quick #custom-backup, #quick #custom-tray-handle,
 #res #custom-cpu, #res #custom-temp, #res #custom-mem, #res #disk,
-#audio #custom-mic, #audio #wireplumber {
+#sys #custom-mic, #sys #wireplumber, #sys #language, #sys #custom-display, #sys #bluetooth, #sys #network {
     background: transparent;
     padding: 0 4px;
     border-radius: 0;
@@ -80,7 +80,7 @@ window#waybar {
 
 /* Marges entre sections (modules de premier niveau et groupes) */
 #custom-menu, #workspaces, #window, #clock, #mpris,
-#ind, #res, #audio, #language, #custom-display, #bluetooth, #network, #battery,
+#ind, #res, #sys, #battery,
 #custom-batwatch, #quick {
     margin: 0 6px;
 }
