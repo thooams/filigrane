@@ -199,7 +199,7 @@
         "tooltip-format-enumerate-connected": "{device_alias}",
         "on-click": "$HOME/.local/bin/bar-tui bluetui"
     },
-    // Veilleuse (wlsunset, 3500 K), clic = bascule
+    // Veilleuse (wlsunset, 4500 K), clic = bascule
     "custom/night": {
         "exec": "$HOME/.local/bin/bar-tray night",
         "return-type": "json",

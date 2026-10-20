@@ -2,7 +2,7 @@
 # Actions de la barre qui changent un état, puis rafraîchissent l'indicateur par signal. Usage: bar-toggle night|rec|idle [start]|air|present
 case "$1" in
     night)
-        if pgrep -x wlsunset >/dev/null; then pkill -x wlsunset; else setsid wlsunset -t 3500 -T 3501 -S 00:00 -s 23:59 >/dev/null 2>&1 & fi
+        if pgrep -x wlsunset >/dev/null; then pkill -x wlsunset; else setsid wlsunset -t 4500 -T 4501 -S 00:00 -s 23:59 >/dev/null 2>&1 & fi
         sleep 0.3; pkill -RTMIN+10 waybar ;;
     rec)
         if pgrep -x wf-recorder >/dev/null; then
