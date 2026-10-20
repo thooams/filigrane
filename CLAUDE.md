@@ -23,7 +23,7 @@ L'OS doit se faire oublier: le navigateur, les agents et les conteneurs passent 
 ## Git
 
 - Dépôt **public**: avant chaque commit, scanner le diff stagé (tokens, mots de passe, clés, e-mails, IP) et montrer le résultat.
-- Ne jamais commit ni push sans demande explicite.
+- Commit autorisé sans demander après un changement terminé et vérifié (scan ci-dessus obligatoire, jamais d'attribution Claude). Ne jamais push sans demande explicite.
 
 ## Interdits
 
