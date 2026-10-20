@@ -21,8 +21,9 @@ input {
             // If this section is empty, niri will fetch xkb settings
             // from org.freedesktop.locale1. You can control these using
             // localectl set-x11-keymap.
-	    layout "fr"
-	    variant "bepo_afnor"
+	    // Groupe 1: bépo, groupe 2: qwerty australien (bascule: icône clavier de Waybar)
+	    layout "fr,au"
+	    variant "bepo_afnor,"
 	    options "compose:caps"
         }
         // Comme Omarchy: répétition 40/s après 600 ms
@@ -276,6 +277,10 @@ layout {
 environment {
     CHROME_FLAGS "--ozone-platform=wayland --enable-features=WebRTCPipeWireCapturer"
     ELECTRON_OZONE_PLATFORM_HINT "auto"
+    // Le Chromium de Void n'a pas de clés Google: valeurs bidon pour masquer le bandeau « API keys are missing ».
+    GOOGLE_API_KEY "no"
+    GOOGLE_DEFAULT_CLIENT_ID "no"
+    GOOGLE_DEFAULT_CLIENT_SECRET "no"
     // Sans niri-session, rien ne le définit: les portails ignoreraient niri-portals.conf.
     XDG_CURRENT_DESKTOP "niri"
 }
@@ -298,6 +303,8 @@ spawn-at-startup "kanshi"
 spawn-sh-at-startup "$HOME/.local/bin/wallpaper"
 // WhatsApp sans navigateur: whatsapp-unreadd + compteur de non-lus (appairage: wa-pair), voir ~/.local/bin/wa-daemon
 spawn-at-startup "wa-daemon"
+// Fenêtre « Appel WhatsApp » en flottant (titre connu après l'ouverture), voir ~/.local/bin/wa-call-float
+spawn-sh-at-startup "$HOME/.local/bin/wa-call-float"
 // Notifications des webapps listées dans ~/.config/webapps/notify (WhatsApp...): indicateur Waybar, voir ~/.local/bin/webapp-notify
 spawn-sh-at-startup "while :; do $HOME/.local/bin/webapp-notify; sleep 30; done"
 // Notifications Proton Calendar (lien ICS dans ~/.config/proton-calendar.url), voir ~/.local/bin/cal-notify
@@ -306,6 +313,11 @@ spawn-sh-at-startup "$HOME/.local/bin/cal-notify"
 spawn-sh-at-startup "$HOME/.local/bin/cron-watch"
 // Verrouillage auto (swayidle): 5 min verrou, 10 min écran éteint, pas de veille auto (comme Omarchy: la veille S3 longue sur batterie perd la session, voir hardware/mac-t2/README.md); bascule dans la barre
 spawn-sh-at-startup "$HOME/.local/bin/bar-toggle idle start"
+// Capot: verrou et écran éteint, veille après 5 min capot fermé (elogind ignore le capot), voir ~/.local/bin/lid
+switch-events {
+    lid-close { spawn "sh" "-c" "$HOME/.local/bin/lid close"; }
+    lid-open { spawn "sh" "-c" "$HOME/.local/bin/lid open"; }
+}
 // Historique du presse-papiers pour le menu (cliphist), texte et images
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
 spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
@@ -418,7 +430,7 @@ binds {
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+Return hotkey-overlay-title="Open a Terminal: foot" { spawn "foot"; }
-    Mod+Y hotkey-overlay-title="Claude Code" { spawn "foot" "-e" "env" "NO_ZELLIJ=1" "bash" "-lc" "cd ~/Projects/void-setup && claude --dangerously-skip-permissions --add-dir ~"; }
+    Mod+Y hotkey-overlay-title="Claude Code" { spawn "foot" "-e" "bash" "-lc" "cd ~/Projects/void-setup && claude --dangerously-skip-permissions --add-dir ~"; }
     Mod+P hotkey-overlay-title="Écrans: réglage visuel (wdisplays)" { spawn-sh "GDK_GL=disable wdisplays"; }
     Mod+Ctrl+P hotkey-overlay-title="Écrans: enregistrer le profil" { spawn-sh "$HOME/.local/bin/display-save"; }
     Mod+Ctrl+A hotkey-overlay-title="Audio (wiremix)" { spawn-sh "$HOME/.local/bin/bar-tui wiremix"; }

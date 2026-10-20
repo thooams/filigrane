@@ -37,7 +37,7 @@ Deux axes indépendants, détectés puis forçables (utile pour tester) :
 - **Thème** : Catppuccin Mocha pour niri, waybar, fuzzel, mako, foot, zellij, nvim.
 - **Menu** (`Mod+Space`) : catégories à vide, recherche floue sur tout dès qu'on tape (applications, actions système, entrées perso). Clavier : `Maj+Retour arrière` remonte d'un niveau, `Échap` quitte tout le menu (`fuzzel` ne sait pas distinguer un retour arrière sur saisie vide). `Mod+D` ouvre le lanceur d'applications seul. Entrées perso dans `~/.config/menu/entries` (`Libellé | mode | commande`, par exemple `Claude | term | claude`).
 - **Captures** : outil intégré à niri, sans logiciel en plus. `Mod+Shift+4` zone, `Mod+Shift+3` écran, `Mod+Shift+Ctrl+4` fenêtre, `Mod+Shift+5` interface de capture, `Print` / `Ctrl+Print` / `Alt+Print`, ou le menu (`Capture: ...`). Enregistrées dans `~/Pictures/Screenshots` et copiées dans le presse-papiers.
-- **Shell** : zsh sans oh-my-zsh, zellij lancé dans chaque terminal graphique (`NO_ZELLIJ=1 zsh` pour s'en passer), outils CLI repris du Mac (`eza`, `fzf`, `zoxide`, `ripgrep`, `bat`, `lazygit`, `gh`), neovim avec LazyVim.
+- **Shell** : zsh sans oh-my-zsh, zellij à la demande (`zj`), pas lancé automatiquement, outils CLI repris du Mac (`eza`, `fzf`, `zoxide`, `ripgrep`, `bat`, `lazygit`, `gh`), neovim avec LazyVim.
 - **Chromium** natif Wayland (variable `CHROME_FLAGS` posée par niri). **Conteneurs** : `podman`, alias `d`.
 - **Fond d'écran** : `swaybg` via `wallpaper [image]`, images dans `~/.local/share/wallpapers/`. Les images téléchargées ne sont pas dans le dépôt (licence inconnue).
 - **Veille automatique** : `cron-watch` (lancé par niri, un `bash` endormi d'environ 3 Mo, sans daemon cron) rejoue des tâches périodiques avec rattrapage après reboot. `watch-void` : notification mako des mises à jour xbps (toutes les 6 h). `watch-claude omarchy|t2` : chaque semaine, si Omarchy ou t2linux ont du neuf, `claude -p` (lecture seule, sans réseau ni Bash, plafond 1 $) compare au dépôt et écrit des propositions d'intégration dans `~/.local/state/watch/reports/`, avec notification. Prompts dans `dotfiles/config/watch/`.
@@ -64,6 +64,11 @@ Mesures sur le même MacBook (T2), au repos, après démarrage récent. Côté M
 - **CPU** : équivalent au repos une fois l'indexation finie. `WindowServer` reste pourtant à ~16 % pour un affichage statique, sans équivalent sous niri.
 - **Énergie** : le Mac tire ~4,6 W de plus (+24 %) avec moins d'applications ouvertes.
 - **Conséquence** : la RAM et la batterie libérées reviennent au navigateur, aux agents et aux conteneurs, d'où la règle « l'OS doit se faire oublier ».
+
+Ce que macOS ne permet pas sur ce Mac et qui marche ici en natif (sans adaptateur ni logiciel tiers) :
+
+- **DisplayPort MST** : plusieurs écrans distincts chaînés ou via un hub sur un seul port, là où macOS ne fait que de la recopie.
+- **Bluetooth LDAC** : casque (Sony WH-1000XM4) en LDAC, alors que macOS s'arrête à AAC et SBC. Codec au choix dans wiremix (onglet Configuration : LDAC, AAC, SBC-XQ, SBC). Le Bluetooth interne du Mac T2 (BCM4364 sur UART) demande un noyau avec `CONFIG_SERIAL_DEV_BUS=y` : [void-packages#63047](https://github.com/void-linux/void-packages/issues/63047), corrigé par [#63089](https://github.com/void-linux/void-packages/pull/63089), pas encore fusionnée.
 
 ## Réinstaller un système complet
 
