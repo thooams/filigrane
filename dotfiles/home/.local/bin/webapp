@@ -10,4 +10,5 @@ win="$(niri msg -j windows 2>/dev/null | jq -r --arg p "chrome-$host" '
 if [ -n "$win" ]; then
     exec niri msg action focus-window --id "$win"
 fi
-exec chromium --app="$1"
+# Détaché: sinon Chromium reste fils du lanceur (clic Waybar) et bloque le rafraîchissement du module
+setsid -f chromium --app="$1" >/dev/null 2>&1

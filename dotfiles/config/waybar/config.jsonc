@@ -31,8 +31,8 @@
     "custom/menu": {
         "format": "\uf0c9",
         "tooltip": false,
-        "on-click": "$HOME/.local/bin/menu",
-        "on-click-right": "foot"
+        "on-click": "setsid -f $HOME/.local/bin/menu",
+        "on-click-right": "setsid -f foot"
     },
     // Clic = aller au workspace, molette = précédent/suivant (sans boucler)
     "niri/workspaces": {
@@ -177,7 +177,7 @@
         "tooltip-format-wifi": "{essid} ({signalStrength}%)  {frequency} GHz\n{ipaddr}\n↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}",
         "tooltip-format-disconnected": "Aucune connexion (clic: Wi-Fi)",
         "on-click": "$HOME/.local/bin/bar-tui impala",
-        "on-click-right": "$HOME/.local/bin/menu network"
+        "on-click-right": "setsid -f $HOME/.local/bin/menu network"
     },
     // Bluetooth (masqué sans adaptateur): clic = bluetui (appairage, connexion, oubli)
     "bluetooth": {
@@ -282,7 +282,7 @@
     "custom/display": {
         "format": "\uf108",
         "tooltip-format": "Écrans (clic: wdisplays)",
-        "on-click": "wdisplays"
+        "on-click": "setsid -f wdisplays"
     },
     // Clic = menu système (verrouiller, veille, quitter...)
     "battery": {
@@ -291,7 +291,7 @@
         "format": "{icon} {capacity}%",
         "format-charging": "\uf0e7 {capacity}%",
         "format-icons": ["\uf244", "\uf243", "\uf242", "\uf241", "\uf240"],
-        "on-click": "$HOME/.local/bin/menu system"
+        "on-click": "setsid -f $HOME/.local/bin/menu system"
     },
     // Tray repliable: s'ouvre au survol
     "group/tray": {

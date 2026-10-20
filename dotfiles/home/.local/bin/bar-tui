@@ -1,3 +1,4 @@
 #!/bin/sh
 # Lance une TUI dans un foot flottant (règle niri sur l'app-id bar-tui). Usage: bar-tui CMD [ARGS...]
-exec foot --app-id bar-tui -T "$1" -e "$@"
+# Détaché (setsid -f): sinon le terminal reste fils de Waybar (clic) et bloque le rafraîchissement de ses modules
+setsid -f foot --app-id bar-tui -T "$1" -e "$@"
