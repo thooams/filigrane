@@ -65,6 +65,11 @@ Mesures sur le même MacBook (T2), au repos, après démarrage récent. Côté M
 - **Énergie** : le Mac tire ~4,6 W de plus (+24 %) avec moins d'applications ouvertes.
 - **Conséquence** : la RAM et la batterie libérées reviennent au navigateur, aux agents et aux conteneurs, d'où la règle « l'OS doit se faire oublier ».
 
+Ce que macOS ne permet pas sur ce Mac et qui marche ici en natif (sans adaptateur ni logiciel tiers) :
+
+- **DisplayPort MST** : plusieurs écrans distincts chaînés ou via un hub sur un seul port, là où macOS ne fait que de la recopie.
+- **Bluetooth LDAC** : casque (Sony WH-1000XM4) en LDAC, alors que macOS s'arrête à AAC et SBC. Codec au choix dans wiremix (onglet Configuration : LDAC, AAC, SBC-XQ, SBC). Le Bluetooth interne du Mac T2 (BCM4364 sur UART) demande un noyau avec `CONFIG_SERIAL_DEV_BUS=y` : [void-packages#63047](https://github.com/void-linux/void-packages/issues/63047), corrigé par [#63089](https://github.com/void-linux/void-packages/pull/63089), pas encore fusionnée.
+
 ## Réinstaller un système complet
 
 1. Démarrer sur l'ISO live Void (glibc x86_64), réseau actif, `root` / `voidlinux`.
