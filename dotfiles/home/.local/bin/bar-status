@@ -14,10 +14,10 @@ case "$1" in
             printf '{"text":"\\uf0f3","class":"idle","tooltip":"Notifications actives (clic: les couper)"}\n'
         fi ;;
     night)
-        if pgrep -x wlsunset >/dev/null; then
-            printf '{"text":"\\uf186","class":"active","tooltip":"Veilleuse automatique 20h–7h (clic: désactiver)"}\n'
+        if pgrep -x gammastep >/dev/null; then
+            printf '{"text":"\\uf186","class":"active","tooltip":"Veilleuse active (auto selon le soleil, ou forcée; clic: couper)"}\n'
         else
-            printf '{"text":"\\uf186","class":"idle","tooltip":"Veilleuse coupée (clic: réactiver l’automatique)"}\n'
+            printf '{"text":"\\uf186","class":"idle","tooltip":"Veilleuse coupée (clic: forcer 4500 K)"}\n'
         fi ;;
     rec)
         if pgrep -x wf-recorder >/dev/null; then

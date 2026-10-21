@@ -2,11 +2,14 @@
 # Actions de la barre qui changent un état, puis rafraîchissent l'indicateur par signal. Usage: bar-toggle night|rec|idle [start]|air|present
 case "$1" in
     night)
-        # Planifiée: 4500 K de 20:00 à 07:00, transition douce de 30 min. Clic: coupe / relance. "start" = lancement au login.
-        if [ "$2" = start ] || ! pgrep -x wlsunset >/dev/null; then
-            pgrep -x wlsunset >/dev/null || setsid wlsunset -t 4500 -T 6500 -S 07:00 -s 20:00 -d 1800 >/dev/null 2>&1 &
-        else pkill -x wlsunset; fi
-        sleep 0.3; pkill -RTMIN+10 waybar ;;
+        # gammastep (fondu ~1 s). "start" (login): automatique selon le soleil, 4500 K la nuit.
+        # Clic: coupe, ou force 4500 K en continu. Position (hors dépôt): ~/.local/state/night-location, "LAT:LON".
+        loc=$(cat "$HOME/.local/state/night-location" 2>/dev/null || echo 48.9:2.3)
+        if [ "$2" = start ]; then
+            pgrep -x gammastep >/dev/null || setsid gammastep -m wayland -l "$loc" -t 6500:4500 >/dev/null 2>&1 &
+        elif pgrep -x gammastep >/dev/null; then pkill -x gammastep
+        else setsid gammastep -m wayland -l "$loc" -t 4500:4500 >/dev/null 2>&1 & fi
+        sleep 1.2; pkill -RTMIN+10 waybar ;;
     rec)
         if pgrep -x wf-recorder >/dev/null; then
             pkill -INT -x wf-recorder; notify-send "Enregistrement" "Terminé: ~/Videos"
