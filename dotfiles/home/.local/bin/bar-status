@@ -14,8 +14,16 @@ case "$1" in
             printf '{"text":"\\uf0f3","class":"idle","tooltip":"Notifications actives (clic: les couper)"}\n'
         fi ;;
     night)
+        # Active seulement si l'écran est réellement réchauffé (forcé, ou auto en soirée); auto en journée = au repos.
         if pgrep -x gammastep >/dev/null; then
-            printf '{"text":"\\uf186","class":"active","tooltip":"Veilleuse active (auto selon le soleil, ou forcée; clic: couper)"}\n'
+            loc=$(cat "$HOME/.local/state/night-location" 2>/dev/null || echo 48.9:2.3)
+            if pgrep -fx 'gammastep .* 4500:4500' >/dev/null; then k=4500
+            else k=$(gammastep -m wayland -l "$loc" -t 6500:4500 -p 2>&1 | sed -n 's/.*Color temperature: \([0-9]*\)K/\1/p'); fi
+            if [ "${k:-6500}" -lt 6400 ]; then
+                printf '{"text":"\\uf186","class":"active","tooltip":"Veilleuse %s K (clic: couper)"}\n' "$k"
+            else
+                printf '{"text":"\\uf186","class":"idle","tooltip":"Veilleuse automatique, allumée au coucher du soleil (clic: couper)"}\n'
+            fi
         else
             printf '{"text":"\\uf186","class":"idle","tooltip":"Veilleuse coupée (clic: forcer 4500 K)"}\n'
         fi ;;

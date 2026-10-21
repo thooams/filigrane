@@ -203,7 +203,7 @@
     "custom/night": {
         "exec": "$HOME/.local/bin/bar-tray night",
         "return-type": "json",
-        "interval": "once",
+        "interval": 120,
         "signal": 10,
         "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-toggle night"
