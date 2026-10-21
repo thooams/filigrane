@@ -28,7 +28,9 @@ L'OS doit se faire oublier: le navigateur, les agents et les conteneurs passent 
 ## Interdits
 
 `install-void.sh` (efface un disque entier), `mkfs`, `wipefs`, `parted`, `dd` sur un disque, et toute modification de `/etc/sudoers*`, `~/.ssh`, `~/.claude/.credentials.json`.
-Installer un paquet (`xbps-install <pkg>`) ne demande pas de confirmation (avertissement ressources si lourd, voir ci-dessus). Demander avant: mises à jour système (`xbps-install -u/-Su`), `xbps-remove`, `sv restart/stop`, `rm`, édition de `/etc`, bootloader, reboot. `sv` et `xbps-*` passent sans mot de passe sudo: la confirmation vient de Claude Code.
+Sans confirmation: installer un paquet (`xbps-install <pkg>`, avertissement ressources si lourd), `xbps-remove` simple d'un paquet non critique (le hook `guard-destructive.sh` redemande pour `base-system`, noyau, glibc, xbps, runit, sudo, niri, `-R`/`-f`), `rm` dans le scratchpad ou le dépôt, commit après un changement vérifié (voir Git).
+Demander avant: mises à jour système (`xbps-install -u/-Su`), `sv restart/stop` (services système), `rm` ailleurs, édition de `/etc`, bootloader, reboot, push. `sv` et `xbps-*` passent sans mot de passe sudo: la confirmation vient de Claude Code.
+Choix de conception (valeur, réglage, outil): prendre le défaut raisonnable, le dire en une ligne, ne pas poser de question. Après un remplacement validé par l'usage, nettoyer l'ancien (paquet, config) sans redemander.
 
 ## Style
 

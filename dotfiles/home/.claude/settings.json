@@ -23,7 +23,14 @@
       "Read(~/Projects/void-setup/**)",
       "Edit(~/Projects/void-setup/**)",
       "Read(~/work/**)",
-      "Edit(~/work/**)"
+      "Edit(~/work/**)",
+      "Bash(sudo xbps-remove *)",
+      "Bash(rm /tmp/claude-1000/*)",
+      "Bash(rm -f /tmp/claude-1000/*)",
+      "Bash(rm -rf /tmp/claude-1000/*)",
+      "Bash(rm /home/thomas/Projects/void-setup/*)",
+      "Bash(rm -f /home/thomas/Projects/void-setup/*)",
+      "Bash(rm -rf /home/thomas/Projects/void-setup/*)"
     ],
     "deny": [
       "Bash(*install-void.sh*)",
@@ -45,12 +52,14 @@
       "Edit(~/.ssh/**)",
       "Edit(~/.claude/.credentials.json)",
       "Read(~/.claude/.credentials.json)",
-      "Read(~/.ssh/id_*)"
+      "Read(~/.ssh/id_*)",
+      "Bash(sudo xbps-remove *-R*)",
+      "Bash(sudo xbps-remove *-f*)",
+      "Bash(sudo xbps-remove *base-system*)"
     ],
     "ask": [
       "Bash(sudo xbps-install -u*)",
       "Bash(sudo xbps-install -*u*)",
-      "Bash(sudo xbps-remove *)",
       "Bash(sudo xbps-reconfigure *)",
       "Bash(sudo sv restart *)",
       "Bash(sudo sv start *)",
@@ -60,13 +69,10 @@
       "Bash(sudo sv once *)",
       "Bash(sudo ln *)",
       "Bash(sudo rm *)",
-      "Bash(rm *)",
       "Bash(sudo reboot*)",
       "Bash(sudo poweroff*)",
       "Bash(sudo grub-*)",
-      "Bash(git -C ~/void-setup commit *)",
       "Bash(git -C ~/void-setup push *)",
-      "Bash(git commit *)",
       "Bash(git push *)",
       "Edit(/etc/**)"
     ]
