@@ -1,7 +1,7 @@
 #!/bin/sh
 # Tiroir Waybar à gauche de l'horloge: minuteur, caféine, notifications, veilleuse, sauvegarde (+ tray système).
 # Replié, un indicateur au repos (classe idle) est masqué et seuls ceux en cours d'usage restent visibles;
-# le chevron (clic) révèle tout. État: présence de $XDG_RUNTIME_DIR/bar-tray-open, sans daemon.
+# un indicateur qui vient de passer au repos reste visible 10 s avant de se masquer; le chevron (clic) révèle tout. État: présence de $XDG_RUNTIME_DIR/bar-tray-open, sans daemon.
 # Usage: bar-tray handle | toggle | timer | idle | dnd | night | backup (JSON pour Waybar)
 f="${XDG_RUNTIME_DIR:-/tmp}/bar-tray-open"
 B="$HOME/.local/bin"
@@ -22,7 +22,19 @@ case "$1" in
     backup) out="$("$B/bar-backup")" ;;
     *) exit 1 ;;
 esac
+# Un indicateur qui repasse au repos reste visible 10 s (pour pouvoir le réactiver après un clic par erreur), puis se masque.
+case "$1" in timer) sig=12 ;; idle) sig=13 ;; dnd) sig=9 ;; night) sig=10 ;; backup) sig=18 ;; esac
+stamp="${XDG_RUNTIME_DIR:-/tmp}/bar-tray-last-$1"
 case "$out" in
-    *'"class":"idle"'*) [ -e "$f" ] || out='{"text":""}' ;;
+    *'"class":"idle"'*)
+        if [ ! -e "$f" ]; then
+            age=$(( $(date +%s) - $(stat -c %Y "$stamp" 2>/dev/null || echo 0) ))
+            if [ "$age" -lt 10 ]; then
+                [ -e "$stamp.wait" ] || { : >"$stamp.wait"; setsid sh -c "sleep $((11 - age)); rm -f '$stamp.wait'; pkill -RTMIN+$sig waybar" >/dev/null 2>&1 & }
+            else
+                out='{"text":""}'
+            fi
+        fi ;;
+    *) : >"$stamp" ;;
 esac
 printf '%s\n' "$out"
