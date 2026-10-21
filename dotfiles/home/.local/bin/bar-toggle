@@ -7,9 +7,10 @@ case "$1" in
         loc=$(cat "$HOME/.local/state/night-location" 2>/dev/null || echo 48.9:2.3)
         if [ "$2" = start ]; then
             pgrep -x gammastep >/dev/null || setsid gammastep -m wayland -l "$loc" -t 6500:4500 >/dev/null 2>&1 &
-        elif pgrep -x gammastep >/dev/null; then pkill -x gammastep
+        elif pgrep -x gammastep >/dev/null; then
+            pkill -x gammastep; for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x gammastep >/dev/null || break; sleep 0.5; done
         else setsid gammastep -m wayland -l "$loc" -t 4500:4500 >/dev/null 2>&1 & fi
-        sleep 1.2; pkill -RTMIN+10 waybar ;;
+        sleep 0.3; pkill -RTMIN+10 waybar ;;
     rec)
         if pgrep -x wf-recorder >/dev/null; then
             pkill -INT -x wf-recorder; notify-send "Enregistrement" "Terminé: ~/Videos"
