@@ -7,8 +7,7 @@
 // Find the full list of options on the wiki:
 // https://niri-wm.github.io/niri/Configuration:-Input
 input {
-    // Option (Alt gauche) comme Mod: Command reste aux raccourcis façon macOS (keyd)
-    mod-key "Alt"
+    // Mod = Super = Command (défaut de niri sur TTY)
     keyboard {
         xkb {
             // You can set rules, model, layout, variant and options.
@@ -489,12 +488,12 @@ binds {
     Mod+Q repeat=false { close-window; }
 
     Mod+Left  { focus-column-left; }
-    Mod+Down  { focus-window-down; }
-    Mod+Up    { focus-window-up; }
+    Mod+Down  { focus-window-or-workspace-down; }
+    Mod+Up    { focus-window-or-workspace-up; }
     Mod+Right { focus-column-right; }
     Mod+T     { focus-column-left; }
-    Mod+S     { focus-window-down; }
-    Mod+R     { focus-window-up; }
+    Mod+S     { focus-window-or-workspace-down; }
+    Mod+R     { focus-window-or-workspace-up; }
     Mod+N     { focus-column-right; }
 
     Mod+Ctrl+Left  { move-column-left; }
@@ -725,7 +724,7 @@ binds {
 
     // Captures (outil intégré à niri, 0 Mo). Enregistrées dans ~/Pictures/Screenshots et copiées dans le presse-papiers.
     // Alternatives sans touche Print (claviers Mac): Mod+Shift+3 écran, 4 zone, 5 interface.
-    // Raccourcis macOS (Mod à la place de Cmd, touches 3/4/5 en symboles bépo): 3 écran, 4 zone, 5 interface de capture (zone/écran/fenêtre), Ctrl+4 fenêtre
+    // Raccourcis macOS (Mod = Cmd, touches 3/4/5 en symboles bépo): 3 écran, 4 zone, 5 interface de capture (zone/écran/fenêtre), Ctrl+4 fenêtre
     Mod+Shift+guillemotright { screenshot-screen; }
     Mod+Shift+parenleft { screenshot; }
     Mod+Shift+parenright { screenshot; }
