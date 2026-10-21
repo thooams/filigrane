@@ -23,13 +23,13 @@ L'OS doit se faire oublier: le navigateur, les agents et les conteneurs passent 
 ## Git
 
 - Dépôt **public**: avant chaque commit, scanner le diff stagé (tokens, mots de passe, clés, e-mails, IP) et montrer le résultat.
-- Commit autorisé sans demander après un changement terminé et vérifié (scan ci-dessus obligatoire, jamais d'attribution Claude). Ne jamais push sans demande explicite.
+- Commit autorisé sans demander après un changement terminé et vérifié (scan ci-dessus obligatoire, jamais d'attribution Claude). Push autorisé sans demander sur toute branche autre que `main`; jamais de push sur `main` (ni force-push) sans demande explicite.
 
 ## Interdits
 
 `install-void.sh` (efface un disque entier), `mkfs`, `wipefs`, `parted`, `dd` sur un disque, et toute modification de `/etc/sudoers*`, `~/.ssh`, `~/.claude/.credentials.json`.
 Sans confirmation: installer un paquet (`xbps-install <pkg>`, avertissement ressources si lourd), `xbps-remove` simple d'un paquet non critique (le hook `guard-destructive.sh` redemande pour `base-system`, noyau, glibc, xbps, runit, sudo, niri, `-R`/`-f`), `rm` dans le scratchpad ou le dépôt, commit après un changement vérifié (voir Git).
-Demander avant: mises à jour système (`xbps-install -u/-Su`), `sv restart/stop` (services système), `rm` ailleurs, édition de `/etc`, bootloader, reboot, push. `sv` et `xbps-*` passent sans mot de passe sudo: la confirmation vient de Claude Code.
+Demander avant: mises à jour système (`xbps-install -u/-Su`), `sv restart/stop` (services système), `rm` ailleurs, édition de `/etc`, bootloader, reboot, push sur `main`. `sv` et `xbps-*` passent sans mot de passe sudo: la confirmation vient de Claude Code.
 Choix de conception (valeur, réglage, outil): prendre le défaut raisonnable, le dire en une ligne, ne pas poser de question. Après un remplacement validé par l'usage, nettoyer l'ancien (paquet, config) sans redemander.
 
 ## Style

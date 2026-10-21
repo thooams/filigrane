@@ -30,7 +30,10 @@
       "Bash(rm -rf /tmp/claude-1000/*)",
       "Bash(rm /home/thomas/Projects/void-setup/*)",
       "Bash(rm -f /home/thomas/Projects/void-setup/*)",
-      "Bash(rm -rf /home/thomas/Projects/void-setup/*)"
+      "Bash(rm -rf /home/thomas/Projects/void-setup/*)",
+      "Bash(git push origin develop)",
+      "Bash(git push origin develop *)",
+      "Bash(git -C /home/thomas/Projects/void-setup push origin develop)"
     ],
     "deny": [
       "Bash(*install-void.sh*)",
@@ -72,9 +75,10 @@
       "Bash(sudo reboot*)",
       "Bash(sudo poweroff*)",
       "Bash(sudo grub-*)",
-      "Bash(git -C ~/void-setup push *)",
-      "Bash(git push *)",
-      "Edit(/etc/**)"
+      "Edit(/etc/**)",
+      "Bash(git push*main*)",
+      "Bash(git push*--force*)",
+      "Bash(git push* -f*)"
     ]
   },
   "model": "sonnet",
