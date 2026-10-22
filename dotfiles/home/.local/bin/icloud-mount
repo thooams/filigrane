@@ -2,7 +2,7 @@
 # iCloud Drive monté dans ~/iCloud (rclone mount): fichiers téléchargés à l'ouverture, cache local plafonné à 5 Go
 # (les moins récemment utilisés partent en premier). Lancé par niri au démarrage, attend le réseau.
 # Config HORS dépôt (identifiants Apple): remote "icloud" créé par `rclone config` (type iclouddrive, 2FA).
-# Session Apple valable 30 jours: au-delà, `rclone config reconnect icloud:` puis relancer icloud-mount.
+# Session Apple valable 30 jours: rappel par watch-icloud (cron-watch) et bouton vers icloud-reconnect.
 REMOTE="icloud:"
 MNT="$HOME/iCloud"
 STATE="$HOME/.local/state/icloud"
@@ -17,7 +17,7 @@ until timeout 3 bash -c 'exec 3<>/dev/tcp/www.icloud.com/443' 2>/dev/null; do sl
 rclone mount "$REMOTE" "$MNT" \
     --vfs-cache-mode full --vfs-cache-max-size 5G --vfs-cache-max-age 720h \
     --log-level NOTICE --log-file "$STATE/mount.log" && exit 0
-notify-send -u critical -a icloud "iCloud non monté" \
-    "$(grep -m1 -iE 'reconnect|auth|error' "$STATE/mount.log" | tail -c 200)
-rclone config reconnect icloud: puis icloud-mount"
+[ "$(notify-send -u critical -a icloud -A reconnect=Reconnecter "iCloud non monté" \
+    "$(grep -m1 -iE 'reconnect|auth|error' "$STATE/mount.log" | tail -c 200)")" = reconnect ] &&
+    "$HOME/.local/bin/bar-tui" icloud-reconnect
 exit 1

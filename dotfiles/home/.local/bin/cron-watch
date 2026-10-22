@@ -11,6 +11,7 @@ flock -n 9 || exit 0
 JOBS=(
     "void:360:watch-void:"
     "backup:1440:watch-backup:"
+    "icloud:1440:watch-icloud:"
     "omarchy:10080:watch-claude:omarchy"
     "t2:10080:watch-claude:t2"
 )
