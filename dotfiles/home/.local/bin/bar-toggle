@@ -5,7 +5,12 @@ case "$1" in
         # gammastep (fondu ~1 s). "start" (login): automatique selon le soleil, 4500 K la nuit.
         # Clic: coupe, ou force 4500 K en continu. Position (hors dépôt): ~/.local/state/night-location, "LAT:LON".
         loc=$(cat "$HOME/.local/state/night-location" 2>/dev/null || echo 48.9:2.3)
-        if [ "$2" = start ]; then
+        if [ "$2" = resume ]; then
+            # Réveil de veille: gammastep (mode auto) garde la teinte du soir, on le relance pour réévaluer l'heure
+            pgrep -x gammastep >/dev/null && ! pgrep -f 'gammastep .* -t 4500.4500$' >/dev/null || exit 0
+            pkill -x gammastep; for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x gammastep >/dev/null || break; sleep 0.5; done
+            setsid gammastep -m wayland -l "$loc" -t 6500:4500 >/dev/null 2>&1 &
+        elif [ "$2" = start ]; then
             pgrep -x gammastep >/dev/null || setsid gammastep -m wayland -l "$loc" -t 6500:4500 >/dev/null 2>&1 &
         elif pgrep -x gammastep >/dev/null; then
             pkill -x gammastep; for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x gammastep >/dev/null || break; sleep 0.5; done
@@ -25,7 +30,8 @@ case "$1" in
             pgrep -x swayidle >/dev/null || setsid swayidle -w \
                 timeout 300 '$HOME/.local/bin/lock auto' \
                 timeout 600 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' \
-                before-sleep '$HOME/.local/bin/lock auto' >/dev/null 2>&1 &
+                before-sleep '$HOME/.local/bin/lock auto' \
+                after-resume '$HOME/.local/bin/bar-toggle night resume' >/dev/null 2>&1 &
             [ "$2" = start ] || notify-send -u low "Verrouillage auto" "Activé (5 min, écran éteint à 10 min, pas de veille automatique)"
         else
             pkill -x swayidle; notify-send -u low "Verrouillage auto" "Désactivé"
