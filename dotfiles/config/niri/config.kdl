@@ -276,12 +276,11 @@ layout {
 environment {
     CHROME_FLAGS "--ozone-platform=wayland --enable-features=WebRTCPipeWireCapturer"
     ELECTRON_OZONE_PLATFORM_HINT "auto"
-    // Le Chromium de Void n'a pas de clés Google: valeurs bidon pour masquer le bandeau « API keys are missing ».
-    GOOGLE_API_KEY "no"
-    GOOGLE_DEFAULT_CLIENT_ID "no"
-    GOOGLE_DEFAULT_CLIENT_SECRET "no"
-    // Sans niri-session, rien ne le définit: les portails ignoreraient niri-portals.conf.
+    // Pas de GOOGLE_API_KEY/GOOGLE_DEFAULT_CLIENT_*: ils remplaceraient les clés de Google Chrome (synchronisation cassée).
+    // Sans niri-session, rien ne les définit: les portails ignoreraient niri-portals.conf, et Google Chrome
+    // (qui ne lit pas CHROME_FLAGS) choisirait X11 avec XDG_SESSION_TYPE=tty, puis quitterait.
     XDG_CURRENT_DESKTOP "niri"
+    XDG_SESSION_TYPE "wayland"
 }
 
 // Les programmes lancés à la demande par D-Bus (trousseau, portails, demandes de mot de passe)
