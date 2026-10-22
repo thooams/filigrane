@@ -473,6 +473,7 @@ binds {
     XF86KbdBrightnessDown allow-when-locked=true { spawn "brightnessctl" "-d" "*kbd_backlight" "set" "10%-"; }
     Mod+Tab hotkey-overlay-title="Fenêtres: aller à" { spawn-sh "$HOME/.local/bin/menu windows"; }
     Mod+B hotkey-overlay-title="Notifications: activer/couper" { spawn-sh "makoctl mode -t do-not-disturb; pkill -RTMIN+9 waybar"; }
+    Mod+Shift+B hotkey-overlay-title="Notifications: fermer toutes" { spawn-sh "makoctl dismiss -a"; }
     Mod+Shift+Space hotkey-overlay-title="Aide des raccourcis" { spawn-sh "$HOME/.local/bin/menu keys"; }
     // Écran: pas de 1%, Shift pour un pas fin de 30 unités (~0,17%, max 17777)
     XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "-d" "intel_backlight" "set" "+1%"; }
