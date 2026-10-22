@@ -21,6 +21,7 @@ xbps-install -r "$TMP" "${REPOS[@]}" -Sy >/dev/null
 
 missing=0
 for list in "$ROOT"/packages/*.txt; do
+    [ "${list##*/}" = restricted.txt ] && continue  # construits avec xbps-src, absents des dépôts
     for pkg in $(sed -e 's/#.*//' -e 's/[[:space:]]*$//' "$list" | grep -v '^$' || true); do
         if ! xbps-query -r "$TMP" "${REPOS[@]}" -R "$pkg" >/dev/null 2>&1; then
             echo "$ARCH: paquet introuvable: $pkg ($(basename "$list"))"

@@ -357,6 +357,36 @@ setup_whatsapp_unreadd() {
     [ -e "$TARGET_HOME/.config/whatsapp-unread/paired" ] || echo "appairage: wa-pair (QR code à scanner depuis WhatsApp > Appareils liés)"
 }
 
+# Paquets restricted (packages/restricted.txt): construits avec xbps-src dans un clone de void-packages.
+# Mise à jour: git pull dans le clone, ./xbps-src pkg <paquet>, puis xbps-install -u -R <dépôt local> <paquet>
+VOID_PACKAGES="${VOID_PACKAGES:-$TARGET_HOME/Projects/void-packages}"
+
+setup_restricted() {
+    local pkg
+    local -a todo=() repos=()
+    for pkg in $(read_list "$ROOT/packages/restricted.txt"); do
+        if xbps-query "$pkg" >/dev/null 2>&1; then echo "SKIP: $pkg déjà installé"; else todo+=("$pkg"); fi
+    done
+    [ ${#todo[@]} -gt 0 ] || return 0
+    log "Paquets restricted (xbps-src): ${todo[*]}"
+    if [ ! -x "$VOID_PACKAGES/xbps-src" ]; then
+        run_as_user git clone -q --depth 1 https://github.com/void-linux/void-packages "$VOID_PACKAGES" \
+            || { warn "clone de void-packages échoué"; return 0; }
+    fi
+    grep -qx 'XBPS_ALLOW_RESTRICTED=yes' "$VOID_PACKAGES/etc/conf" 2>/dev/null \
+        || echo 'XBPS_ALLOW_RESTRICTED=yes' | run_as_user tee -a "$VOID_PACKAGES/etc/conf" >/dev/null
+    if ! compgen -G "$VOID_PACKAGES/masterdir*" >/dev/null; then
+        (cd "$VOID_PACKAGES" && run_as_user ./xbps-src binary-bootstrap) || { warn "xbps-src binary-bootstrap échoué"; return 0; }
+    fi
+    for pkg in "${todo[@]}"; do
+        (cd "$VOID_PACKAGES" && run_as_user ./xbps-src pkg "$pkg") || warn "construction de $pkg échouée"
+    done
+    # dépôts locaux produits par xbps-src (hostdir/binpkgs/<branche>/nonfree...)
+    mapfile -t repos < <(find "$VOID_PACKAGES/hostdir/binpkgs" -name '*-repodata' -printf '%h\n' | sort -u)
+    [ ${#repos[@]} -gt 0 ] || return 0
+    $SUDO xbps-install -y "${repos[@]/#/--repository=}" "${todo[@]}" || warn "installation de ${todo[*]} échouée"
+}
+
 setup_claude() {
     log "Claude Code"
     if [ -x "$TARGET_HOME/.local/bin/claude" ]; then
@@ -455,4 +485,5 @@ if [ "$PLAN" -eq 1 ]; then print_plan; exit; fi
 [ "$DO_SYSTEM" -eq 1 ] && setup_claude
 [ "$DO_SYSTEM" -eq 1 ] && setup_proton_drive
 [ "$DO_SYSTEM" -eq 1 ] && setup_whatsapp_unreadd
+[ "$DO_SYSTEM" -eq 1 ] && setup_restricted
 log "Terminé"
