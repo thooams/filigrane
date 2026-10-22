@@ -57,6 +57,8 @@ python3-icalendar
 # Gestionnaire de fichiers, visionneuse, USB sans daemon (udisks2 à la demande), santé du disque
 yazi
 imv
+poppler  # pdftoppm: pages PDF en image pour l'aperçu rapide de Thunar (quicklook)
+pspg  # tableaux CSV/TSV dans l'aperçu rapide (343 Ko + postgresql-libs 1,4 Mo)
 udisks2
 smartmontools
 nvme-cli
