@@ -11,6 +11,12 @@ mkdir -p "$STATE" "$MNT"
 rclone listremotes 2>/dev/null | grep -qx "$REMOTE" || exit 0
 mountpoint -q "$MNT" && exit 0
 fusermount3 -uz "$MNT" 2>/dev/null  # montage mort d'une session précédente
+# Écrit hors montage (via ~/Documents ou ~/Pictures): rclone refuserait un point de montage non vide
+if [ -n "$(ls -A "$MNT")" ]; then
+    aside="$STATE/hors-montage-$(date +%Y%m%d%H%M%S)"
+    mv "$MNT" "$aside" && mkdir -p "$MNT"
+    notify-send -a icloud "iCloud: fichiers écrits hors montage" "Mis de côté dans $aside"
+fi
 
 until timeout 3 bash -c 'exec 3<>/dev/tcp/www.icloud.com/443' 2>/dev/null; do sleep 30; done
 

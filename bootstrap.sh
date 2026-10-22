@@ -421,6 +421,18 @@ setup_dotfiles() {
         run_as_user mkdir -p "${acc%/*}"
         run_as_user sh -c 'printf "%s\n" "$1" >> "$2"' _ "$ql" "$acc"
     fi
+    # Documents et Images dans iCloud Drive (~/iCloud, monté par icloud-mount): liens symboliques.
+    # Un dossier local non vide n'est pas touché: déplacer son contenu dans ~/iCloud puis relancer.
+    local d
+    for d in Documents Pictures; do
+        [ -L "$TARGET_HOME/$d" ] && continue
+        if [ -d "$TARGET_HOME/$d" ] && ! rmdir "$TARGET_HOME/$d" 2>/dev/null; then
+            warn "~/$d non vide: déplacer son contenu dans ~/iCloud/$d puis relancer bootstrap.sh"
+            continue
+        fi
+        log "~/$d -> ~/iCloud/$d"
+        run_as_user ln -s "iCloud/$d" "$TARGET_HOME/$d"
+    done
     # Mac T2 (MacBookPro16,2): la route ALSA "Speaker" est cachée par le DSP (hide-parent), donc plus
     # réglable, et un volume bas sur elle atténue tout le DSP. WirePlumber n'a pas de règle de volume
     # par route: on la fixe à 1.0 dans son état, le volume se règle sur le DSP.

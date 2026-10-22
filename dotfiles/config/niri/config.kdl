@@ -342,7 +342,7 @@ hotkey-overlay {
 // You can change the path where screenshots are saved.
 // A ~ at the front will be expanded to the home directory.
 // The path is formatted with strftime(3) to give you the screenshot date and time.
-screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+screenshot-path "~/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
 // You can also set this to null to disable saving screenshots to disk.
 // screenshot-path null
@@ -734,7 +734,7 @@ binds {
     // Mod+Space       { switch-layout "next"; }
     // Mod+Shift+Space { switch-layout "prev"; }
 
-    // Captures (outil intégré à niri, 0 Mo). Enregistrées dans ~/Pictures/Screenshots et copiées dans le presse-papiers.
+    // Captures (outil intégré à niri, 0 Mo). Enregistrées dans ~/Screenshots (local, hors iCloud) et copiées dans le presse-papiers.
     // Alternatives sans touche Print (claviers Mac): Mod+Shift+3 écran, 4 zone, 5 interface.
     // Raccourcis macOS (Mod = Cmd, touches 3/4/5 en symboles bépo): 3 écran, 4 zone, 5 interface de capture (zone/écran/fenêtre), Ctrl+4 fenêtre
     Mod+Shift+guillemotright { screenshot-screen; }
