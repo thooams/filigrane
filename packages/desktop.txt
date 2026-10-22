@@ -17,6 +17,7 @@ xdg-desktop-portal-gtk
 mesa-dri
 dejavu-fonts-ttf
 noto-fonts-ttf
+liberation-fonts-ttf  # mêmes dimensions qu'Arial, Times et Courier (documents bureautiques)
 font-awesome6
 # Menu tout-en-un (dotfiles/home/.local/bin/menu)
 cliphist
