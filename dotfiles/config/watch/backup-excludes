@@ -12,6 +12,8 @@ go/pkg
 .local/share/claude
 # Cache des mails Proton (gluon): se re-télécharge, les identifiants restent dans ~/.config
 .local/share/protonmail
+# iCloud Drive monté (rclone mount): le parcourir téléchargerait tout iCloud
+iCloud
 .config/chromium/*/Cache
 .config/chromium/*/Code Cache
 .config/chromium/*/GPUCache

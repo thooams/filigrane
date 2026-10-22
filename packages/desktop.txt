@@ -75,3 +75,6 @@ wireguard-tools
 
 # Relais de la socket du compteur WhatsApp (wa-daemon), remplace un script Python (~1 Mo)
 socat
+
+# iCloud Drive monté dans ~/iCloud (rclone mount, cache 5 Go), voir ~/.local/bin/icloud-mount (~106 Mo disque)
+rclone
