@@ -81,7 +81,7 @@
       "Bash(git push* -f*)"
     ]
   },
-  "model": "sonnet",
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
