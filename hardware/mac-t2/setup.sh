@@ -230,6 +230,10 @@ EOF
 }
 
 setup_trackpad() {
+    log "Trackpad: seuils de paume libinput (relire au prochain démarrage de niri)"
+    install -d /etc/libinput
+    install -m 0644 "$HERE/libinput-local-overrides.quirks" /etc/libinput/local-overrides.quirks
+
     log "Trackpad multitouch via DKMS (t2-trackpad $TRACKPAD_VER)"
     local src="/usr/src/t2-trackpad-$TRACKPAD_VER" k
     rm -rf "$src"
