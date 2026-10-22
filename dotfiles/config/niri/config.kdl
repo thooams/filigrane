@@ -445,6 +445,7 @@ binds {
     // Cmd+Espace: keyd traduit Cmd en Ctrl (hardware/mac-t2/keyd*.conf), donc Ctrl+Space.
     Ctrl+Space hotkey-overlay-title=null { spawn-sh "pkill -x fuzzel || exec $HOME/.local/bin/menu"; }
     Mod+L hotkey-overlay-title="Verrouiller l'écran" { spawn-sh "$HOME/.local/bin/lock"; }
+    Mod+Shift+C hotkey-overlay-title="iCloud Drive (Thunar)" { spawn-sh "thunar \"$HOME/iCloud\""; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
