@@ -18,6 +18,10 @@ iCloud
 .config/chromium/*/Code Cache
 .config/chromium/*/GPUCache
 .config/chromium/*/Service Worker/CacheStorage
+.config/google-chrome/*/Cache
+.config/google-chrome/*/Code Cache
+.config/google-chrome/*/GPUCache
+.config/google-chrome/*/Service Worker/CacheStorage
 **/node_modules
 **/target
 **/.venv

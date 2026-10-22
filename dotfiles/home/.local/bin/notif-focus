@@ -3,7 +3,7 @@
 # Usage: notif-focus <id notification>. Correspondance par nom d'appli ou desktop-entry contre l'app_id ou le titre
 # des fenêtres niri (minuscules, sans ponctuation: "foo-bar" retrouve l'app-id "foobar").
 # Si l'appli porte le nom d'une application web (~/.config/webapps/list), son domaine sert aussi à retrouver la fenêtre
-# (app-id Chromium "chrome-mail.proton.me__-Profile_1"), et la webapp est ouverte si aucune fenêtre n'existe.
+# (app-id Chrome "chrome-mail.proton.me__-Default"), et la webapp est ouverte si aucune fenêtre n'existe.
 id="$1"
 [ -n "$id" ] || exit 1
 info="$(makoctl list | awk -v id="$id" '

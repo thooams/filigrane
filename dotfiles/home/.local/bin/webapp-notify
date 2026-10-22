@@ -3,10 +3,10 @@
 # Écoute les appels Notify sur le bus D-Bus de session (dbus-monitor + awk, aucun interpréteur résident de plus). Une notification
 # est rattachée à une webapp de ~/.config/webapps/list suivie dans ~/.config/webapps/notify ("Nom | émetteur", un par ligne):
 #   - émetteur natif (WhatsApp | whatsapp-unreadd): client sans navigateur, reconnu par son nom d'application
-#   - sans émetteur: webapp Chromium ouverte, reconnue par son nom ou son hôte dans l'appli émettrice, le titre ou le corps
+#   - sans émetteur: webapp ouverte (Chrome), reconnue par son nom ou son hôte dans l'appli émettrice, le titre ou le corps
 # La notification d'origine est retirée puis ré-émise sous le nom de la webapp (notif-focus la focalise ou la rouvre au clic)
 # et poussée dans bar-alert (kind = nom en minuscules sans espace).
-# Notifications Chromium non reconnues: consignées dans $XDG_RUNTIME_DIR/webapp-notify.log. Proton Mail a déjà mail-notify.
+# Notifications Chrome non reconnues: consignées dans $XDG_RUNTIME_DIR/webapp-notify.log. Proton Mail a déjà mail-notify.
 # Lancé par niri au démarrage (boucle de relance).
 CONF="${XDG_CONFIG_HOME:-$HOME/.config}/webapps"
 RUN="${XDG_RUNTIME_DIR:-/tmp}"
