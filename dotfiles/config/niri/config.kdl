@@ -38,7 +38,13 @@ input {
     // All commented-out settings here are examples, not defaults.
     // Réglages repris d'Omarchy (Hyprland): tap, pas de défilement naturel, clic droit à deux doigts
     touchpad {
-        // tap désactivé: la paume déclenchait des clics. Clic physique seulement.
+        // tap: 1 doigt = clic, 2 doigts = clic droit, 3 doigts = clic milieu.
+        // Sélection/glisser: double tap et garder le doigt posé; drag-lock laisse lever
+        // le doigt un court instant pour repositionner. dwt contre les clics de paume.
+        tap
+        tap-button-map "left-right-middle"
+        drag true
+        drag-lock
         dwt
         click-method "clickfinger"
         scroll-factor 0.2
