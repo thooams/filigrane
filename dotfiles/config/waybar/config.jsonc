@@ -142,15 +142,13 @@
     },
     // Usage et top 5 processus en infobulle, clic = htop
     "custom/cpu": {
-        "exec": "$HOME/.local/bin/bar-status cpu",
+        "exec": "$HOME/.local/bin/bar-stats cpu",
         "return-type": "json",
-        "interval": 10,
         "on-click": "$HOME/.local/bin/bar-tui htop"
     },
     "custom/mem": {
-        "exec": "$HOME/.local/bin/bar-status mem",
+        "exec": "$HOME/.local/bin/bar-stats mem",
         "return-type": "json",
-        "interval": 15,
         "on-click": "$HOME/.local/bin/bar-tui htop"
     },
     // Micro: clic = couper/activer, molette = volume, clic droit ou milieu = mixeur (onglet entrées)
@@ -262,9 +260,8 @@
     },
     // Température CPU (masquée sans sonde), clic = htop
     "custom/temp": {
-        "exec": "$HOME/.local/bin/bar-status temp",
+        "exec": "$HOME/.local/bin/bar-stats temp",
         "return-type": "json",
-        "interval": 15,
         "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-tui htop"
     },
