@@ -118,9 +118,9 @@ list_apps() {
             if (name != "" && cmd != "" && type == "Application" && nodisplay != "true" && hidden != "true") {
                 gsub(/%c/, name, cmd)
                 gsub(/ ?%[fFuUdDnNikvm]/, "", cmd)
-                print name "\t" cmd "\t" term
+                print name "\t" cmd "\t" term "\t" icon
             }
-            name = ""; cmd = ""; term = "false"; type = ""; nodisplay = ""; hidden = ""
+            name = ""; cmd = ""; term = "false"; type = ""; nodisplay = ""; hidden = ""; icon = ""
         }
         FNR == 1 { flush(); ing = 0 }
         /^\[/ { ing = ($0 == "[Desktop Entry]"); next }
@@ -130,6 +130,7 @@ list_apps() {
             val = $0; sub(/^[^=]*=/, "", val)
             if (key == "Name" && name == "") name = val
             else if (key == "Exec" && cmd == "") cmd = val
+            else if (key == "Icon" && icon == "") icon = val
             else if (key == "Terminal") term = val
             else if (key == "Type") type = val
             else if (key == "NoDisplay") nodisplay = val
@@ -147,7 +148,7 @@ ranked_apps() {
     awk -F'\t' -v OFS='\t' -v cf="$APPCOUNT" '
         BEGIN { while ((getline l < cf) > 0) { n = split(l, a, "\t"); if (n == 2) c[a[2]] = a[1] } }
         { s = (tolower($1 " " $2) ~ /settings|preferences|préférences|prefs|configur|bulk|uninstall/) ? 1 : 0
-          printf "%05d\t%d\t%s\t%s\t%s\t%s\n", 99999 - c[$1], s, $1, $1, $2, $3 }' |
+          printf "%05d\t%d\t%s\t%s\t%s\t%s\t%s\n", 99999 - c[$1], s, $1, $1, $2, $3, $4 }' |
         sort -t "$TAB" -k1,2 -k3 | cut -f4-
 }
 count_app() { # count_app NOM
@@ -239,7 +240,7 @@ menu_custom() {
 # Une action terminée ferme le menu. Avec un argument (liste unique), l'action est directe.
 
 menu_apps() {
-    sel="$(list_apps | ranked_apps | cut -f1 | NOSORT=1 pick "Applications › " 10)"
+    sel="$(list_apps | ranked_apps | awk -F'\t' '{ printf "%s", $1; if ($4 != "") printf "\0icon\037%s", $4; print "" }' | NOSORT=1 pick "Applications › " 10)"
     [ -n "$sel" ] || { cancel; return $BACK; }
     run_app "$sel"
 }
