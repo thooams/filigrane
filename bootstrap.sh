@@ -357,6 +357,34 @@ setup_whatsapp_unreadd() {
     [ -e "$TARGET_HOME/.config/whatsapp-unread/paired" ] || echo "appairage: wa-pair (QR code à scanner depuis WhatsApp > Appareils liés)"
 }
 
+# Outils maison (apps/<nom>, Rust): binaires natifs plutôt que scripts Python/GTK, pour que l'OS reste léger.
+# Compilés en release dans ~/.local/opt/<nom>-<empreinte des sources>, liés dans ~/.local/bin; recompilés
+# seulement quand les sources changent. Le dossier de compilation (target/) reste hors du dépôt, dans ~/.cache.
+setup_apps() {
+    local manifest app name sum dir
+    for manifest in "$ROOT"/apps/*/Cargo.toml; do
+        [ -e "$manifest" ] || return 0
+        command -v cargo >/dev/null || { warn "cargo absent (packages/dev.txt): apps/ non compilées"; return 0; }
+        app="$(dirname "$manifest")"; name="$(basename "$app")"
+        sum="$(cd "$app" && find Cargo.toml Cargo.lock src -type f | sort | xargs cat | sha256sum | cut -c1-12)"
+        dir="$TARGET_HOME/.local/opt/$name-$sum"
+        if [ ! -x "$dir/$name" ]; then
+            log "Compilation de $name ($sum)"
+            if run_as_user env CARGO_TARGET_DIR="$TARGET_HOME/.cache/void-setup-apps" \
+                    cargo build -q --release --locked --manifest-path "$manifest" \
+                && run_as_user mkdir -p "$dir" \
+                && run_as_user cp "$TARGET_HOME/.cache/void-setup-apps/release/$name" "$dir/$name"; then
+                # anciennes versions
+                find "$TARGET_HOME/.local/opt" -maxdepth 1 -name "$name-*" ! -name "$name-$sum" -exec rm -rf {} +
+            else
+                warn "compilation de $name échouée"; run_as_user rm -rf "$dir"; continue
+            fi
+        fi
+        run_as_user mkdir -p "$TARGET_HOME/.local/bin"
+        run_as_user ln -sfn "$dir/$name" "$TARGET_HOME/.local/bin/$name"
+    done
+}
+
 # Paquets restricted (packages/restricted.txt): construits avec xbps-src dans un clone de void-packages.
 # Mise à jour: git pull dans le clone, ./xbps-src pkg <paquet>, puis xbps-install -u -R <dépôt local> <paquet>
 VOID_PACKAGES="${VOID_PACKAGES:-$TARGET_HOME/Projects/void-packages}"
@@ -482,6 +510,7 @@ setup_dotfiles() {
 if [ "$PLAN" -eq 1 ]; then print_plan; exit; fi
 [ "$DO_SYSTEM" -eq 1 ] && setup_system
 [ "$DO_DOTFILES" -eq 1 ] && setup_dotfiles
+[ "$DO_DOTFILES" -eq 1 ] && setup_apps
 [ "$DO_SYSTEM" -eq 1 ] && setup_claude
 [ "$DO_SYSTEM" -eq 1 ] && setup_proton_drive
 [ "$DO_SYSTEM" -eq 1 ] && setup_whatsapp_unreadd

@@ -9,6 +9,7 @@ fzf
 ripgrep
 zoxide
 mise  # versions Ruby/Rust/Node par projet; binaire seul, aucun démon (118 Mo disque)
+cargo  # compile les outils maison de apps/ (bootstrap.sh, setup_apps)
 bat
 lazygit
 github-cli

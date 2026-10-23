@@ -54,9 +54,14 @@ I_WIN="$(printf '\357\213\220')"  # U+F2D0 window-maximize
 STATE="${XDG_RUNTIME_DIR:-/tmp}/menu-back.$$"
 KEYS="--override=key-bindings.custom-1=Shift+BackSpace"
 BINDS="${XDG_RUNTIME_DIR:-/tmp}/menu-binds.$$"
-trap 'rm -f "$STATE" "$BINDS"' EXIT
+BDREADY="${XDG_RUNTIME_DIR:-/tmp}/menu-backdrop.$$"
+"$HOME/.local/bin/menu-backdrop" "$BDREADY" >/dev/null 2>&1 &
+BACKDROP=$!
+trap 'rm -f "$STATE" "$BINDS" "$BDREADY"; kill "$BACKDROP" 2>/dev/null' EXIT
 
 pick() { # pick INVITE [LIGNES] [LARGEUR] [POLICE]  (entrées sur stdin, sélection sur stdout; vide si annulé)
+    # Le voile flouté doit être affiché avant fuzzel (1 s au plus)
+    n=0; while [ ! -e "$BDREADY" ] && [ "$n" -lt 50 ] && kill -0 "$BACKDROP" 2>/dev/null; do sleep 0.02; n=$((n + 1)); done
     out="$(fuzzel --dmenu $KEYS ${NOSORT:+--no-sort} --minimal-lines --lines "${2:-12}" ${3:+--width "$3"} ${4:+--font "$4"} --prompt "$1")"; rc=$?
     if [ "$rc" -eq 10 ]; then : > "$STATE"; return 0; fi
     [ -n "$out" ] && printf '%s\n' "$out"

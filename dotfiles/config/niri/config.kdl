@@ -369,6 +369,15 @@ animations {
 
 // Work around WezTerm's initial configure bug
 // by setting an empty default-column-width.
+// Flou du fond autour de fuzzel: voile plein écran de `menu-backdrop`, présent seulement pendant que le menu est ouvert
+layer-rule {
+    match namespace="^menu-backdrop$"
+    background-effect {
+        blur true
+        xray false
+    }
+}
+
 window-rule {
     // This regular expression is intentionally made as specific as possible,
     // since this is the default config, and we want no false positives.

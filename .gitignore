@@ -1,0 +1,2 @@
+apps/*/target/
+__pycache__/
