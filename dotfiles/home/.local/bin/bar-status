@@ -9,9 +9,9 @@ case "$1" in
         esac ;;
     dnd)
         if makoctl mode 2>/dev/null | grep -q do-not-disturb; then
-            printf '{"text":"\\uf1f6","class":"active","tooltip":"Ne pas déranger (clic: réactiver les notifications)"}\n'
+            printf '{"text":"\\uf1f6","class":"active","tooltip":"Ne pas déranger (clic: historique, clic droit: réactiver)"}\n'
         else
-            printf '{"text":"\\uf0f3","class":"idle","tooltip":"Notifications actives (clic: les couper)"}\n'
+            printf '{"text":"\\uf0f3","class":"idle","tooltip":"Notifications actives (clic: historique, clic droit: les couper)"}\n'
         fi ;;
     night)
         # Active seulement si l'écran est réellement réchauffé (forcé, ou auto en soirée); auto en journée = au repos.

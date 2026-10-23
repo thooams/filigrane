@@ -4,7 +4,7 @@
 # Aucun démon: il n'existe que le temps du menu (0 Mo au repos).
 #
 #   menu                  catégories à vide; en tapant, recherche floue sur tout
-#   menu apps|clip|emoji|calc|windows|files|web|keys|toggles|system|audio|network|style|packages|capture|custom
+#   menu apps|clip|emoji|calc|windows|files|web|keys|toggles|history|system|audio|network|style|packages|capture|custom
 #                         ouvre directement une section (raccourcis clavier)
 #
 # Entrées perso: ~/.config/menu/entries (Libellé | mode | commande).
@@ -468,7 +468,7 @@ menu_keys() {
 menu_toggles() {
     arg="$1"
     while :; do
-        act="${arg:-$(printf 'Auto lock\nAirplane mode\nPresentation mode\nNight light\nDo not disturb\nNext wallpaper\n' | pick "Toggles › " 6)}"
+        act="${arg:-$(printf 'Auto lock\nAirplane mode\nPresentation mode\nNight light\nDo not disturb\nMute 1 hour\nNotification history\nNext wallpaper\n' | pick "Toggles › " 8)}"
         [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
             "Auto lock") "$HOME/.local/bin/bar-toggle" idle; return 0 ;;
@@ -476,6 +476,21 @@ menu_toggles() {
             "Presentation mode") "$HOME/.local/bin/bar-toggle" present; return 0 ;;
             "Night light") "$HOME/.local/bin/bar-toggle" night; return 0 ;;
             "Do not disturb") makoctl mode -t do-not-disturb; pkill -RTMIN+9 waybar; return 0 ;;
+            "Mute 1 hour")
+                makoctl mode -a do-not-disturb; pkill -RTMIN+9 waybar
+                setsid -f sh -c 'sleep 3600; makoctl mode -r do-not-disturb; pkill -RTMIN+9 waybar' >/dev/null 2>&1
+                notify "Notifications" "Coupées pendant 1 h"
+                return 0 ;;
+            "Notification history")
+                hist="$(makoctl history -j)"
+                fmt='def line: "\(.app_name) · \(.summary)\(if .body then " — " + (.body | gsub("\\s+"; " ") | .[0:120]) else "" end)";'
+                sel="$(printf '%s' "$hist" | jq -j "$fmt"'.[] | line, "\u0000icon\u001f", ((.app_icon // (.app_name | ascii_downcase | gsub(" "; "-"))) | sub("^file://"; "") | gsub("%20"; " ")), "\n"' | NOSORT=1 pick "History › " 10 100)"
+                if [ -n "$sel" ]; then
+                    printf '%s' "$hist" | jq -r --arg l "$sel" "$fmt"'first(.[] | select(line == $l)) | .summary + (if .body then "\n" + .body else "" end)' | wl-copy
+                    return 0
+                fi
+                cancel
+                ;;
             "Next wallpaper")
                 cur="$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/wallpaper" 2>/dev/null)"
                 next="$(ls "$WALLPAPERS" | awk -v c="$(basename "$cur")" 'NR==1{f=$0} hit{print; done=1; exit} $0==c{hit=1} END{if(!done)print f}')"
@@ -562,6 +577,8 @@ $I_NET Toggles: Airplane mode
 $I_CHART Toggles: Presentation mode
 $I_SLEEP Toggles: Night light
 $I_MUTE Toggles: Do not disturb
+$I_MUTE Toggles: Mute 1 hour
+$I_MUTE Toggles: Notification history
 $I_IMAGE Toggles: Next wallpaper
 $I_CAM Capture: Color (picker)
 $I_SEARCH Packages: Search and install
@@ -767,6 +784,7 @@ case "${1:-}" in
     web) menu_web ;;
     keys) menu_keys ;;
     toggles) menu_toggles ;;
+    history) menu_toggles "Notification history" ;;
     system) menu_system ;;
     audio) menu_audio ;;
     network) menu_network ;;
@@ -775,7 +793,7 @@ case "${1:-}" in
     capture) menu_capture ;;
     custom) menu_custom ;;
     "") menu_main ;;
-    *) echo "Usage: menu [apps|clip|emoji|calc|windows|files|web|keys|toggles|system|audio|network|style|packages|capture|custom]" >&2; exit 1 ;;
+    *) echo "Usage: menu [apps|clip|emoji|calc|windows|files|web|keys|toggles|history|system|audio|network|style|packages|capture|custom]" >&2; exit 1 ;;
 esac
 rc=$?
 [ "$rc" -eq "$BACK" ] && exit 0 # section lancée directement et annulée: sortie propre

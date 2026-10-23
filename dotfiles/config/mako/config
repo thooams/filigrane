@@ -12,6 +12,7 @@ padding=14
 border-size=2
 border-radius=12
 default-timeout=5000
+max-history=30
 max-visible=4
 ignore-timeout=1
 layer=overlay

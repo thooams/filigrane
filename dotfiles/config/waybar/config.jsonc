@@ -19,7 +19,7 @@
     // Tiroir à gauche de l'horloge (bar-tray): replié, seuls les indicateurs en cours d'usage restent visibles; clic sur le chevron = tout afficher
     "group/quick": {
         "orientation": "inherit",
-        "modules": ["tray", "custom/timer", "custom/idle", "custom/dnd", "custom/night", "custom/backup", "custom/tray-handle"]
+        "modules": ["tray", "custom/timer", "custom/idle", "custom/night", "custom/backup", "custom/tray-handle"]
     },
     // Ressources: CPU, température, mémoire, disque
     "group/res": {
@@ -29,7 +29,7 @@
     // Système: micro, sortie audio, clavier, écrans, Bluetooth, réseau
     "group/sys": {
         "orientation": "inherit",
-        "modules": ["custom/mic", "wireplumber", "niri/language", "custom/display", "bluetooth", "network"]
+        "modules": ["custom/mic", "wireplumber", "niri/language", "custom/display", "bluetooth", "network", "custom/dnd"]
     },
 
     // Bouton menu: clic = menu, clic droit = terminal
@@ -130,14 +130,15 @@
         "hide-empty-text": true,
         "on-click": "$HOME/.local/bin/bar-backup run"
     },
-    // Ne pas déranger (mako), clic = bascule
+    // Centre de notifications (mako), toujours visible: clic = historique, clic droit = Ne pas déranger
     "custom/dnd": {
-        "exec": "$HOME/.local/bin/bar-tray dnd",
+        "exec": "$HOME/.local/bin/bar-status dnd",
         "return-type": "json",
         "interval": "once",
         "signal": 9,
         "hide-empty-text": true,
-        "on-click": "makoctl mode -t do-not-disturb; pkill -RTMIN+9 waybar"
+        "on-click": "setsid -f $HOME/.local/bin/menu history",
+        "on-click-right": "makoctl mode -t do-not-disturb; pkill -RTMIN+9 waybar"
     },
     // Usage et top 5 processus en infobulle, clic = htop
     "custom/cpu": {

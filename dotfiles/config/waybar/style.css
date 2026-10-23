@@ -68,10 +68,10 @@ window#waybar {
 }
 #ind #custom-mail, #ind #custom-whatsapp, #ind #custom-cal, #ind #custom-rec, #ind #custom-remote,
 #ind #custom-air, #ind #custom-vpn, #ind #custom-news, #ind #custom-update,
-#quick #tray, #quick #custom-timer, #quick #custom-idle, #quick #custom-dnd,
+#quick #tray, #quick #custom-timer, #quick #custom-idle,
 #quick #custom-night, #quick #custom-backup, #quick #custom-tray-handle,
 #res #custom-cpu, #res #custom-temp, #res #custom-mem, #res #disk,
-#sys #custom-mic, #sys #wireplumber, #sys #language, #sys #custom-display, #sys #bluetooth, #sys #network {
+#sys #custom-mic, #sys #wireplumber, #sys #language, #sys #custom-display, #sys #bluetooth, #sys #network, #sys #custom-dnd {
     background: transparent;
     padding: 0 4px;
     border-radius: 0;
