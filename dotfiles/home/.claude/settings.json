@@ -81,7 +81,18 @@
       "Bash(git push* -f*)"
     ]
   },
-  "model": "opus",
+  "env": {
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
+  },
+  "skillOverrides": {
+    "anthropic-skills:computer-use": "off",
+    "anthropic-skills:built-in-browser": "off",
+    "anthropic-skills:google-workspace": "off",
+    "anthropic-skills:morning": "off",
+    "anthropic-skills:import-memory": "off",
+    "anthropic-skills:docs": "off"
+  },
+  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
