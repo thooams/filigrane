@@ -1,0 +1,16 @@
+# Paquets propres à thomas (couche users/thomas), installés après ceux de la distribution
+
+# Notifications Proton Mail: pont IMAP local (démon Go, ~100-200 Mo, lancé par niri) + écoute IMAP IDLE (10 Mo)
+protonmail-bridge
+goimapnotify
+# Notifications Proton Calendar: lecture du lien ICS (cal-notify), sans daemon propre
+python3-icalendar
+# Relais de la socket du compteur WhatsApp (wa-daemon), remplace un script Python (~1 Mo)
+socat
+# iCloud Drive monté dans ~/iCloud (rclone mount, cache 5 Go), voir ~/.local/bin/icloud-mount (~106 Mo disque)
+rclone
+# Compilation de whatsapp-unreadd (layer.sh): outil de build seulement, 217 Mo sur disque, rien de résident
+go
+# Diagnostic Android en USB (adb); binaires seuls, le serveur adb ne tourne que sur demande
+android-tools
+cmus
