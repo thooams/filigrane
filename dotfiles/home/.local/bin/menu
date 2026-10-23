@@ -357,10 +357,7 @@ menu_network() {
                     || notify -u critical "Network" "Speed test failed"
                 return 0
                 ;;
-            "Test connection")
-                if ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then notify "Network" "Connection OK"; else notify -u critical "Network" "No connection"; fi
-                return 0
-                ;;
+            "Test connection") "$HOME/.local/bin/captive-portal"; return 0 ;;
         esac
         [ -n "$arg" ] && return $BACK
     done
