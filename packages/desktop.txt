@@ -5,7 +5,6 @@ foot
 fuzzel
 mako
 swaybg
-chromium
 swaylock
 brightnessctl
 playerctl

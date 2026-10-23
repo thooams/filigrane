@@ -1,0 +1,6 @@
+# keyd capte le clavier interne et réémet les touches par son clavier virtuel, que libinput tient pour externe:
+# disable-while-typing (dwt) ne l'associe alors pas au trackpad et la paume bouge/clique pendant la frappe.
+[keyd virtual keyboard]
+MatchUdevType=keyboard
+MatchName=keyd*keyboard
+AttrKeyboardIntegration=internal

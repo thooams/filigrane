@@ -254,6 +254,9 @@ setup_keys() {
     install -m 0644 "$HERE/keyd.conf" /etc/keyd/default.conf
     install -m 0644 "$HERE/keyd-external-azerty.conf" /etc/keyd/external-azerty.conf
     keyd check /etc/keyd/default.conf /etc/keyd/external-azerty.conf
+    # Clavier virtuel de keyd déclaré interne: sinon dwt du trackpad ne réagit pas à la frappe (relu au prochain démarrage de niri)
+    install -d /etc/libinput
+    install -m 0644 "$HERE/libinput-keyd.quirks" /etc/libinput/local-overrides.quirks
     ln -sfn /etc/sv/keyd /etc/runit/runsvdir/default/keyd
     if [ -e /var/service/keyd ]; then sv restart /var/service/keyd 2>/dev/null || true; fi
 
