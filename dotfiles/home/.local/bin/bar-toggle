@@ -2,19 +2,21 @@
 # Actions de la barre qui changent un état, puis rafraîchissent l'indicateur par signal. Usage: bar-toggle night|rec|idle [start]|air|present
 case "$1" in
     night)
-        # gammastep (fondu ~1 s). "start" (login): automatique selon le soleil, 4500 K la nuit.
-        # Clic: coupe, ou force 4500 K en continu. Position (hors dépôt): ~/.local/state/night-location, "LAT:LON".
+        # wlsunset (ne se réveille que pendant l'aube et le crépuscule, gammastep renvoyait la table gamma toutes les 5 s).
+        # "start" (login): automatique selon le soleil, 4500 K la nuit. Clic: coupe, ou force 4500 K en continu
+        # (-T 4501: wlsunset veut T > t). Position (hors dépôt): ~/.local/state/night-location, "LAT:LON".
+        # Sa sortie (températures appliquées) sert à l'indicateur (bar-status night).
         loc=$(cat "$HOME/.local/state/night-location" 2>/dev/null || echo 48.9:2.3)
+        run() { setsid wlsunset -l "${loc%:*}" -L "${loc#*:}" -t 4500 -T "$1" >"${XDG_RUNTIME_DIR:-/tmp}/wlsunset.log" 2>&1 & }
+        stop() { pkill -x wlsunset; for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x wlsunset >/dev/null || break; sleep 0.5; done; }
         if [ "$2" = resume ]; then
-            # Réveil de veille: gammastep (mode auto) garde la teinte du soir, on le relance pour réévaluer l'heure
-            pgrep -x gammastep >/dev/null && ! pgrep -f 'gammastep .* -t 4500.4500$' >/dev/null || exit 0
-            pkill -x gammastep; for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x gammastep >/dev/null || break; sleep 0.5; done
-            setsid gammastep -m wayland -l "$loc" -t 6500:4500 >/dev/null 2>&1 &
+            # Réveil de veille: relancer le mode auto pour réévaluer l'heure tout de suite
+            pgrep -x wlsunset >/dev/null && ! pgrep -f 'wlsunset .* -T 4501$' >/dev/null || exit 0
+            stop; run 6500
         elif [ "$2" = start ]; then
-            pgrep -x gammastep >/dev/null || setsid gammastep -m wayland -l "$loc" -t 6500:4500 >/dev/null 2>&1 &
-        elif pgrep -x gammastep >/dev/null; then
-            pkill -x gammastep; for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x gammastep >/dev/null || break; sleep 0.5; done
-        else setsid gammastep -m wayland -l "$loc" -t 4500:4500 >/dev/null 2>&1 & fi
+            pgrep -x wlsunset >/dev/null || run 6500
+        elif pgrep -x wlsunset >/dev/null; then stop
+        else run 4501; fi
         sleep 0.3; pkill -RTMIN+10 waybar ;;
     rec)
         if pgrep -x wf-recorder >/dev/null; then

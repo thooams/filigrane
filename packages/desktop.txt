@@ -41,7 +41,7 @@ bluez
 libspa-bluetooth   # son Bluetooth (casques) dans PipeWire
 bluetui
 # Indicateurs de la barre: veilleuse et enregistrement d'écran
-gammastep
+wlsunset
 wf-recorder
 
 # Verrouillage auto et écran éteint au repos (38 Ko, bascule dans la barre)

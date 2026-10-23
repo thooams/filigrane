@@ -16,10 +16,10 @@ case "$1" in
         fi ;;
     night)
         # Active seulement si l'écran est réellement réchauffé (forcé, ou auto en soirée); auto en journée = au repos.
-        if pgrep -x gammastep >/dev/null; then
-            loc=$(cat "$HOME/.local/state/night-location" 2>/dev/null || echo 48.9:2.3)
-            if pgrep -f 'gammastep .* -t 4500.4500$' >/dev/null; then k=4500
-            else k=$(gammastep -m wayland -l "$loc" -t 6500:4500 -p 2>&1 | sed -n 's/.*Color temperature: \([0-9]*\)K/\1/p'); fi
+        if pgrep -x wlsunset >/dev/null; then
+            # Dernière température appliquée, d'après la sortie de wlsunset (bar-toggle night)
+            if pgrep -f 'wlsunset .* -T 4501$' >/dev/null; then k=4500
+            else k=$(awk '/^setting temperature to/ { k = $4 } END { print k }' "${XDG_RUNTIME_DIR:-/tmp}/wlsunset.log" 2>/dev/null); fi
             if [ "${k:-6500}" -lt 6400 ]; then
                 printf '{"text":"\\uf186","class":"active","tooltip":"Veilleuse %s K (clic: couper)"}\n' "$k"
             else

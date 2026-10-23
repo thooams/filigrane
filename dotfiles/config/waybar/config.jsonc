@@ -198,7 +198,7 @@
         "tooltip-format-enumerate-connected": "{device_alias}",
         "on-click": "$HOME/.local/bin/bar-tui bluetui"
     },
-    // Veilleuse (gammastep, 4500 K la nuit), clic = coupe/force
+    // Veilleuse (wlsunset, 4500 K la nuit), clic = coupe/force
     "custom/night": {
         "exec": "$HOME/.local/bin/bar-tray night",
         "return-type": "json",
