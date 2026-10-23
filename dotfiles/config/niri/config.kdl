@@ -453,7 +453,7 @@ binds {
     Mod+Ctrl+W hotkey-overlay-title="Wi-Fi (impala)" { spawn-sh "$HOME/.local/bin/bar-tui impala"; }
     Mod+Ctrl+B hotkey-overlay-title="Bluetooth (bluetui)" { spawn-sh "$HOME/.local/bin/bar-tui bluetui"; }
     Mod+Ctrl+D hotkey-overlay-title="Écrans (wdisplays)" { spawn-sh "GDK_GL=disable wdisplays"; }
-    Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
+    Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn-sh "$HOME/.local/bin/menu apps"; }
     Mod+Space hotkey-overlay-title="Menu: apps, clipboard, emoji, system... (rappuyer pour fermer)" { spawn-sh "pkill -x fuzzel || exec $HOME/.local/bin/menu"; }
     // Cmd+Espace: keyd traduit Cmd en Ctrl (hardware/mac-t2/keyd*.conf), donc Ctrl+Space.
     Ctrl+Space hotkey-overlay-title=null { spawn-sh "pkill -x fuzzel || exec $HOME/.local/bin/menu"; }

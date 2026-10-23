@@ -57,7 +57,7 @@ BINDS="${XDG_RUNTIME_DIR:-/tmp}/menu-binds.$$"
 trap 'rm -f "$STATE" "$BINDS"' EXIT
 
 pick() { # pick INVITE [LIGNES] [LARGEUR] [POLICE]  (entrées sur stdin, sélection sur stdout; vide si annulé)
-    out="$(fuzzel --dmenu $KEYS --minimal-lines --lines "${2:-12}" ${3:+--width "$3"} ${4:+--font "$4"} --prompt "$1")"; rc=$?
+    out="$(fuzzel --dmenu $KEYS ${NOSORT:+--no-sort} --minimal-lines --lines "${2:-12}" ${3:+--width "$3"} ${4:+--font "$4"} --prompt "$1")"; rc=$?
     if [ "$rc" -eq 10 ]; then : > "$STATE"; return 0; fi
     [ -n "$out" ] && printf '%s\n' "$out"
     return 0
@@ -139,9 +139,27 @@ list_apps() {
     ' | sort -t "$TAB" -k1,1 -u
 }
 
+# Classement des applications (fuzzel trie par longueur de correspondance, donc « Thunar Préférences »
+# passait avant « Thunar »): les plus lancées d'abord, puis les applis principales avant les
+# réglages/préférences, puis l'ordre alphabétique. Utilisé avec fuzzel --no-sort.
+APPCOUNT="${XDG_STATE_HOME:-$HOME/.local/state}/menu-apps-count"
+ranked_apps() {
+    awk -F'\t' -v OFS='\t' -v cf="$APPCOUNT" '
+        BEGIN { while ((getline l < cf) > 0) { n = split(l, a, "\t"); if (n == 2) c[a[2]] = a[1] } }
+        { s = (tolower($1 " " $2) ~ /settings|preferences|préférences|prefs|configur|bulk|uninstall/) ? 1 : 0
+          printf "%05d\t%d\t%s\t%s\t%s\t%s\n", 99999 - c[$1], s, $1, $1, $2, $3 }' |
+        sort -t "$TAB" -k1,2 -k3 | cut -f4-
+}
+count_app() { # count_app NOM
+    mkdir -p "$(dirname "$APPCOUNT")"
+    { cat "$APPCOUNT" 2>/dev/null; } | awk -F'\t' -v OFS='\t' -v n="$1" '
+        $2 == n { $1++; f = 1 } { print } END { if (!f) print 1, n }' > "$APPCOUNT.tmp" && mv "$APPCOUNT.tmp" "$APPCOUNT"
+}
+
 run_app() { # run_app NOM : retourne 1 si aucune application de ce nom
     line="$(list_apps | awk -F'\t' -v n="$1" '$1 == n { print; exit }')"
     [ -n "$line" ] || return 1
+    count_app "$1"
     cmd="$(printf '%s' "$line" | cut -f2)"
     istty="$(printf '%s' "$line" | cut -f3)"
     if [ "$istty" = "true" ]; then
@@ -220,7 +238,11 @@ menu_custom() {
 # Chaque section est une boucle: annuler une sous-étape revient au menu de la section.
 # Une action terminée ferme le menu. Avec un argument (liste unique), l'action est directe.
 
-menu_apps() { exec fuzzel; }
+menu_apps() {
+    sel="$(list_apps | ranked_apps | cut -f1 | NOSORT=1 pick "Applications › " 10)"
+    [ -n "$sel" ] || { cancel; return $BACK; }
+    run_app "$sel"
+}
 
 menu_clip() {
     command -v cliphist >/dev/null || { notify "Clipboard" "cliphist is not installed"; return 1; }
@@ -469,7 +491,7 @@ menu_toggles() {
 menu_packages() {
     arg="$1"
     while :; do
-        act="${arg:-$(printf 'Search and install\nRemove\nUpdate system\nClean cache\n' | pick "Packages › " 4)}"
+        act="${arg:-$(printf 'Search and install\nUninstall an app\nRemove\nUpdate system\nClean cache\n' | pick "Packages › " 4)}"
         [ -n "$act" ] || { cancel; return $BACK; }
         case "$act" in
             "Search and install")
@@ -482,6 +504,19 @@ menu_packages() {
                         pkg="$(printf '%s' "$sel" | awk '{print $1}' | sed -E 's/-[^-]+$//')"
                         term "echo 'Resource budget: check size and dependencies before installing.'; xbps-query -R -p pkgver,installed_size $pkg; echo; sudo xbps-install -S $pkg"
                     fi
+                fi
+                ;;
+            "Uninstall an app")
+                # Applis visibles (natives et web): Nom<TAB>fichier .desktop
+                apps="$(for f in /usr/share/applications/*.desktop "$HOME"/.local/share/applications/*.desktop; do
+                    [ -f "$f" ] || continue
+                    awk -v f="$f" -F= '/^\[/ && NR>1 {exit} $1=="Name" && n=="" {n=$2} $1=="NoDisplay" && $2=="true" {h=1} $1=="Type" {t=$2} END {if (n!="" && !h && t=="Application") print n "\t" f}' "$f"
+                done | sort -f)"
+                sel="$(printf '%s\n' "$apps" | cut -f1 | pick "Uninstall › " 15)"
+                if [ -z "$sel" ]; then cancel
+                else
+                    file="$(printf '%s\n' "$apps" | awk -F'\t' -v n="$sel" '$1==n {print $2; exit}')"
+                    confirm "Uninstall $sel" && term "app-uninstall '$file'"
                 fi
                 ;;
             Remove)
@@ -532,6 +567,7 @@ $I_MUTE Toggles: Do not disturb
 $I_IMAGE Toggles: Next wallpaper
 $I_CAM Capture: Color (picker)
 $I_SEARCH Packages: Search and install
+$I_TRASH Packages: Uninstall an app
 $I_TRASH Packages: Remove
 $I_DOWN Packages: Update system
 $I_BROOM Packages: Clean cache
@@ -674,11 +710,11 @@ menu_main() {
     cats="$(categories_list | with_hints)"
     nb="$(printf '%s\n' "$cats" | wc -l | tr -d ' ')"
     customs="$(custom_labels | while IFS= read -r l; do printf '%s %s\n' "$I_CUSTOM" "$l"; done)"
-    apps="$(list_apps | cut -f1,2 | glyph_apps | add_hints)"
+    apps="$(list_apps | ranked_apps | cut -f1,2 | glyph_apps | add_hints)"
     items="$( { printf '%s\n' "$cats"; [ -n "$customs" ] && printf '%s\n' "$customs"; [ -n "$apps" ] && printf '%s\n' "$apps"; actions_list | with_hints; } )"
 
     while :; do # Échap dans une section revient ici; Échap ici quitte
-        sel="$(printf '%s\n' "$items" | align_hints | pick "› " "$nb" "" "$MENU_FONT")"
+        sel="$(printf '%s\n' "$items" | align_hints | NOSORT=1 pick "› " "$nb" "" "$MENU_FONT")"
         [ -n "$sel" ] || exit 0
         sel="${sel#* }" # retire le glyphe et le 1er espace
         sel="${sel# }"  # ... et le 2e

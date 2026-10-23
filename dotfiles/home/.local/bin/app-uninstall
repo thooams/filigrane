@@ -1,0 +1,36 @@
+#!/bin/sh
+# Désinstalle une application (équivalent du « Uninstall » d'Omarchy), à lancer dans un terminal.
+#   app-uninstall FICHIER.desktop
+# Appli web: webapp-remove. Paquet Void: xbps-remove puis retrait de la ligne dans packages/*.txt
+# (état déclaratif du dépôt). Fichier .desktop utilisateur sans paquet: supprimé.
+f="$1"
+[ -f "$f" ] || { echo "usage: app-uninstall FICHIER.desktop" >&2; exit 1; }
+ROOT="$(readlink -f "$0")"; ROOT="${ROOT%/dotfiles/*}"
+base="$(basename "$f")"
+name="$(sed -n 's/^Name=//p' "$f" | head -1)"
+case "$base" in
+    webapp-*.desktop)
+        webapp-remove "${name% (web)}"; exit $? ;;
+esac
+owner="$(xbps-query -o "$f" 2>/dev/null | head -1 | sed -E 's/-[^-]+_[0-9]+:.*//')"
+if [ -z "$owner" ]; then
+    echo "Aucun paquet ne possède $f"
+    rm -v "$f"; exit $?
+fi
+echo "Application: $name"
+echo "Paquet:      $owner"
+echo
+xbps-query -p installed_size "$owner"
+printf '\nDésinstaller %s ? [o/N] ' "$owner"
+read -r rep
+case "$rep" in o|O|y|Y) ;; *) echo annulé; exit 0 ;; esac
+sudo xbps-remove -R "$owner" || exit $?
+# Retire la ligne du paquet (commentaire de fin compris) des listes du dépôt
+for l in "$ROOT"/packages/*.txt; do
+    grep -qE "^$owner([[:space:]]|\$)" "$l" || continue
+    tmp="$(mktemp)"
+    grep -vE "^$owner([[:space:]]|\$)" "$l" > "$tmp"
+    cat "$tmp" > "$l"; rm -f "$tmp"
+    echo "retiré de ${l#"$ROOT"/}"
+done
+echo; git -C "$ROOT" diff --stat
