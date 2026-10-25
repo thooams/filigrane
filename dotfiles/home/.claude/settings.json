@@ -1,4 +1,7 @@
 {
+  "env": {
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
+  },
   "permissions": {
     "allow": [
       "Bash(xbps-query *)",
@@ -81,9 +84,7 @@
       "Bash(git push* -f*)"
     ]
   },
-  "env": {
-    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
-  },
+  "model": "opus",
   "skillOverrides": {
     "anthropic-skills:computer-use": "off",
     "anthropic-skills:built-in-browser": "off",
@@ -92,7 +93,6 @@
     "anthropic-skills:import-memory": "off",
     "anthropic-skills:docs": "off"
   },
-  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
