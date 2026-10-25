@@ -425,6 +425,8 @@ window-rule {
 window-rule {
     match app-id=r#"^wdisplays$"#
     open-floating true
+    default-column-width { proportion 0.75; }
+    default-window-height { proportion 0.75; }
 }
 
 // TUI lancées depuis la barre (bar-tui): fenêtre flottante
