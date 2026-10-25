@@ -110,6 +110,14 @@
     "type": "command",
     "command": "/bin/bash /home/thomas/.claude/statusline-command.sh"
   },
+  "extraKnownMarketplaces": {
+    "logo-design-skill": {
+      "source": {
+        "source": "github",
+        "repo": "kaankiziltug/logo-design-skill"
+      }
+    }
+  },
   "modelSettings": {
     "claude-opus-5-5": {
       "effortLevel": "high"
@@ -121,5 +129,8 @@
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "enabledPlugins": {
+    "logo-design@logo-design-skill": true
+  }
 }
