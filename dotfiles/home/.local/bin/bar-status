@@ -63,14 +63,14 @@ case "$1" in
             printf '{"text":""}\n'
         fi ;;
     batwatch)
-        # Alerte batterie faible (<=10 %) puis arrêt propre (<=2 %) après 30 s sauf si le chargeur est branché,
+        # Alerte batterie faible (<=10 %) puis arrêt propre (<=1 %) après 30 s sauf si le chargeur est branché,
         # une seule fois par décharge; aucun affichage. Pas de veille: en S3 la batterie finit de se vider (coupure brutale).
         printf '{"text":""}\n'
         b=/sys/class/power_supply/BAT0; [ -r "$b/capacity" ] || exit 0
         f="${XDG_RUNTIME_DIR:-/tmp}/battery-notified"
         if [ "$(cat "$b/status")" = "Discharging" ] && [ "$(cat "$b/capacity")" -le 10 ]; then
             [ -e "$f" ] || { notify-send -u critical "Batterie faible" "$(cat "$b/capacity")%: brancher le chargeur"; : > "$f"; }
-            if [ "$(cat "$b/capacity")" -le 2 ] && [ ! -e "$f.off" ]; then
+            if [ "$(cat "$b/capacity")" -le 1 ] && [ ! -e "$f.off" ]; then
                 : > "$f.off"
                 notify-send -u critical -t 30000 "Batterie critique: extinction dans 30 s" "Brancher le chargeur pour l'annuler"
                 setsid -f sh -c '
