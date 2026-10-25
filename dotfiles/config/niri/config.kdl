@@ -421,6 +421,12 @@ window-rule {
     default-window-height { fixed 600; }
 }
 
+// Réglage des écrans: fenêtre flottante
+window-rule {
+    match app-id=r#"^wdisplays$"#
+    open-floating true
+}
+
 // TUI lancées depuis la barre (bar-tui): fenêtre flottante
 window-rule {
     match app-id=r#"^bar-tui$"#
