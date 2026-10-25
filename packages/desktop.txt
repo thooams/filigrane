@@ -68,6 +68,11 @@ rtkit
 Thunar
 thunar-volman
 gvfs
+# Archives: xarchiver (GTK3, sans daemon) + clic droit Extraire/Compresser dans Thunar; zip pour créer, 7zip pour 7z/rar
+xarchiver
+thunar-archive-plugin
+zip
+7zip
 # Icônes du Thunar/GTK (fichiers statiques, ~100 Mo disque)
 papirus-icon-theme
 papirus-folders  # couleur des dossiers: sudo papirus-folders -C violet -t Papirus-Dark (à relancer après mise à jour des icônes)
