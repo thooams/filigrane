@@ -785,3 +785,10 @@ window-rule {
     match app-id="^foot$"
     scroll-factor 5.0
 }
+
+// Lancé par `dbus-run-session niri` (sans --session, pas de systemd): sans ceci niri ne publie pas
+// org.gnome.Mutter.ScreenCast, et xdg-desktop-portal-gnome n'offre pas le partage d'écran entier
+// (Chrome/Meet/Chromecast: seuls les onglets passaient). Lu au démarrage de niri seulement.
+debug {
+    dbus-interfaces-in-non-session-instances
+}
