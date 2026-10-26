@@ -1,4 +1,4 @@
-# void-setup: Void Linux + niri
+# Filigrane: Void Linux + niri
 
 Ce dépôt décrit la machine (paquets, services, dotfiles) et c'est depuis lui que Claude Code est lancé (Mod+Y). Les conversations portent sur cette machine: config, paquets, services, niri, dépannage. Les dotfiles de `~` et `~/.config` sont des liens vers `dotfiles/` (`bootstrap.sh`).
 

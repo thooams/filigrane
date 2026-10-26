@@ -55,7 +55,7 @@ ESP_UUID="$(findmnt -no UUID "$ESP_MNT")" || die "ESP non montée sur $ESP_MNT"
 echo "[dualboot] racine $ROOT_SUBVOL sur $LUKS_DEV, ESP sur $ESP_MNT"
 
 {
-    echo "# Généré par void-setup/hardware/mac-t2/dualboot.sh"
+    echo "# Généré par filigrane/hardware/mac-t2/dualboot.sh"
     echo "UUID=$FS_UUID  /                btrfs  subvol=$ROOT_SUBVOL,$OPTS  0 0"
     echo "UUID=$FS_UUID  /home            btrfs  subvol=/$HOME_SUBVOL,$OPTS  0 0"
     [ -n "$OTHER_HOME_SUBVOL" ] && \
@@ -76,7 +76,7 @@ if [ "$DRY" -eq 0 ]; then
 fi
 
 put /etc/dracut.conf.d/10-dualboot.conf <<'EOF'
-# Généré par void-setup/hardware/mac-t2/dualboot.sh
+# Généré par filigrane/hardware/mac-t2/dualboot.sh
 hostonly="yes"
 hostonly_cmdline="no"
 add_dracutmodules+=" crypt btrfs plymouth "
@@ -116,7 +116,7 @@ for d in post-install post-remove; do
     mkdir -p "/etc/kernel.d/$d"
     cat > "/etc/kernel.d/$d/60-limine-void" <<'EOF'
 #!/bin/sh
-# void-setup: noyaux et entrée Limine sur l'ESP ($1 = paquet, $2 = version). Non bloquant.
+# filigrane: noyaux et entrée Limine sur l'ESP ($1 = paquet, $2 = version). Non bloquant.
 /usr/local/sbin/limine-void sync || echo "AVERTISSEMENT: limine-void sync a échoué, l'ESP n'est pas à jour" >&2
 exit 0
 EOF

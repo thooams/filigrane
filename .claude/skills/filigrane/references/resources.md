@@ -11,5 +11,5 @@ Native Rust binary rather than a script loading a heavy runtime (Python/GTK, Nod
 
 - `apps/<name>/`, `Cargo.lock` committed, built `--locked`; minimal deps (raw `wayland-client` + `wayland-protocols*`, no toolkit).
 - Release profile: `opt-level = "s"`, `lto`, `codegen-units = 1`, `panic = "abort"`, `strip`.
-- `bootstrap.sh` (`setup_apps`) builds into `~/.local/opt/<name>-<hash>`, links `~/.local/bin/<name>`, rebuilds only on source change; `target/` in `~/.cache/void-setup-apps`.
+- `bootstrap.sh` (`setup_apps`) builds into `~/.local/opt/<name>-<hash>`, links `~/.local/bin/<name>`, rebuilds only on source change; `target/` in `~/.cache/filigrane-apps`.
 - Report startup time and RSS against what it replaces.

@@ -253,7 +253,7 @@ setup_system() {
         $SUDO install -d /etc/iwd
         $SUDO install -m 644 "$ROOT/system/iwd/main.conf" /etc/iwd/
         if [ -f /etc/dhcpcd.conf ] && ! grep -qE '^denyinterfaces.*wl\*' /etc/dhcpcd.conf; then
-            printf '\n# void-setup: le Wi-Fi est configuré par iwd\ndenyinterfaces wl*\n' | $SUDO tee -a /etc/dhcpcd.conf >/dev/null
+            printf '\n# filigrane: le Wi-Fi est configuré par iwd\ndenyinterfaces wl*\n' | $SUDO tee -a /etc/dhcpcd.conf >/dev/null
         fi
     fi
 
@@ -381,10 +381,10 @@ setup_apps() {
         dir="$TARGET_HOME/.local/opt/$name-$sum"
         if [ ! -x "$dir/$name" ]; then
             log "Compilation de $name ($sum)"
-            if run_as_user env CARGO_TARGET_DIR="$TARGET_HOME/.cache/void-setup-apps" \
+            if run_as_user env CARGO_TARGET_DIR="$TARGET_HOME/.cache/filigrane-apps" \
                     cargo build -q --release --locked --manifest-path "$manifest" \
                 && run_as_user mkdir -p "$dir" \
-                && run_as_user cp "$TARGET_HOME/.cache/void-setup-apps/release/$name" "$dir/$name"; then
+                && run_as_user cp "$TARGET_HOME/.cache/filigrane-apps/release/$name" "$dir/$name"; then
                 # anciennes versions
                 find "$TARGET_HOME/.local/opt" -maxdepth 1 -name "$name-*" ! -name "$name-$sum" -exec rm -rf {} +
             else

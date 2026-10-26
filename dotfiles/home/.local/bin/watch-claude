@@ -1,7 +1,7 @@
 #!/bin/bash
 # Veille hebdomadaire via Claude Code (lecture seule): watch-claude omarchy|t2
 # 1. le shell récupère les nouveautés GitHub (Claude n'a aucun accès réseau ni Bash: pas d'injection depuis du contenu distant),
-# 2. s'il y en a, `claude -p` les compare au dépôt void-setup et écrit des propositions d'intégration (rien n'est appliqué),
+# 2. s'il y en a, `claude -p` les compare au dépôt filigrane et écrit des propositions d'intégration (rien n'est appliqué),
 # 3. notification avec le résumé; le rapport est dans ~/.local/state/watch/reports/.
 set -uo pipefail
 topic="${1:?omarchy|t2}"
@@ -58,7 +58,7 @@ fi
 [ "$rc" != 0 ] && exit 1   # erreur réseau: on réessaiera
 
 report="$OUT/$topic-$(date +%Y-%m-%d).md"
-cd "$HOME/Projects/void-setup" || exit 1
+cd "$HOME/Projects/filigrane" || exit 1
 claude -p "$(cat "$HOME/.config/watch/$topic.md")
 
 Données à analyser, fichier JSON: $data

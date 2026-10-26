@@ -1,4 +1,4 @@
-# void-setup
+# Filigrane
 
 Environnement Void Linux (niri, identité visuelle Filigrane) rejouable sur VM, PC ou Mac Intel (x86_64, glibc, UEFI).
 Objectif: un système léger qui s'efface, pour laisser la RAM et le CPU au navigateur, aux agents et aux conteneurs.
@@ -73,7 +73,7 @@ Ce que macOS ne permet pas sur ce Mac et qui marche ici en natif (sans adaptateu
 ## Réinstaller un système complet
 
 1. Démarrer sur l'ISO live Void (glibc x86_64), réseau actif, `root` / `voidlinux`.
-2. `xbps-install -Sy git && git clone https://github.com/thooams/void-setup && cd void-setup`
+2. `xbps-install -Sy git && git clone https://github.com/thooams/filigrane && cd filigrane`
 3. `./install-void.sh --disk /dev/sda --user thomas --hostname void` (NVMe : `/dev/nvme0n1`)
 4. Taper le chemin du disque pour confirmer l'effacement, saisir les mots de passe, redémarrer.
 
@@ -82,7 +82,7 @@ GRUB est installé en `--removable` : pas d'entrée NVRAM, donc démarrage fiabl
 ## Rejouer sur un Void déjà installé
 
 ```
-git clone https://github.com/thooams/void-setup ~/void-setup && cd ~/void-setup
+git clone https://github.com/thooams/filigrane ~/filigrane && cd ~/filigrane
 ./bootstrap.sh                 # tout (demande le mot de passe sudo)
 ./bootstrap.sh --dotfiles-only # liens seulement
 ```
@@ -90,11 +90,11 @@ git clone https://github.com/thooams/void-setup ~/void-setup && cd ~/void-setup
 Les dotfiles existants sont déplacés en `*.bak.<date>`. Le dépôt doit rester à son emplacement (les liens pointent dedans).
 
 Sans accès à GitHub, copier le dépôt depuis un autre poste (pas de `rsync` sur Void de base) :
-`tar --exclude=.git -C ~/Projects/void-setup -cf - . | ssh void 'mkdir -p ~/void-setup && tar -xf - -C ~/void-setup'`, puis `ssh -t void 'cd ~/void-setup && ./bootstrap.sh'` (`-t` pour le mot de passe sudo).
+`tar --exclude=.git -C ~/Projects/filigrane -cf - . | ssh void 'mkdir -p ~/filigrane && tar -xf - -C ~/filigrane'`, puis `ssh -t void 'cd ~/filigrane && ./bootstrap.sh'` (`-t` pour le mot de passe sudo).
 
 ## Workflow
 
-La VM sert de terrain d'essai : on règle niri, waybar, le menu... dessus (les fichiers sont des liens vers `~/void-setup` sur la VM), puis `scripts/pull-from-vm.sh` rapatrie le tout, on relit le diff et on commite.
+La VM sert de terrain d'essai : on règle niri, waybar, le menu... dessus (les fichiers sont des liens vers `~/filigrane` sur la VM), puis `scripts/pull-from-vm.sh` rapatrie le tout, on relit le diff et on commite.
 Nouveau paquet : l'ajouter dans le bon fichier `packages/*.txt`.
 
 ## Limites connues
