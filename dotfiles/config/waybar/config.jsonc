@@ -1,4 +1,4 @@
-// Waybar léger, interactions inspirées de la barre Omarchy Quattro (cf. skill void-linux, budget ressources)
+// Waybar léger, interactions inspirées de la barre Omarchy Quattro (cf. skill filigrane, budget ressources)
 // Clic: action principale; clic droit/milieu/molette: voir chaque module. Les TUI s'ouvrent via bar-tui.
 {
     "layer": "top",

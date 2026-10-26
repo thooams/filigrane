@@ -47,7 +47,7 @@ Deux axes indépendants, détectés puis forçables (utile pour tester) :
   proton-drive auth login
   ```
   Puis par exemple `proton-drive filesystem upload -f skip -d merge -t ./dossier /my-files/sauvegardes`. Le trousseau est verrouillé à chaque démarrage : la première utilisation de la session le redemande.
-- **Claude Code** : installé par `bootstrap.sh` (`~/.local/bin/claude`, `/login` au premier lancement, `Mod+Y`), avec le skill `void-linux` (règles xbps/runit, budget ressources, tout changement durable reporté dans ce dépôt).
+- **Claude Code** : installé par `bootstrap.sh` (`~/.local/bin/claude`, `/login` au premier lancement, `Mod+Y`), avec la skill `filigrane` (règles xbps/runit, budget ressources, identité visuelle, tout changement durable reporté dans ce dépôt).
 
 ## Ce que Void + niri apporte par rapport à macOS
 
