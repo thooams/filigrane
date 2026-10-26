@@ -1,5 +1,5 @@
 #!/bin/sh
-# Appelé par goimapnotify à l'arrivée d'un mail: notification mako avec expéditeur et sujet du dernier mail.
+# Appelé par goimapnotify à l'arrivée d'un mail: notification avec expéditeur et sujet du dernier mail.
 # goimapnotify déclenche aussi un faux événement à son démarrage: ignoré s'il a moins de 10 s.
 # Lecture via le pont Proton local (identifiants du trousseau, voir goimapnotify.yaml); repli générique si elle échoue.
 age="$(ps -o etimes= -C goimapnotify | sort -n | head -1 | tr -d ' ')"

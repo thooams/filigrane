@@ -1,6 +1,6 @@
 #!/bin/sh
 # Notifications Proton Calendar sans webapp ouverte: lit le lien ICS privé (Partager via un lien, lecture seule)
-# toutes les 5 min et notifie via mako LEAD minutes avant chaque événement. Lancé par niri (boucle, pas de daemon).
+# toutes les 5 min et notifie LEAD minutes avant chaque événement. Lancé par niri (boucle, pas de daemon).
 # Les URL sont des secrets: ~/.config/proton-calendar.url (hors dépôt), une par ligne (lignes vides et # ignorées). Le lien ICS de Proton est mis à jour avec du retard.
 # Hors ligne: dernier ICS en cache. Événements récurrents: RRULE/EXDATE gérés, modifications d'une occurrence ignorées.
 URL_FILE="$HOME/.config/proton-calendar.url"
