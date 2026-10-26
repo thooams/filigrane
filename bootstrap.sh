@@ -475,10 +475,19 @@ setup_dotfiles() {
         log "Dotfiles de la machine $MACHINE"
         link_tree "$ROOT/hardware/$MACHINE/dotfiles"
     fi
+    # Identité Filigrane: fichiers maîtres du logo (brand/) dans ~/.local/share/filigrane (logo de waybar),
+    # polices Jost et JetBrains Mono (dotfiles/home/.local/share/fonts, OFL, absentes des dépôts Void)
+    link_one "$ROOT/brand" "$TARGET_HOME/.local/share/filigrane"
+    run_as_user fc-cache -f "$TARGET_HOME/.local/share/fonts" >/dev/null || warn "fc-cache a échoué"
     # .desktop des applications web (liste ~/.config/webapps/list)
     HOME="$TARGET_HOME" sh "$ROOT/dotfiles/home/.local/bin/webapp-sync"
     # Thème sombre par défaut (portail xdg: Chromium, GTK4, libadwaita); sans effet hors session D-Bus
-    gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || warn "gsettings: color-scheme non appliqué (pas de session D-Bus)"
+    if gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null; then
+        gsettings set org.gnome.desktop.interface font-name 'Jost 10'
+        gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrains Mono 10'
+    else
+        warn "gsettings: thème et polices non appliqués (pas de session D-Bus)"
+    fi
     # Thunar: Espace lance l'aperçu rapide (action "quicklook" de uca.xml). Thunar réécrit accels.scm
     # en quittant (un lien serait remplacé, l'ajout perdu): on le ferme puis on ajoute la ligne.
     local acc="$TARGET_HOME/.config/Thunar/accels.scm"

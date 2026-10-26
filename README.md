@@ -1,6 +1,6 @@
 # void-setup
 
-Environnement Void Linux (niri, thème Catppuccin Mocha) rejouable sur VM, PC ou Mac Intel (x86_64, glibc, UEFI).
+Environnement Void Linux (niri, identité visuelle Filigrane) rejouable sur VM, PC ou Mac Intel (x86_64, glibc, UEFI).
 Objectif: un système léger qui s'efface, pour laisser la RAM et le CPU au navigateur, aux agents et aux conteneurs.
 
 ## Structure
@@ -34,7 +34,7 @@ Deux axes indépendants, détectés puis forçables (utile pour tester) :
 ## Ce que contient le bureau
 
 - **Session** : sur la VM, connexion automatique sur `tty1` (`AUTOLOGIN=auto` : actif en VM, inactif sur machine physique), puis `~/.zprofile` lance `dbus-run-session niri`. Désactiver : `touch ~/.no-niri`, ou se connecter sur `tty2` à `tty6`.
-- **Thème** : Catppuccin Mocha pour niri, waybar, fuzzel, mako, foot, zellij, nvim.
+- **Thème** : identité Filigrane (`brand/`, polices Jost et JetBrains Mono) pour niri, waybar, fuzzel, mako, foot, swaylock, GTK, zellij, nvim, fond d'écran et écran de démarrage Plymouth (invite de passphrase LUKS). Visuels générés par `scripts/brand-assets.sh`.
 - **Menu** (`Mod+Space`) : catégories à vide, recherche floue sur tout dès qu'on tape (applications, actions système, entrées perso). Clavier : `Maj+Retour arrière` remonte d'un niveau, `Échap` quitte tout le menu (`fuzzel` ne sait pas distinguer un retour arrière sur saisie vide). `Mod+D` ouvre le lanceur d'applications seul (`menu apps`): les plus lancées d'abord, puis les applis avant leurs préférences (compteur dans `~/.local/state/menu-apps-count`). Entrées perso dans `~/.config/menu/entries` (`Libellé | mode | commande`, par exemple `Claude | term | claude`).
 - **Captures** : outil intégré à niri, sans logiciel en plus. `Mod+Shift+4` zone, `Mod+Shift+3` écran, `Mod+Shift+Ctrl+4` fenêtre, `Mod+Shift+5` interface de capture, `Print` / `Ctrl+Print` / `Alt+Print`, ou le menu (`Capture: ...`). Enregistrées dans `~/Screenshots` (local, hors iCloud) et copiées dans le presse-papiers.
 - **Shell** : zsh sans oh-my-zsh, zellij à la demande (`zj`), pas lancé automatiquement, outils CLI repris du Mac (`eza`, `fzf`, `zoxide`, `ripgrep`, `bat`, `lazygit`, `gh`), neovim avec LazyVim.

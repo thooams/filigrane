@@ -117,6 +117,11 @@ input {
 }
 
 // Settings that influence how windows are positioned and sized.
+// Vue d'ensemble (Mod+O): fond nuit profond (brand.md)
+overview {
+    backdrop-color "#181d25"
+}
+
 // Find more information on the wiki:
 // https://niri-wm.github.io/niri/Configuration:-Layout
 layout {
@@ -177,13 +182,13 @@ layout {
         // - CSS-like notation: "rgb(255, 127, 0)", rgba(), hsl() and a few others.
 
         // Color of the ring on the active monitor.
-        active-color "#b4befe99"
+        active-color "#9dbbd699"
 
         // Color of the ring on inactive monitors.
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#45475a55"
+        inactive-color "#3c485855"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -208,11 +213,11 @@ layout {
         off
 
         width 4
-        active-color "#b4befe"
-        inactive-color "#45475a"
+        active-color "#9dbbd6"
+        inactive-color "#3c4858"
 
         // Color of the border around windows that request your attention.
-        urgent-color "#f38ba8"
+        urgent-color "#c98f93"
 
         // Gradients can use a few different interpolation color spaces.
         // For example, this is a pastel rainbow gradient via in="oklch longer hue".
@@ -256,7 +261,7 @@ layout {
         offset x=0 y=5
 
         // You can also change the shadow color and opacity.
-        color "#11111b99"
+        color "#181d2599"
     }
 
     // Struts shrink the area occupied by windows, similarly to layer-shell panels.

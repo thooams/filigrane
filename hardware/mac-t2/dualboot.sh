@@ -131,12 +131,8 @@ snapper --no-dbus -c root set-config TIMELINE_CREATE=no NUMBER_LIMIT=10 NUMBER_L
 
 # Écran de démarrage Plymouth: invite de passphrase LUKS avec points, puis session en autologin
 if [[ " $BOOT_QUIET " == *" splash "* ]]; then
-    echo "[dualboot] Plymouth (thème void) et initramfs du noyau courant"
-    xbps-install -y plymouth >/dev/null
-    install -d /usr/share/plymouth/themes/void /etc/plymouth
-    install -m 0644 "$ROOT"/system/plymouth/void/* /usr/share/plymouth/themes/void/
-    install -m 0644 "$ROOT/system/plymouth/plymouthd.conf" /etc/plymouth/plymouthd.conf
-    dracut --force --kver "$(uname -r)"
+    echo "[dualboot] Plymouth (thème filigrane) et initramfs du noyau courant"
+    SKIP_LIMINE_SYNC=1 "$ROOT/system/plymouth/install.sh"
 fi
 
 if [ -f "$ESP_MNT/limine.conf" ]; then

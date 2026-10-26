@@ -28,12 +28,21 @@ Des voiles translucides qui se superposent : l'OS est le voile, tout reste visib
 
 Interface sombre (niri, waybar, fuzzel, mako, foot) : fond `nuit`, texte `brume`, accent `voile`. Pas d'autre couleur vive ; les couleurs d'état (erreur, alerte) restent désaturées.
 
+## Dans l'OS
+
+Teintes dérivées (entre nuit et voile) et états désaturés, communs à toutes les configs : nuit profond `#181d25`, nuit-2 `#232b36` (champs, cartes), nuit-3 `#2d3744` (sélection), nuit-4 `#3c4858` (liserés), brume-2 `#a9b8c8` (texte secondaire), sable `#d2bf92` (alerte), cendre `#c98f93` (erreur), sauge `#a3bfa8` (succès). Palette 16 couleurs du terminal : `dotfiles/config/foot/foot.ini` (reprise par alacritty, nvim via catppuccin `color_overrides`, zellij).
+
+- Polices : `dotfiles/home/.local/share/fonts/` (Jost, JetBrains Mono, variables, OFL). Interface en Jost, terminaux et menu principal (alignement) en JetBrains Mono.
+- Logo : `brand/` lié dans `~/.local/share/filigrane` (bouton menu de waybar : `filigrane-sombre.svg`).
+- Fond d'écran `filigrane.png` et images Plymouth : générés par `scripts/brand-assets.sh` (relancer si `brand/` change).
+- Démarrage : thème Plymouth `system/plymouth/filigrane/` (logo empilé, étiquette « PHRASE DE PASSE », points), installé par `sudo system/plymouth/install.sh` (régénère l'initramfs).
+
 ## Typographie
 
 - **Jost** (linéale géométrique, OFL), pas d'empattement : c'est la police de l'interface et du nom.
 - Nom dans le logo : Jost Light 300, CAPITALES, espacement 0,4 em (`F I L I G R A N E`). Dans les SVG, les lettres sont des tracés : aucune police requise.
 - Titres Jost 300, sous-titres 400, texte 300-400, étiquettes 500 en capitales espacées 0,12-0,16 em. Code : JetBrains Mono.
-- Pas de paquet Void : Google Fonts (`family=Jost:wght@300;400;500`) ou fichiers dans `~/.local/share/fonts/`.
+- Pas de paquet Void : fichiers dans `dotfiles/home/.local/share/fonts/` (liés dans `~/.local/share/fonts/`), Google Fonts pour le web (`family=Jost:wght@300;400;500`).
 
 ## Fichiers (`brand/`)
 

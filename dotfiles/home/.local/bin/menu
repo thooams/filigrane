@@ -666,7 +666,7 @@ action_needle() { # résultat dans $NEEDLE (vide si aucune touche)
 
 # Mise en page du menu principal (police à chasse fixe): glyphe + 2 espaces, touche alignée à droite.
 # Largeur en caractères = largeur fuzzel (36) moins les marges.
-MENU_FONT="DejaVu Sans Mono:size=12,Symbols Nerd Font Mono:size=12"
+MENU_FONT="JetBrains Mono:size=12,Symbols Nerd Font Mono:size=12"
 MENU_COLS=33
 align_hints() {
     awk -v w="$MENU_COLS" '{
