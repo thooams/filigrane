@@ -34,7 +34,7 @@ python3
 btop
 wiremix
 # Wi-Fi et Bluetooth (pile d'Omarchy): iwd + impala, bluez + bluetui. Démons au repos si aucun adaptateur.
-# iwd remplace wpa_supplicant (DHCP reste géré par dhcpcd).
+# iwd remplace wpa_supplicant et configure l'IP du Wi-Fi (dhcpcd: filaire seulement).
 iwd
 impala
 bluez

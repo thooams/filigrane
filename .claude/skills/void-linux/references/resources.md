@@ -17,7 +17,7 @@ Goal: the base system idles as low as possible so the browser, agents, container
 | File manager | `yazi`, `nnn`, `lf` |
 | Image viewer / PDF / media | `imv` or `swayimg` / `zathura` / `mpv` |
 | Notifications | `mako` or `fnott` |
-| Network | `dhcpcd` + `wpa_supplicant` (current), `iwd` |
+| Network | `iwd` (Wi-Fi + its IP config, current), `dhcpcd` for wired only |
 | Search | `ripgrep`, `fd`, `fzf` instead of tracker/baloo |
 | Database | SQLite, or start the service only when needed |
 | Runtimes (Node/Python/JVM) | on demand, never as a boot service |
