@@ -14,7 +14,7 @@ Objectif: un système léger qui s'efface, pour laisser la RAM et le CPU au navi
 | `services/*.txt` | Services runit : `common`, `vm` |
 | `dotfiles/home`, `dotfiles/config` | Fichiers liés par symlink dans `~` et `~/.config` |
 | `hardware/<machine>/` | Tout ce qui est propre à un matériel : `mac-t2/` (Mac Intel à puce T2, voir son README). `dotfiles/{home,config}` y est lié en plus des dotfiles communs |
-| `scripts/` | `pull-from-vm.sh`, `gen-wallpaper.py`, `gen-emoji.py` |
+| `scripts/` | `pull-from-vm.sh`, `brand-assets.sh` (visuels Filigrane), `gen-emoji.py` |
 
 Deux axes indépendants, détectés puis forçables (utile pour tester) :
 
