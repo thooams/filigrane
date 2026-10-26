@@ -6,7 +6,7 @@ mkdir -p "${out%/*}"
 while :; do
     socat -u "UNIX-CONNECT:${XDG_RUNTIME_DIR:-/tmp}/whatsapp-unreadd.sock" - 2>/dev/null | while IFS= read -r n; do
         echo "$n" >"$out"
-        "$HOME/.local/bin/fili-shell" signal 19
+        "$HOME/.local/bin/fili-shell" bar refresh 19
     done
     sleep 5
 done
