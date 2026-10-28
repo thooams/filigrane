@@ -1,0 +1,107 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xbps-query *)",
+      "Bash(sv status *)",
+      "Bash(sudo sv status *)",
+      "Bash(sudo xbps-install *)",
+      "Bash(sudo -n -l)",
+      "Bash(lsblk *)",
+      "Bash(df *)",
+      "Bash(free *)",
+      "Bash(ps *)",
+      "Bash(ss *)",
+      "Bash(ip *)",
+      "Bash(uname *)",
+      "Bash(dmesg *)",
+      "Bash(wpctl status *)",
+      "Bash(niri validate *)",
+      "Bash(niri msg *)",
+      "Bash(sudo xbps-remove *)",
+      "Bash(rm /tmp/claude-*/*)",
+      "Bash(rm -f /tmp/claude-*/*)",
+      "Bash(rm -rf /tmp/claude-*/*)"
+    ],
+    "deny": [
+      "Bash(*install-void.sh*)",
+      "Bash(*mkfs*)",
+      "Bash(*wipefs*)",
+      "Bash(*dd if=*)",
+      "Bash(parted *)",
+      "Bash(sudo parted *)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf / *)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf ~/)",
+      "Bash(rm -rf ~ *)",
+      "Bash(*chmod -R 777 /*)",
+      "Bash(sudo visudo*)",
+      "Bash(sudo passwd*)",
+      "Bash(passwd*)",
+      "Edit(/etc/sudoers*)",
+      "Edit(~/.ssh/**)",
+      "Edit(~/.claude/.credentials.json)",
+      "Read(~/.claude/.credentials.json)",
+      "Read(~/.ssh/id_*)",
+      "Bash(sudo xbps-remove *-R*)",
+      "Bash(sudo xbps-remove *-f*)",
+      "Bash(sudo xbps-remove *base-system*)",
+      "Read(~/.codex/auth.json)",
+      "Edit(~/.codex/auth.json)",
+      "Read(~/.local/share/opencode/auth.json)",
+      "Edit(~/.local/share/opencode/auth.json)"
+    ],
+    "ask": [
+      "Bash(sudo xbps-install -u*)",
+      "Bash(sudo xbps-install -*u*)",
+      "Bash(sudo xbps-reconfigure *)",
+      "Bash(sudo sv restart *)",
+      "Bash(sudo sv start *)",
+      "Bash(sudo sv stop *)",
+      "Bash(sudo sv down *)",
+      "Bash(sudo sv up *)",
+      "Bash(sudo sv once *)",
+      "Bash(sudo ln *)",
+      "Bash(sudo rm *)",
+      "Bash(sudo reboot*)",
+      "Bash(sudo poweroff*)",
+      "Bash(sudo grub-*)",
+      "Edit(/etc/**)",
+      "Bash(git push*main*)",
+      "Bash(git push*--force*)",
+      "Bash(git push* -f*)"
+    ]
+  },
+  "model": "opus",
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "permission_prompt|elicitation_dialog",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pw-play /usr/share/sounds/freedesktop/stereo/bell.oga 2>/dev/null || true",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.claude/hooks/guard-destructive.sh\""
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "/bin/bash \"$HOME/.claude/statusline-command.sh\""
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "auto"
+}

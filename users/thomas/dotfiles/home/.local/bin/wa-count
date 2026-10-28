@@ -1,0 +1,11 @@
+#!/bin/sh
+# Relais du compteur de non-lus de whatsapp-unreadd (socket Unix, une ligne par changement) vers la barre:
+# écrit ~/.local/state/alerts/whatsapp.count, relu aussitôt par la barre (BarState.qml). Relancé par wa-daemon.
+out="$HOME/.local/state/alerts/whatsapp.count"
+mkdir -p "${out%/*}"
+while :; do
+    socat -u "UNIX-CONNECT:${XDG_RUNTIME_DIR:-/tmp}/whatsapp-unreadd.sock" - 2>/dev/null | while IFS= read -r n; do
+        echo "$n" >"$out"
+    done
+    sleep 5
+done

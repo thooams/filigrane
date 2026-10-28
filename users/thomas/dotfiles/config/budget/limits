@@ -1,0 +1,8 @@
+# Plafonds de thomas: ceux de la distribution, plus les démons personnels résidents
+# (protonmail-bridge ~70-200 Mo, rclone ~90 Mo, whatsapp-unreadd ~25 Mo, keyd). Format: dotfiles/config/budget/limits
+system 1536
+process 150
+limit niri 250
+limit protonmail-brid 250
+apps chrome chromium firefox claude node podman conmon qemu
+terminals foot alacritty

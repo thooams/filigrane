@@ -1,0 +1,26 @@
+#!/bin/sh
+# Retire une appli web du menu (inverse de webapp-add).
+#   webapp-remove "WhatsApp"
+# Supprime la ligne de ~/.config/webapps/list, son icône si plus personne ne l'utilise, puis webapp-sync.
+[ -n "$1" ] || { echo 'usage: webapp-remove "Nom"' >&2; exit 1; }
+name="$1"
+list="${XDG_CONFIG_HOME:-$HOME/.config}/webapps/list"
+[ -f "$list" ] || { echo "liste introuvable: $list" >&2; exit 1; }
+pat="^[[:space:]]*$(printf '%s' "$name" | sed 's/[][\.*^$/]/\\&/g')[[:space:]]*\|"
+line="$(grep -iE "$pat" "$list" | head -1)"
+[ -n "$line" ] || { echo "introuvable: $name" >&2; exit 1; }
+icon="$(printf '%s' "$line" | cut -d'|' -f3 | sed 's/^ *//;s/ *$//')"
+# Réécriture par cat: la liste est un lien vers le dépôt, sed -i le remplacerait par un fichier
+tmp="$(mktemp)"
+grep -viE "$pat" "$list" > "$tmp"
+cat "$tmp" > "$list"; rm -f "$tmp"
+case "$icon" in
+    "~/.config/webapps/icons/"*)
+        f="${icon#\~/}"
+        if ! grep -qF "$icon" "$list"; then
+            real="$(readlink -f "$HOME/$f")"
+            rm -f "$HOME/$f" "$real"
+        fi ;;
+esac
+webapp-sync
+echo "retiré: $name (web)"

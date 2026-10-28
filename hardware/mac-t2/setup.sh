@@ -3,7 +3,7 @@
 # Approche inspirée d'Omarchy (install/hardware/apple/fix-t2.sh), adaptée à Void:
 # xbps + DKMS (pas de noyau linux-t2), dracut, GRUB ou Limine (/etc/kernel/cmdline), runit.
 #
-#   ./setup.sh [--check] [--only dkms|touchbar|smc|trackpad|keys|boot|audio|fan|sleeplog|net|tools]
+#   ./setup.sh [--check] [--only dkms|touchbar|smc|trackpad|keys|boot|audio|fan|sleeplog|net|tools|clock]
 #
 # --check: affiche si une puce T2 est détectée (code 0 = oui) puis quitte.
 # Appelé automatiquement par bootstrap.sh quand la machine est mac-t2 (détectée, ou forcée avec --machine).
@@ -83,7 +83,12 @@ fetch_ref() { # fetch_ref DEPOT REF DESTINATION
 
 setup_packages() {
     log "Paquets (dkms, en-têtes noyau, alsa-ucm-conf, outils firmware)"
-    xbps-install -y $(read_list "$ROOT/packages/mac-t2.txt")
+    # Seulement ceux qui manquent: xbps-install signale chaque paquet déjà là par un « ERROR »
+    local pkg todo=()
+    for pkg in $(read_list "$ROOT/packages/mac-t2.txt"); do
+        if xbps-query "$pkg" >/dev/null 2>&1; then echo "SKIP: $pkg déjà installé"; else todo+=("$pkg"); fi
+    done
+    [ ${#todo[@]} -eq 0 ] || xbps-install -y "${todo[@]}"
 }
 
 installed_kernels() { # versions dont les en-têtes sont présents
@@ -212,7 +217,7 @@ setup_smc() {
     # Jamais chargé par udev: l'applesmc du noyau Void bloque "waiting for devices to settle".
     # Le service t2fanrd charge la version DKMS (/updates) après le démarrage, si elle existe.
     cat > /etc/modprobe.d/t2-applesmc.conf <<'EOF'
-# void-setup: applesmc chargé par le service t2fanrd (version DKMS applesmc-t2), pas par udev
+# filigrane: applesmc chargé par le service t2fanrd (version DKMS applesmc-t2), pas par udev
 blacklist applesmc
 EOF
     local src="/usr/src/applesmc-t2-$APPLESMC_VER" k
@@ -254,6 +259,9 @@ setup_keys() {
     install -m 0644 "$HERE/keyd.conf" /etc/keyd/default.conf
     install -m 0644 "$HERE/keyd-external-azerty.conf" /etc/keyd/external-azerty.conf
     keyd check /etc/keyd/default.conf /etc/keyd/external-azerty.conf
+    # Clavier virtuel de keyd déclaré interne: sinon dwt du trackpad ne réagit pas à la frappe (relu au prochain démarrage de niri)
+    install -d /etc/libinput
+    install -m 0644 "$HERE/libinput-keyd.quirks" /etc/libinput/local-overrides.quirks
     ln -sfn /etc/sv/keyd /etc/runit/runsvdir/default/keyd
     if [ -e /var/service/keyd ]; then sv restart /var/service/keyd 2>/dev/null || true; fi
 
@@ -261,7 +269,7 @@ setup_keys() {
     # l'énumération USB de la T2, donc rc.local serait trop tôt). 3000 sur 14660 max, environ 20%.
     mkdir -p /etc/udev/rules.d
     cat > /etc/udev/rules.d/71-t2-kbd-backlight.rules <<'EOF'
-# void-setup: rétroéclairage clavier allumé dès que le LED apparaît
+# filigrane: rétroéclairage clavier allumé dès que le LED apparaît
 SUBSYSTEM=="leds", ACTION=="add", KERNEL==":white:kbd_backlight", ATTR{brightness}="3000"
 EOF
 }
@@ -367,7 +375,7 @@ EOF
     mkdir -p /usr/libexec/elogind/system-sleep
     cat > /usr/libexec/elogind/system-sleep/50-zzz.d <<'EOF'
 #!/bin/sh
-# void-setup: elogind appelle ce hook avec pre|post; on lance les hooks zzz.d correspondants
+# filigrane: elogind appelle ce hook avec pre|post; on lance les hooks zzz.d correspondants
 case "$1" in
     pre) d=/etc/zzz.d/suspend ;;
     post) d=/etc/zzz.d/resume ;;
@@ -401,18 +409,18 @@ setup_net() {
     # (sinon adresse 169.254.x.x et route par défaut parasite avant le Wi-Fi)
     mkdir -p /etc/udev/rules.d
     cat > /etc/udev/rules.d/70-t2-ncm.rules <<'EOF'
-# void-setup: interface Ethernet USB interne de la puce T2 (pas un vrai réseau)
+# filigrane: interface Ethernet USB interne de la puce T2 (pas un vrai réseau)
 SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="ac:de:48:00:11:22", NAME="t2ncm0"
 EOF
     if [ -f /etc/dhcpcd.conf ] && ! grep -qE '^denyinterfaces.*t2ncm0' /etc/dhcpcd.conf; then
-        printf '\n# void-setup: interface interne de la T2\ndenyinterfaces t2ncm0\n' >> /etc/dhcpcd.conf
+        printf '\n# filigrane: interface interne de la T2\ndenyinterfaces t2ncm0\n' >> /etc/dhcpcd.conf
     fi
 
     log "Wi-Fi Broadcom: pas de réveil de la veille"
     # Capot fermé, la machine se réveillait seule ~35 s après la mise en veille (ARPT dans
     # /proc/acpi/wakeup). Le capot (LID0) et le clavier (T2) réveillent toujours la machine.
     cat > /etc/udev/rules.d/72-t2-wifi-nowake.rules <<'EOF'
-# void-setup: la carte Wi-Fi Broadcom (ARPT) ne réveille pas la machine en veille
+# filigrane: la carte Wi-Fi Broadcom (ARPT) ne réveille pas la machine en veille
 SUBSYSTEM=="pci", ACTION=="add", ATTR{vendor}=="0x14e4", ATTR{class}=="0x028000", ATTR{power/wakeup}="disabled"
 EOF
 }
@@ -439,6 +447,14 @@ if ! is_t2 && [ -z "${T2_FORCE:-}" ]; then
 fi
 
 [ -z "$ONLY" ] && setup_packages  # avec --only: dkms et linux-headers doivent déjà être installés
+# L'horloge matérielle (RTC) de la T2 repart parfois du 1er janvier 1970 au démarrage: le système vit en 1970
+# jusqu'à la synchro NTP (certificats TLS « pas encore valides »). chronyd -s remet alors l'heure à celle de
+# son dernier arrêt (date du fichier drift) dès le démarrage, avant le réseau.
+setup_clock() {
+    log "Heure au démarrage: chronyd -s (RTC T2 parfois remise à 1970)"
+    printf '%s\n' '# filigrane (hardware/mac-t2): RTC T2 peu fiable, restaurer l'"'"'heure du dernier arrêt' 'OPTS="-s"' > /etc/sv/chronyd/conf
+}
+
 want dkms && setup_dkms
 want touchbar && setup_touchbar
 want smc && setup_smc
@@ -450,4 +466,5 @@ want fan && setup_fan
 want sleeplog && setup_sleeplog
 want net && setup_net
 want tools && setup_tools
+want clock && setup_clock
 log "Terminé. Redémarrer, puis lancer t2-wifi-firmware pour le Wi-Fi/Bluetooth."

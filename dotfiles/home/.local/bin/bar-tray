@@ -1,28 +1,8 @@
 #!/bin/sh
-# Tiroir Waybar à gauche de l'horloge: minuteur, caféine, notifications, veilleuse, sauvegarde (+ tray système).
-# Replié, un indicateur au repos (classe idle) est masqué et seuls ceux en cours d'usage restent visibles;
-# le chevron (clic) révèle tout. État: présence de $XDG_RUNTIME_DIR/bar-tray-open, sans daemon.
-# Usage: bar-tray handle | toggle | timer | idle | dnd | night | backup (JSON pour Waybar)
+# Tiroir de la barre à gauche de l'horloge (sauvegarde, mail, WhatsApp, agenda au repos, tray système): `bar-tray toggle`
+# l'ouvre ou le replie. État: présence de $XDG_RUNTIME_DIR/bar-tray-open, lue par la barre (BarState.qml), sans daemon.
 f="${XDG_RUNTIME_DIR:-/tmp}/bar-tray-open"
-B="$HOME/.local/bin"
 case "$1" in
-    handle)
-        if [ -e "$f" ]; then
-            printf '{"text":"\\uf054","class":"open","tooltip":"Replier"}\n'
-        else
-            printf '{"text":"\\uf053","tooltip":"Afficher minuteur, caféine, notifications, veilleuse, sauvegarde"}\n'
-        fi
-        exit 0 ;;
-    toggle)
-        if [ -e "$f" ]; then rm -f "$f"; else : >"$f"; fi
-        for s in 20 12 13 9 10 18; do pkill -RTMIN+$s waybar; done
-        exit 0 ;;
-    timer) out="$("$B/bar-timer")" ;;
-    idle|dnd|night) out="$("$B/bar-status" "$1")" ;;
-    backup) out="$("$B/bar-backup")" ;;
-    *) exit 1 ;;
+    toggle) if [ -e "$f" ]; then rm -f "$f"; else : >"$f"; fi ;;
+    *) echo "usage: bar-tray toggle" >&2; exit 2 ;;
 esac
-case "$out" in
-    *'"class":"idle"'*) [ -e "$f" ] || out='{"text":""}' ;;
-esac
-printf '%s\n' "$out"
