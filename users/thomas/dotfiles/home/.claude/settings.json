@@ -103,5 +103,5 @@
     "command": "/bin/bash \"$HOME/.claude/statusline-command.sh\""
   },
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark"
+  "theme": "auto"
 }
